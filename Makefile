@@ -3,7 +3,7 @@
 #################################################################################
 
 PROJECT_NAME = Smile-Authenticity-Trainer
-PYTHON_VERSION = 3.13
+PYTHON_VERSION = 3.11
 PYTHON_INTERPRETER = python
 
 #################################################################################
