@@ -1,0 +1,11 @@
+from pathlib import Path
+
+
+PROJ_ROOT = Path(__file__).resolve().parents[1]
+
+DATA_DIR = PROJ_ROOT / "data"
+
+UvA_NEMO_SMILE_DATABASE_DIR = DATA_DIR / "UvA-NEMO_SMILE_DATABASE"
+UvA_NEMO_SMILE_DETAILS = UvA_NEMO_SMILE_DATABASE_DIR / "UvA-NEMO_Smile_Database_File_Details.txt"
+
+PREPROCESSED_UvA_NEMO_SMILE_DATABASE_DIR = DATA_DIR / "preprocessed_UvA-NEMO_SMILE_DATABASE"
