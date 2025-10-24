@@ -33,6 +33,12 @@ clean:
 	find . -type d -name "__pycache__" -delete
 
 
+# Sort imports using isort
+.PHONY: isort
+isort:
+	isort ai/
+
+
 # Lint using ruff (use `make format` to do formatting)
 .PHONY: lint
 lint:
