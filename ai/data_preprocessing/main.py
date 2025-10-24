@@ -7,10 +7,19 @@ import numpy as np
 from ai.data_preprocessing.file_utils import save_frame
 from ai.data_preprocessing.get_details import get_details
 from ai.data_preprocessing.get_face_landmarks import get_face_landmarks
-from ai.config import UvA_NEMO_SMILE_DETAILS, PREPROCESSED_DATA_DIR, ORIGINAL_FRAMES_DIR, ORIGINAL_FACELANDMARKS_DIR, UvA_NEMO_SMILE_VIDEOS_DIR, PREPROCESSED_FRAMES_DIR
+from ai.config import (
+    UvA_NEMO_SMILE_DETAILS,
+    PREPROCESSED_DATA_DIR,
+    ORIGINAL_FRAMES_DIR,
+    ORIGINAL_FACELANDMARKS_DIR,
+    UvA_NEMO_SMILE_VIDEOS_DIR,
+    PREPROCESSED_FRAMES_DIR,
+)
 
 
-def preprocess_frame(frame: cv2.Mat | np.ndarray[Any, np.dtype[Any]], frame_number: int, video_name: str):
+def preprocess_frame(
+    frame: cv2.Mat | np.ndarray[Any, np.dtype[Any]], frame_number: int, video_name: str
+):
     frame_path = ORIGINAL_FRAMES_DIR / f"{video_name}" / f"{frame_number}.jpg"
     save_frame(frame, frame_path)
 
@@ -40,7 +49,9 @@ def main():
     ORIGINAL_FRAMES_DIR.mkdir(parents=True, exist_ok=True)
     ORIGINAL_FACELANDMARKS_DIR.mkdir(parents=True, exist_ok=True)
 
-    get_details(UvA_NEMO_SMILE_DETAILS).to_csv(PREPROCESSED_DATA_DIR / "details.csv", index=False)
+    get_details(UvA_NEMO_SMILE_DETAILS).to_csv(
+        PREPROCESSED_DATA_DIR / "details.csv", index=False
+    )
 
     preprocess_video(UvA_NEMO_SMILE_VIDEOS_DIR / "001_deliberate_smile_2.mp4")
 

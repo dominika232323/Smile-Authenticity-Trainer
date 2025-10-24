@@ -7,7 +7,7 @@ import cv2
 
 
 def append_row_to_csv(landmarks_file_path: Path, row: list[int]):
-    with open(landmarks_file_path, 'a') as f:
+    with open(landmarks_file_path, "a") as f:
         writer = csv.writer(f)
         writer.writerow(row)
 
