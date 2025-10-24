@@ -1,8 +1,9 @@
-import mediapipe as mp
 from pathlib import Path
-import cv2
-import numpy as np
 from typing import Any
+
+import cv2
+import mediapipe as mp
+import numpy as np
 
 from ai.data_preprocessing.file_utils import append_row_to_csv
 

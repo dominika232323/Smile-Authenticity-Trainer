@@ -4,17 +4,12 @@ from typing import Any
 import cv2
 import numpy as np
 
+from ai.config import (ORIGINAL_FACELANDMARKS_DIR, ORIGINAL_FRAMES_DIR,
+                       PREPROCESSED_DATA_DIR, PREPROCESSED_FRAMES_DIR,
+                       UvA_NEMO_SMILE_DETAILS, UvA_NEMO_SMILE_VIDEOS_DIR)
 from ai.data_preprocessing.file_utils import save_frame
 from ai.data_preprocessing.get_details import get_details
 from ai.data_preprocessing.get_face_landmarks import get_face_landmarks
-from ai.config import (
-    UvA_NEMO_SMILE_DETAILS,
-    PREPROCESSED_DATA_DIR,
-    ORIGINAL_FRAMES_DIR,
-    ORIGINAL_FACELANDMARKS_DIR,
-    UvA_NEMO_SMILE_VIDEOS_DIR,
-    PREPROCESSED_FRAMES_DIR,
-)
 
 
 def preprocess_frame(

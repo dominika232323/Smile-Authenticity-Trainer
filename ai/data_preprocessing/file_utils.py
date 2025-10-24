@@ -1,9 +1,9 @@
 import csv
 from pathlib import Path
-import numpy as np
 from typing import Any
 
 import cv2
+import numpy as np
 
 
 def append_row_to_csv(landmarks_file_path: Path, row: list[int]):

@@ -1,5 +1,6 @@
-import pandas as pd
 from pathlib import Path
+
+import pandas as pd
 
 
 def get_details(path_to_file: Path) -> pd.DataFrame:
