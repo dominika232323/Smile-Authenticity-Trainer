@@ -31,6 +31,8 @@ requirements:
 clean:
 	find . -type f -name "*.py[co]" -delete
 	find . -type d -name "__pycache__" -delete
+	rm -r data/original_data
+	rm -r data/preprocessed_UvA-NEMO_SMILE_DATABASE
 
 
 # Sort imports using isort
