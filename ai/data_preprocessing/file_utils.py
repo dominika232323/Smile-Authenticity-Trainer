@@ -12,8 +12,5 @@ def append_row_to_csv(landmarks_file_path: Path, row: list[int]):
         writer.writerow(row)
 
 
-def save_frame(frame: cv2.Mat | np.ndarray[Any, np.dtype[Any]], output_directory: Path, frame_number: int, video_name: str):
-    frames_directory = output_directory / f"{video_name}"
-    frames_directory.mkdir(parents=True, exist_ok=True)
-
-    cv2.imwrite(str(frames_directory / f"{frame_number}.jpg"), frame)
+def save_frame(frame: cv2.Mat | np.ndarray[Any, np.dtype[Any]], frame_path: Path):
+    cv2.imwrite(str(frame_path), frame)

@@ -7,17 +7,24 @@ import numpy as np
 from ai.data_preprocessing.file_utils import save_frame
 from ai.data_preprocessing.get_details import get_details
 from ai.data_preprocessing.get_face_landmarks import get_face_landmarks
-from ai.config import UvA_NEMO_SMILE_DETAILS, PREPROCESSED_DATA_DIR, ORIGINAL_FRAMES_DIR, ORIGINAL_FACELANDMARKS_DIR, UvA_NEMO_SMILE_VIDEOS_DIR
+from ai.config import UvA_NEMO_SMILE_DETAILS, PREPROCESSED_DATA_DIR, ORIGINAL_FRAMES_DIR, ORIGINAL_FACELANDMARKS_DIR, UvA_NEMO_SMILE_VIDEOS_DIR, PREPROCESSED_FRAMES_DIR
 
 
 def preprocess_frame(frame: cv2.Mat | np.ndarray[Any, np.dtype[Any]], frame_number: int, video_name: str):
+    frame_path = ORIGINAL_FRAMES_DIR / f"{video_name}" / f"{frame_number}.jpg"
+    save_frame(frame, frame_path)
+
     face_landmarks_file_path = ORIGINAL_FACELANDMARKS_DIR / f"{video_name}.csv"
     get_face_landmarks(frame, frame_number, face_landmarks_file_path)
 
-    save_frame(frame, ORIGINAL_FRAMES_DIR, frame_number, video_name)
-
 
 def preprocess_video(video_path: Path):
+    video_original_directory = ORIGINAL_FRAMES_DIR / video_path.stem
+    video_original_directory.mkdir(parents=True, exist_ok=True)
+
+    video_preprocessed_directory = PREPROCESSED_FRAMES_DIR / video_path.stem
+    video_preprocessed_directory.mkdir(parents=True, exist_ok=True)
+
     cap = cv2.VideoCapture(str(video_path))
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
@@ -35,7 +42,7 @@ def main():
 
     get_details(UvA_NEMO_SMILE_DETAILS).to_csv(PREPROCESSED_DATA_DIR / "details.csv", index=False)
 
-    preprocess_video(UvA_NEMO_SMILE_VIDEOS_DIR / '001_deliberate_smile_2.mp4')
+    preprocess_video(UvA_NEMO_SMILE_VIDEOS_DIR / "001_deliberate_smile_2.mp4")
 
 
 if __name__ == "__main__":
