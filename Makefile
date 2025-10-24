@@ -33,18 +33,18 @@ clean:
 	find . -type d -name "__pycache__" -delete
 
 
-## Lint using ruff (use `make format` to do formatting)
-#.PHONY: lint
-#lint:
-#	ruff format --check
-#	ruff check
+# Lint using ruff (use `make format` to do formatting)
+.PHONY: lint
+lint:
+	ruff format --check
+	ruff check
 
 
-## Format source code with ruff
-#.PHONY: format
-#format:
-#	ruff check --fix
-#	ruff format
+# Format source code with ruff
+.PHONY: format
+format:
+	ruff check --fix
+	ruff format
 
 
 ## Check type hints with mypy
