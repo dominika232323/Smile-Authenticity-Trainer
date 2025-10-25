@@ -4,6 +4,7 @@ from typing import Any
 import cv2
 import mediapipe as mp
 import numpy as np
+import pandas as pd
 
 from ai.data_preprocessing.file_utils import append_row_to_csv
 
@@ -41,3 +42,16 @@ def get_face_landmarks(
 
                 except Exception as e:
                     print(e)
+
+
+def create_facelandmarks_header(face_landmarks_file_path: Path) -> list[str]:
+    header = ["frame_number"]
+
+    df = pd.read_csv(face_landmarks_file_path, header=None)
+    number_of_columns = df.shape[1]
+
+    for i in range((number_of_columns - 1) // 2):
+        header.append(f"{i}_x")
+        header.append(f"{i}_y")
+
+    return header

@@ -4,12 +4,20 @@ from typing import Any
 import cv2
 import numpy as np
 
-from ai.config import (ORIGINAL_FACELANDMARKS_DIR, ORIGINAL_FRAMES_DIR,
-                       PREPROCESSED_DATA_DIR, PREPROCESSED_FRAMES_DIR,
-                       UvA_NEMO_SMILE_DETAILS, UvA_NEMO_SMILE_VIDEOS_DIR)
-from ai.data_preprocessing.file_utils import save_frame
+from ai.config import (
+    ORIGINAL_FACELANDMARKS_DIR,
+    ORIGINAL_FRAMES_DIR,
+    PREPROCESSED_DATA_DIR,
+    PREPROCESSED_FRAMES_DIR,
+    UvA_NEMO_SMILE_DETAILS,
+    UvA_NEMO_SMILE_VIDEOS_DIR,
+)
+from ai.data_preprocessing.file_utils import add_header_to_csv, save_frame
 from ai.data_preprocessing.get_details import get_details
-from ai.data_preprocessing.get_face_landmarks import get_face_landmarks
+from ai.data_preprocessing.get_face_landmarks import (
+    create_facelandmarks_header,
+    get_face_landmarks,
+)
 
 
 def preprocess_frame(
@@ -37,6 +45,11 @@ def preprocess_video(video_path: Path):
         _, frame = cap.read()
 
         preprocess_frame(frame, frame_number, video_path.stem)
+
+    face_landmarks_file_path = ORIGINAL_FACELANDMARKS_DIR / f"{video_path.stem}.csv"
+    add_header_to_csv(
+        face_landmarks_file_path, create_facelandmarks_header(face_landmarks_file_path)
+    )
 
 
 def main():
