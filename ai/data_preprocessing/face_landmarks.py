@@ -1,0 +1,165 @@
+class FaceLandmarks:
+    @staticmethod
+    def silhouette():
+        return [
+            10,
+            338,
+            297,
+            332,
+            284,
+            251,
+            389,
+            356,
+            454,
+            323,
+            361,
+            288,
+            397,
+            365,
+            379,
+            378,
+            400,
+            377,
+            152,
+            148,
+            176,
+            149,
+            150,
+            136,
+            172,
+            58,
+            132,
+            93,
+            234,
+            127,
+            162,
+            21,
+            54,
+            103,
+            67,
+            109,
+        ]
+
+    @staticmethod
+    def lips_upper_outer():
+        return [61, 185, 40, 39, 37, 0, 267, 269, 270, 409, 291]
+
+    @staticmethod
+    def lips_lower_outer():
+        return [146, 91, 181, 84, 17, 314, 405, 321, 375, 291]
+
+    @staticmethod
+    def lips_upper_inner():
+        return [78, 191, 80, 81, 82, 13, 312, 311, 310, 415, 308]
+
+    @staticmethod
+    def lips_lower_inner():
+        return [78, 95, 88, 178, 87, 14, 317, 402, 318, 324, 308]
+
+    @staticmethod
+    def right_eye_upper_0():
+        return [246, 161, 160, 159, 158, 157, 173]
+
+    @staticmethod
+    def right_eye_lower_0():
+        return [33, 7, 163, 144, 145, 153, 154, 155, 133]
+
+    @staticmethod
+    def right_eye_upper_1():
+        return [247, 30, 29, 27, 28, 56, 190]
+
+    @staticmethod
+    def right_eye_lower_1():
+        return [130, 25, 110, 24, 23, 22, 26, 112, 243]
+
+    @staticmethod
+    def right_eye_upper_2():
+        return [113, 225, 224, 223, 222, 221, 189]
+
+    @staticmethod
+    def right_eye_lower_2():
+        return [226, 31, 228, 229, 230, 231, 232, 233, 244]
+
+    @staticmethod
+    def right_eye_lower_3():
+        return [143, 111, 117, 118, 119, 120, 121, 128, 245]
+
+    @staticmethod
+    def right_eyebrow_upper():
+        return [156, 70, 63, 105, 66, 107, 55, 193]
+
+    @staticmethod
+    def right_eyebrow_lower():
+        return [35, 124, 46, 53, 52, 65]
+
+    @staticmethod
+    def right_eye_iris():
+        return [473, 474, 475, 476, 477]
+
+    @staticmethod
+    def left_eye_upper_0():
+        return [466, 388, 387, 386, 385, 384, 398]
+
+    @staticmethod
+    def left_eye_lower_0():
+        return [263, 249, 390, 373, 374, 380, 381, 382, 362]
+
+    @staticmethod
+    def left_eye_upper_1():
+        return [467, 260, 259, 257, 258, 286, 414]
+
+    @staticmethod
+    def left_eye_lower_1():
+        return [359, 255, 339, 254, 253, 252, 256, 341, 463]
+
+    @staticmethod
+    def left_eye_upper_2():
+        return [342, 445, 444, 443, 442, 441, 413]
+
+    @staticmethod
+    def left_eye_lower_2():
+        return [446, 261, 448, 449, 450, 451, 452, 453, 464]
+
+    @staticmethod
+    def left_eye_lower_3():
+        return [372, 340, 346, 347, 348, 349, 350, 357, 465]
+
+    @staticmethod
+    def left_eyebrow_upper():
+        return [383, 300, 293, 334, 296, 336, 285, 417]
+
+    @staticmethod
+    def left_eyebrow_lower():
+        return [265, 353, 276, 283, 282, 295]
+
+    @staticmethod
+    def left_eye_iris():
+        return [468, 469, 470, 471, 472]
+
+    @staticmethod
+    def midway_between_eyes():
+        return [168]
+
+    @staticmethod
+    def nose_tip():
+        return [1]
+
+    @staticmethod
+    def nose_bottom():
+        return [2]
+
+    @staticmethod
+    def nose_right_corner():
+        return [98]
+
+    @staticmethod
+    def nose_left_corner():
+        return [327]
+
+    @staticmethod
+    def right_cheek():
+        return [205]
+
+    @staticmethod
+    def left_cheek():
+        return [425]
