@@ -72,6 +72,12 @@ data_preprocessing:
 	python -m ai.data_preprocessing.main
 
 
+## Run tests
+.PHONY: test
+test:
+	pytest ./ai/tests
+
+
 #################################################################################
 # Self Documenting Commands                                                     #
 #################################################################################
