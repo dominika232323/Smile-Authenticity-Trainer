@@ -208,3 +208,9 @@ __marimo__/
 
 # Datasets
 data/
+
+# Notebooks
+notebooks/
+
+# Logs
+logs/
