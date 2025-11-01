@@ -41,7 +41,7 @@ def get_face_landmarks(
                     append_row_to_csv(landmarks_file_path, row)
 
                 except Exception as e:
-                    print(e)
+                    raise e
 
 
 def create_facelandmarks_header(face_landmarks_file_path: Path) -> list[str]:
