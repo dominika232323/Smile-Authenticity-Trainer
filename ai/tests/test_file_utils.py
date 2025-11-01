@@ -2,9 +2,10 @@ import csv
 import tempfile
 from pathlib import Path
 
+import pandas as pd
 import pytest
 
-from ai.data_preprocessing.file_utils import append_row_to_csv
+from ai.data_preprocessing.file_utils import append_row_to_csv, add_header_to_csv
 
 
 @pytest.mark.parametrize(("row", "expected"), [([1, 2, 3, 4, 5], ["1", "2", "3", "4", "5"]), ([16], ["16"]), ([], [])])
@@ -105,3 +106,110 @@ def test_invalid_directory_path(row):
 
     with pytest.raises(FileNotFoundError):
         append_row_to_csv(invalid_path, row)
+
+
+@pytest.mark.parametrize(("header", "expected_header"), [
+    (["A", "B", "C"], ["A", "B", "C"]),
+    (["Name", "Age", "Score"], ["Name", "Age", "Score"]),
+    (["Name & Title", "Age (years)", "Score %"], ["Name & Title", "Age (years)", "Score %"])
+])
+def test_add_header_to_csv_with_data(header, expected_header):
+    with tempfile.TemporaryDirectory() as temp_dir:
+        csv_file = Path(temp_dir) / "test_header.csv"
+        
+        with open(csv_file, "w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow([1, 2, 3])
+            writer.writerow([4, 5, 6])
+        
+        add_header_to_csv(csv_file, header)
+        
+        with open(csv_file, "r") as f:
+            reader = csv.reader(f)
+            rows = list(reader)
+
+            assert rows[0] == expected_header
+            assert rows[1] == ["1", "2", "3"]
+            assert rows[2] == ["4", "5", "6"]
+
+            assert len(rows) == 3
+
+
+@pytest.mark.parametrize("header", [
+    (["A", "B", "C"]),
+    (["Name", "Age", "Score"]),
+    (["Name & Title", "Age (years)", "Score %"])
+])
+def test_add_header_to_csv_empty_file(header):
+    with tempfile.TemporaryDirectory() as temp_dir:
+        csv_file = Path(temp_dir) / "test_empty.csv"
+        
+        csv_file.touch()
+
+        with pytest.raises(pd.errors.EmptyDataError):
+            add_header_to_csv(csv_file, header)
+
+
+@pytest.mark.parametrize("header", [
+    (["A", "B"]),
+    (["Name", "Age"]),
+    (["Name & Title", "Age (years)"])
+])
+def test_add_header_to_csv_mismatched_number_of_columns(header):
+    with tempfile.TemporaryDirectory() as temp_dir:
+        csv_file = Path(temp_dir) / "test_mismatch.csv"
+
+        with open(csv_file, "w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow([1, 2, 3])
+            writer.writerow([4, 5, 6])
+
+        with pytest.raises(ValueError):
+            add_header_to_csv(csv_file, header)
+
+
+def test_add_empty_header_to_csv():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        csv_file = Path(temp_dir) / "test_empty_header.csv"
+
+        with open(csv_file, "w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow([1, 2, 3])
+            writer.writerow([4, 5, 6])
+
+        with pytest.raises(ValueError):
+            add_header_to_csv(csv_file, [])
+
+
+@pytest.mark.parametrize("header", [
+    (["A", "B", "C"]),
+    (["Name", "Age", "Score"]),
+    (["Name & Title", "Age (years)", "Score %"])
+])
+def test_add_header_to_csv_nonexistent_file(header):
+    nonexistent_file = Path("/nonexistent/directory/test.csv")
+
+    with pytest.raises(FileNotFoundError):
+        add_header_to_csv(nonexistent_file, header)
+
+
+@pytest.mark.parametrize("header", [
+    (["A", "B", "C"]),
+    (["Name", "Age", "Score"]),
+    (["Name & Title", "Age (years)", "Score %"])
+])
+def test_add_header_to_csv_file_permissions(header):
+    with tempfile.TemporaryDirectory() as temp_dir:
+        csv_file = Path(temp_dir) / "readonly.csv"
+        
+        with open(csv_file, "w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow([1, 2, 3])
+        
+        csv_file.chmod(0o444)
+        
+        try:
+            with pytest.raises(PermissionError):
+                add_header_to_csv(csv_file, header)
+        finally:
+            csv_file.chmod(0o666)
