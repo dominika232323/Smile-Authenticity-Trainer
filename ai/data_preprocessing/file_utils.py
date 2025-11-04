@@ -5,19 +5,51 @@ from typing import Any
 import cv2
 import numpy as np
 import pandas as pd
+from loguru import logger
 
 
-def append_row_to_csv(landmarks_file_path: Path, row: list[int]):
-    with open(landmarks_file_path, "a") as f:
-        writer = csv.writer(f)
-        writer.writerow(row)
+def append_row_to_csv(file_path: Path, row: list[int]):
+    logger.debug(f"Appending row with {len(row)} values to {file_path}")
+
+    try:
+        with open(file_path, "a") as f:
+            writer = csv.writer(f)
+            writer.writerow(row)
+    except Exception as e:
+        logger.error(f"Failed to append row to CSV {file_path}: {e}")
+        raise
 
 
 def add_header_to_csv(file_path: Path, header: list[str]):
-    df = pd.read_csv(file_path, header=None)
-    df.columns = header
-    df.to_csv(file_path, index=False)
+    logger.debug(f"Adding header to CSV file: {file_path}")
+
+    try:
+        df = pd.read_csv(file_path, header=None)
+        df.columns = header
+        df.to_csv(file_path, index=False)
+        logger.info(f"Successfully added header with {len(header)} columns to {file_path}")
+    except Exception as e:
+        logger.error(f"Failed to add header to CSV {file_path}: {e}")
+        raise
 
 
 def save_frame(frame: cv2.Mat | np.ndarray[Any, np.dtype[Any]], frame_path: Path):
-    cv2.imwrite(str(frame_path), frame)
+    logger.debug(f"Saving frame to {frame_path}")
+
+    try:
+        create_directories([frame_path.parent])
+        success = cv2.imwrite(str(frame_path), frame)
+
+        if not success:
+            raise RuntimeError(f"cv2.imwrite failed for {frame_path}")
+
+        logger.debug(f"Frame saved successfully to {frame_path}")
+    except Exception as e:
+        logger.error(f"Failed to save frame to {frame_path}: {e}")
+        raise
+
+
+def create_directories(directories: list[Path]):
+    for directory in directories:
+        directory.mkdir(parents=True, exist_ok=True)
+        logger.debug(f"Ensured directory {directory} exists")

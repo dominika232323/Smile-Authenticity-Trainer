@@ -4,6 +4,7 @@ from typing import Any
 import cv2
 import numpy as np
 from tqdm import tqdm
+from loguru import logger
 
 from ai.config import (
     ORIGINAL_FACELANDMARKS_DIR,
@@ -13,57 +14,105 @@ from ai.config import (
     UvA_NEMO_SMILE_DETAILS,
     UvA_NEMO_SMILE_VIDEOS_DIR,
 )
-from ai.data_preprocessing.file_utils import add_header_to_csv, save_frame
+from ai.data_preprocessing.file_utils import add_header_to_csv, save_frame, create_directories
 from ai.data_preprocessing.get_details import get_details
 from ai.data_preprocessing.get_face_landmarks import create_facelandmarks_header, get_face_landmarks
+from ai.logging_config import setup_logging
 
 
+@logger.catch
 def preprocess_frame(frame: cv2.Mat | np.ndarray[Any, np.dtype[Any]], frame_number: int, video_name: str):
+    logger.debug(f"Processing frame {frame_number} for video {video_name}")
+
     frame_path = ORIGINAL_FRAMES_DIR / f"{video_name}" / f"{frame_number}.jpg"
     save_frame(frame, frame_path)
+    logger.debug(f"Saved frame to {frame_path}")
 
     face_landmarks_file_path = ORIGINAL_FACELANDMARKS_DIR / f"{video_name}.csv"
     get_face_landmarks(frame, frame_number, face_landmarks_file_path)
+    logger.debug(f"Extracted face landmarks for frame {frame_number}")
 
 
+@logger.catch
 def preprocess_video(video_path: Path):
     video_name = video_path.stem
+    logger.info(f"Starting preprocessing video: {video_name}")
 
     video_original_directory = ORIGINAL_FRAMES_DIR / video_name
-    video_original_directory.mkdir(parents=True, exist_ok=True)
-
     video_preprocessed_directory = PREPROCESSED_FRAMES_DIR / video_name
-    video_preprocessed_directory.mkdir(parents=True, exist_ok=True)
+    create_directories([video_original_directory, video_preprocessed_directory])
 
     cap = cv2.VideoCapture(str(video_path))
+
+    if not cap.isOpened():
+        logger.error(f"Failed to open video file: {video_path}")
+
+        return
+
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    logger.info(f"Video {video_name} has {total_frames} frames")
 
     for frame_number in tqdm(
-        range(0, total_frames), desc=f"Preprocessing frames for video {video_name}", colour="yellow"
+            range(0, total_frames), desc=f"Preprocessing frames for video {video_name}", colour="yellow"
     ):
         cap.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
-        _, frame = cap.read()
+        ret, frame = cap.read()
+
+        if not ret:
+            logger.warning(f"Failed to read frame {frame_number} from video {video_name}")
+
+            continue
 
         preprocess_frame(frame, frame_number, video_name)
 
+        if frame_number % 100 == 0:
+            logger.info(f"Processed {frame_number}/{total_frames} frames for video {video_name}")
+
+    cap.release()
+    logger.info(f"Finished processing all frames for video {video_name}")
+
     face_landmarks_file_path = ORIGINAL_FACELANDMARKS_DIR / f"{video_name}.csv"
     add_header_to_csv(face_landmarks_file_path, create_facelandmarks_header(face_landmarks_file_path))
+    logger.info(f"Added header to face landmarks CSV: {face_landmarks_file_path}")
 
 
+@logger.catch
 def main():
-    PREPROCESSED_DATA_DIR.mkdir(parents=True, exist_ok=True)
-    ORIGINAL_FRAMES_DIR.mkdir(parents=True, exist_ok=True)
-    ORIGINAL_FACELANDMARKS_DIR.mkdir(parents=True, exist_ok=True)
+    setup_logging()
+    logger.info("Starting data preprocessing pipeline")
 
-    get_details(UvA_NEMO_SMILE_DETAILS).to_csv(PREPROCESSED_DATA_DIR / "details.csv", index=False)
+    directories = [PREPROCESSED_DATA_DIR, ORIGINAL_FRAMES_DIR, ORIGINAL_FACELANDMARKS_DIR]
+    create_directories(directories)
+
+    logger.info(f"Processing UvA-NEMO SMILE DATABASE details file: {UvA_NEMO_SMILE_DETAILS}")
+
+    try:
+        details_df = get_details(UvA_NEMO_SMILE_DETAILS)
+        details_path = PREPROCESSED_DATA_DIR / "details.csv"
+        details_df.to_csv(details_path, index=False)
+
+        logger.info(f"Saved UvA-NEMO SMILE DATABASE details to {details_path} ({len(details_df)} records)")
+    except Exception as e:
+        logger.error(f"Failed to process UvA-NEMO SMILE DATABASE details file: {e}")
+
+        return
 
     videos_to_process = [
         UvA_NEMO_SMILE_VIDEOS_DIR / "001_deliberate_smile_2.mp4",
         UvA_NEMO_SMILE_VIDEOS_DIR / "001_deliberate_smile_3.mp4",
     ]
 
-    for video_path in tqdm(videos_to_process, desc="Preprocessing videos", colour="green"):
+    logger.info(f"Processing {len(videos_to_process)} videos")
+
+    for i, video_path in enumerate(videos_to_process, 1):
+        if not video_path.exists():
+            logger.error(f"Video file not found: {video_path}")
+            continue
+
+        logger.info(f"Processing video {i}/{len(videos_to_process)}: {video_path.name}")
         preprocess_video(video_path)
+
+    logger.info("Data preprocessing pipeline completed successfully")
 
 
 if __name__ == "__main__":
