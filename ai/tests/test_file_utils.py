@@ -337,9 +337,8 @@ def test_save_frame_invalid_directory(image_format):
     invalid_path = Path(f"/nonexistent/directory/frame{image_format}")
     frame = np.ones((50, 50, 3), dtype=np.uint8)
 
-    save_frame(frame, invalid_path)
-
-    assert not invalid_path.exists()
+    with pytest.raises(PermissionError):
+        save_frame(frame, invalid_path)
 
 
 @pytest.mark.parametrize("image_format", [".jpg", ".png", ".bmp", ".tiff"])
@@ -363,11 +362,10 @@ def test_save_frame_to_readonly_directory(image_format):
         frame = np.ones((50, 50, 3), dtype=np.uint8)
 
         try:
-            save_frame(frame, frame_path)
+            with pytest.raises(RuntimeError):
+                save_frame(frame, frame_path)
         finally:
             readonly_dir.chmod(0o755)
-
-            assert not frame_path.exists()
 
 
 @pytest.mark.parametrize("extension", ["", ".unknown", ".xyz"])
