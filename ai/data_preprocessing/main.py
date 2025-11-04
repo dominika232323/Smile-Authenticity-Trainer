@@ -3,8 +3,8 @@ from typing import Any
 
 import cv2
 import numpy as np
-from tqdm import tqdm
 from loguru import logger
+from tqdm import tqdm
 
 from ai.config import (
     ORIGINAL_FACELANDMARKS_DIR,
@@ -14,7 +14,7 @@ from ai.config import (
     UvA_NEMO_SMILE_DETAILS,
     UvA_NEMO_SMILE_VIDEOS_DIR,
 )
-from ai.data_preprocessing.file_utils import add_header_to_csv, save_frame, create_directories
+from ai.data_preprocessing.file_utils import add_header_to_csv, create_directories, save_frame
 from ai.data_preprocessing.get_details import get_details
 from ai.data_preprocessing.get_face_landmarks import create_facelandmarks_header, get_face_landmarks
 from ai.logging_config import setup_logging
@@ -53,7 +53,7 @@ def preprocess_video(video_path: Path):
     logger.info(f"Video {video_name} has {total_frames} frames")
 
     for frame_number in tqdm(
-            range(0, total_frames), desc=f"Preprocessing frames for video {video_name}", colour="yellow"
+        range(0, total_frames), desc=f"Preprocessing frames for video {video_name}", colour="yellow"
     ):
         cap.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
         ret, frame = cap.read()
