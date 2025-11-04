@@ -3,6 +3,7 @@ from typing import Any
 
 import cv2
 import numpy as np
+from tqdm import tqdm
 
 from ai.config import (
     ORIGINAL_FACELANDMARKS_DIR,
@@ -26,22 +27,26 @@ def preprocess_frame(frame: cv2.Mat | np.ndarray[Any, np.dtype[Any]], frame_numb
 
 
 def preprocess_video(video_path: Path):
-    video_original_directory = ORIGINAL_FRAMES_DIR / video_path.stem
+    video_name = video_path.stem
+
+    video_original_directory = ORIGINAL_FRAMES_DIR / video_name
     video_original_directory.mkdir(parents=True, exist_ok=True)
 
-    video_preprocessed_directory = PREPROCESSED_FRAMES_DIR / video_path.stem
+    video_preprocessed_directory = PREPROCESSED_FRAMES_DIR / video_name
     video_preprocessed_directory.mkdir(parents=True, exist_ok=True)
 
     cap = cv2.VideoCapture(str(video_path))
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
 
-    for frame_number in range(0, total_frames):
+    for frame_number in tqdm(
+        range(0, total_frames), desc=f"Preprocessing frames for video {video_name}", colour="yellow"
+    ):
         cap.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
         _, frame = cap.read()
 
-        preprocess_frame(frame, frame_number, video_path.stem)
+        preprocess_frame(frame, frame_number, video_name)
 
-    face_landmarks_file_path = ORIGINAL_FACELANDMARKS_DIR / f"{video_path.stem}.csv"
+    face_landmarks_file_path = ORIGINAL_FACELANDMARKS_DIR / f"{video_name}.csv"
     add_header_to_csv(face_landmarks_file_path, create_facelandmarks_header(face_landmarks_file_path))
 
 
@@ -52,7 +57,13 @@ def main():
 
     get_details(UvA_NEMO_SMILE_DETAILS).to_csv(PREPROCESSED_DATA_DIR / "details.csv", index=False)
 
-    preprocess_video(UvA_NEMO_SMILE_VIDEOS_DIR / "001_deliberate_smile_2.mp4")
+    videos_to_process = [
+        UvA_NEMO_SMILE_VIDEOS_DIR / "001_deliberate_smile_2.mp4",
+        UvA_NEMO_SMILE_VIDEOS_DIR / "001_deliberate_smile_3.mp4",
+    ]
+
+    for video_path in tqdm(videos_to_process, desc="Preprocessing videos", colour="green"):
+        preprocess_video(video_path)
 
 
 if __name__ == "__main__":
