@@ -2,6 +2,7 @@ from pathlib import Path
 
 PROJ_ROOT = Path(__file__).resolve().parents[1]
 
+LOGS_DIR = PROJ_ROOT / "logs"
 DATA_DIR = PROJ_ROOT / "data"
 
 UvA_NEMO_SMILE_DATABASE_DIR = DATA_DIR / "UvA-NEMO_SMILE_DATABASE"
