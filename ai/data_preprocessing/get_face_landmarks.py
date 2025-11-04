@@ -6,7 +6,6 @@ import mediapipe as mp
 import numpy as np
 import pandas as pd
 from loguru import logger
-from tqdm import tqdm
 
 from ai.data_preprocessing.file_utils import append_row_to_csv
 
@@ -37,12 +36,7 @@ def get_face_landmarks(
 
                     row = [frame_number]
 
-                    for i, landmark in tqdm(
-                        enumerate(landmarks),
-                        total=len(landmarks),
-                        desc=f"Saving landmarks for frame {frame_number}",
-                        colour="blue",
-                    ):
+                    for i, landmark in enumerate(landmarks):
                         x = landmark.x
                         y = landmark.y
 
