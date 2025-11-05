@@ -75,7 +75,7 @@ data_preprocessing:
 ## Run tests
 .PHONY: test
 test:
-	pytest ./ai/tests
+	pytest ./tests
 
 
 #################################################################################
