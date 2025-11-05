@@ -69,13 +69,19 @@ mypy:
 ## Run data preprocessing
 .PHONY: data_preprocessing
 data_preprocessing:
-	python -m ai.data_preprocessing.main
+	$(PYTHON_INTERPRETER) -m ai.data_preprocessing.main
 
 
 ## Run tests
 .PHONY: test
 test:
-	pytest ./tests
+	$(PYTHON_INTERPRETER) -m pytest tests
+
+
+## Run tests with coverage
+.PHONY: coverage
+coverage:
+	$(PYTHON_INTERPRETER) -m pytest --cov=ai --cov-report=term-missing tests
 
 
 #################################################################################
