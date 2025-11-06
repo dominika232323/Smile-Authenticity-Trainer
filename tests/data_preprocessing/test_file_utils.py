@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from ai.data_preprocessing.file_utils import add_header_to_csv, append_row_to_csv, save_frame
+from ai.data_preprocessing.file_utils import add_header_to_csv, append_row_to_csv, save_frame, create_directories
 
 
 @pytest.mark.parametrize(("row", "expected"), [([1, 2, 3, 4, 5], ["1", "2", "3", "4", "5"]), ([16], ["16"]), ([], [])])
@@ -392,3 +392,123 @@ def test_save_frame_with_alpha_channel(image_format):
         save_frame(frame, frame_path)
 
         assert frame_path.exists()
+
+
+def test_create_directories_single_directory():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        new_dir = Path(temp_dir) / "new_directory"
+
+        assert not new_dir.exists()
+
+        create_directories([new_dir])
+
+        assert new_dir.exists()
+        assert new_dir.is_dir()
+
+
+def test_create_directories_multiple_directories():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        dir1 = Path(temp_dir) / "dir1"
+        dir2 = Path(temp_dir) / "dir2"
+        dir3 = Path(temp_dir) / "dir3"
+
+        assert not dir1.exists()
+        assert not dir2.exists()
+        assert not dir3.exists()
+
+        create_directories([dir1, dir2, dir3])
+
+        assert dir1.exists() and dir1.is_dir()
+        assert dir2.exists() and dir2.is_dir()
+        assert dir3.exists() and dir3.is_dir()
+
+
+def test_create_directories_nested_paths():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        nested_dir = Path(temp_dir) / "level1" / "level2" / "level3"
+
+        assert not nested_dir.exists()
+        assert not nested_dir.parent.exists()
+        assert not nested_dir.parent.parent.exists()
+
+        create_directories([nested_dir])
+
+        assert nested_dir.exists() and nested_dir.is_dir()
+        assert nested_dir.parent.exists() and nested_dir.parent.is_dir()
+        assert nested_dir.parent.parent.exists() and nested_dir.parent.parent.is_dir()
+
+
+def test_create_directories_already_exists():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        existing_dir = Path(temp_dir) / "existing"
+        existing_dir.mkdir()
+
+        assert existing_dir.exists()
+
+        create_directories([existing_dir])
+
+        assert existing_dir.exists() and existing_dir.is_dir()
+
+
+def test_create_directories_empty_list():
+    create_directories([])
+
+
+def test_create_directories_mixed_existing_and_new():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        existing_dir = Path(temp_dir) / "existing"
+        new_dir = Path(temp_dir) / "new"
+
+        existing_dir.mkdir()
+
+        assert existing_dir.exists()
+        assert not new_dir.exists()
+
+        create_directories([existing_dir, new_dir])
+
+        assert existing_dir.exists() and existing_dir.is_dir()
+        assert new_dir.exists() and new_dir.is_dir()
+
+
+def test_create_directories_with_file_conflict():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        file_path = Path(temp_dir) / "conflicting_file"
+        file_path.touch()
+
+        assert file_path.exists() and file_path.is_file()
+
+        with pytest.raises(FileExistsError):
+            create_directories([file_path])
+
+
+def test_create_directories_permission_error():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        restricted_parent = Path(temp_dir) / "restricted"
+        restricted_parent.mkdir()
+        restricted_parent.chmod(0o444)
+
+        restricted_child = restricted_parent / "child"
+
+        try:
+            with pytest.raises(PermissionError):
+                create_directories([restricted_child])
+        finally:
+            restricted_parent.chmod(0o755)
+
+
+def test_create_directories_complex_nested_structure():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        complex_paths = [
+            Path(temp_dir) / "project" / "src" / "main",
+            Path(temp_dir) / "project" / "src" / "test",
+            Path(temp_dir) / "project" / "docs" / "api",
+            Path(temp_dir) / "project" / "build" / "output",
+        ]
+
+        for path in complex_paths:
+            assert not path.exists()
+
+        create_directories(complex_paths)
+
+        for path in complex_paths:
+            assert path.exists() and path.is_dir()
