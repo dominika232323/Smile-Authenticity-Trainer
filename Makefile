@@ -81,7 +81,7 @@ test:
 ## Run tests with coverage
 .PHONY: coverage
 coverage:
-	$(PYTHON_INTERPRETER) -m pytest --cov=ai --cov-report=term-missing tests
+	$(PYTHON_INTERPRETER) -m pytest --cov=ai/data_preprocessing --cov-report=term-missing tests
 
 
 #################################################################################
