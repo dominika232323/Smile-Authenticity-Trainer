@@ -21,7 +21,7 @@ from ai.logging_config import setup_logging
 
 
 @logger.catch
-def preprocess_frame(frame: cv2.Mat | np.ndarray[Any, np.dtype[Any]], frame_number: int, video_name: str):
+def preprocess_frame(frame: cv2.Mat | np.ndarray[Any, np.dtype[Any]], frame_number: int, video_name: str) -> None:
     logger.debug(f"Processing frame {frame_number} for video {video_name}")
 
     frame_path = ORIGINAL_FRAMES_DIR / f"{video_name}" / f"{frame_number}.jpg"
@@ -34,7 +34,7 @@ def preprocess_frame(frame: cv2.Mat | np.ndarray[Any, np.dtype[Any]], frame_numb
 
 
 @logger.catch
-def preprocess_video(video_path: Path):
+def preprocess_video(video_path: Path) -> None:
     video_name = video_path.stem
     logger.info(f"Starting preprocessing video: {video_name}")
 
@@ -77,7 +77,7 @@ def preprocess_video(video_path: Path):
 
 
 @logger.catch
-def main():
+def main() -> None:
     setup_logging()
     logger.info("Starting data preprocessing pipeline")
 

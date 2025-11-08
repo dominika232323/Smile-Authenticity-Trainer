@@ -14,7 +14,7 @@ def get_face_landmarks(
     frame: cv2.Mat | np.ndarray[Any, np.dtype[Any]],
     frame_number: int,
     landmarks_file_path: Path,
-):
+) -> None:
     logger.debug(f"Extracting face landmarks for frame {frame_number}")
 
     mp_face_mesh = mp.solutions.face_mesh

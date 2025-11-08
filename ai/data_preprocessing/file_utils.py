@@ -8,7 +8,7 @@ import pandas as pd
 from loguru import logger
 
 
-def append_row_to_csv(file_path: Path, row: list[int]):
+def append_row_to_csv(file_path: Path, row: list[int]) -> None:
     logger.debug(f"Appending row with {len(row)} values to {file_path}")
 
     try:
@@ -20,7 +20,7 @@ def append_row_to_csv(file_path: Path, row: list[int]):
         raise
 
 
-def add_header_to_csv(file_path: Path, header: list[str]):
+def add_header_to_csv(file_path: Path, header: list[str]) -> None:
     logger.debug(f"Adding header to CSV file: {file_path}")
 
     try:
@@ -33,7 +33,7 @@ def add_header_to_csv(file_path: Path, header: list[str]):
         raise
 
 
-def save_frame(frame: cv2.Mat | np.ndarray[Any, np.dtype[Any]], frame_path: Path):
+def save_frame(frame: cv2.Mat | np.ndarray[Any, np.dtype[Any]], frame_path: Path) -> None:
     logger.debug(f"Saving frame to {frame_path}")
 
     try:
@@ -49,7 +49,7 @@ def save_frame(frame: cv2.Mat | np.ndarray[Any, np.dtype[Any]], frame_path: Path
         raise
 
 
-def create_directories(directories: list[Path]):
+def create_directories(directories: list[Path]) -> None:
     for directory in directories:
         directory.mkdir(parents=True, exist_ok=True)
         logger.debug(f"Ensured directory {directory} exists")
