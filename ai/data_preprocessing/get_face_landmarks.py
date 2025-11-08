@@ -37,8 +37,8 @@ def get_face_landmarks(
                     row = [frame_number]
 
                     for i, landmark in enumerate(landmarks):
-                        x = landmark.x
-                        y = landmark.y
+                        x = landmark.x * frame.shape[1]
+                        y = landmark.y * frame.shape[0]
 
                         row.append(x)
                         row.append(y)
@@ -69,3 +69,16 @@ def create_facelandmarks_header(face_landmarks_file_path: Path) -> list[str]:
     logger.debug(f"Created header with {number_of_landmarks} landmark pairs")
 
     return header
+
+
+def get_face_landmark_coords(landmarks_file_path: Path, frame_number: int, landmark_index: int) -> tuple[int, int]:
+    logger.debug(f"Reading face landmarks from file: {landmarks_file_path}")
+
+    df = pd.read_csv(landmarks_file_path)
+
+    x_coord = df.loc[df["frame_number"] == frame_number, f"{landmark_index}_x"].values[0]
+    y_coord = df.loc[df["frame_number"] == frame_number, f"{landmark_index}_y"].values[0]
+
+    logger.debug(f"Read face landmarks for frame {frame_number} at index {landmark_index}: ({x_coord}, {y_coord})")
+
+    return x_coord, y_coord
