@@ -94,7 +94,7 @@ class FaceLandmarks:
 
     @staticmethod
     def right_eye_iris():
-        return [473, 474, 475, 476, 477]
+        return [468, 469, 470, 471, 472]
 
     @staticmethod
     def left_eye_upper_0():
@@ -134,7 +134,7 @@ class FaceLandmarks:
 
     @staticmethod
     def left_eye_iris():
-        return [468, 469, 470, 471, 472]
+        return [473, 474, 475, 476, 477]
 
     @staticmethod
     def midway_between_eyes():

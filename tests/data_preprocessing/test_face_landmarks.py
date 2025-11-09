@@ -386,11 +386,11 @@ def test_facelandmarks_right_eyebrow_lower(landmark, expected):
 @pytest.mark.parametrize(
     ("landmark", "expected"),
     [
-        (473, True),
-        (474, True),
-        (475, True),
-        (476, True),
-        (477, True),
+        (468, True),
+        (469, True),
+        (470, True),
+        (471, True),
+        (472, True),
         (16, False),
         (44, False),
         (33, False),
@@ -649,11 +649,11 @@ def test_facelandmarks_left_eyebrow_lower(landmark, expected):
 @pytest.mark.parametrize(
     ("landmark", "expected"),
     [
-        (468, True),
-        (469, True),
-        (470, True),
-        (471, True),
-        (472, True),
+        (473, True),
+        (474, True),
+        (475, True),
+        (476, True),
+        (477, True),
         (16, False),
         (44, False),
         (33, False),
