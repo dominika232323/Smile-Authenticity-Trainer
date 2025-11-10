@@ -10,13 +10,15 @@ from ai.config import (
     ORIGINAL_FACELANDMARKS_DIR,
     ORIGINAL_FRAMES_DIR,
     PREPROCESSED_DATA_DIR,
+    PREPROCESSED_FACELANDMARKS_DIR,
     PREPROCESSED_FRAMES_DIR,
     UvA_NEMO_SMILE_DETAILS,
     UvA_NEMO_SMILE_VIDEOS_DIR,
 )
-from ai.data_preprocessing.file_utils import add_header_to_csv, create_directories, save_frame
+from ai.data_preprocessing.file_utils import create_csv_with_header, create_directories, save_frame
 from ai.data_preprocessing.get_details import get_details
 from ai.data_preprocessing.get_face_landmarks import create_facelandmarks_header, get_face_landmarks
+from ai.data_preprocessing.normalize_face import normalize_face
 from ai.logging_config import setup_logging
 
 
@@ -32,6 +34,17 @@ def preprocess_frame(frame: cv2.Mat | np.ndarray[Any, np.dtype[Any]], frame_numb
     get_face_landmarks(frame, frame_number, face_landmarks_file_path)
     logger.debug(f"Extracted face landmarks for frame {frame_number}")
 
+    normalized_frame_path = PREPROCESSED_FRAMES_DIR / f"{video_name}" / f"{frame_number}.jpg"
+    normalized_frame = normalize_face(frame, face_landmarks_file_path, frame_number, (0.35, 0.35), (256, 256))
+    save_frame(normalized_frame, normalized_frame_path)
+    logger.debug(
+        f"Saved normalized frame to {normalized_frame_path} (face landmarks saved to {face_landmarks_file_path})"
+    )
+
+    normalized_face_landmarks_file_path = PREPROCESSED_FACELANDMARKS_DIR / f"{video_name}.csv"
+    get_face_landmarks(normalized_frame, frame_number, normalized_face_landmarks_file_path)
+    logger.debug(f"Extracted normalized face landmarks for frame {frame_number}")
+
 
 @logger.catch
 def preprocess_video(video_path: Path) -> None:
@@ -41,6 +54,10 @@ def preprocess_video(video_path: Path) -> None:
     video_original_directory = ORIGINAL_FRAMES_DIR / video_name
     video_preprocessed_directory = PREPROCESSED_FRAMES_DIR / video_name
     create_directories([video_original_directory, video_preprocessed_directory])
+
+    face_landmarks_file_path = ORIGINAL_FACELANDMARKS_DIR / f"{video_name}.csv"
+    create_csv_with_header(face_landmarks_file_path, create_facelandmarks_header())
+    logger.info(f"Added header to face landmarks CSV: {face_landmarks_file_path}")
 
     cap = cv2.VideoCapture(str(video_path))
 
@@ -71,17 +88,19 @@ def preprocess_video(video_path: Path) -> None:
     cap.release()
     logger.info(f"Finished processing all frames for video {video_name}")
 
-    face_landmarks_file_path = ORIGINAL_FACELANDMARKS_DIR / f"{video_name}.csv"
-    add_header_to_csv(face_landmarks_file_path, create_facelandmarks_header(face_landmarks_file_path))
-    logger.info(f"Added header to face landmarks CSV: {face_landmarks_file_path}")
-
 
 @logger.catch
 def main() -> None:
     setup_logging()
     logger.info("Starting data preprocessing pipeline")
 
-    directories = [PREPROCESSED_DATA_DIR, ORIGINAL_FRAMES_DIR, ORIGINAL_FACELANDMARKS_DIR]
+    directories = [
+        PREPROCESSED_DATA_DIR,
+        ORIGINAL_FRAMES_DIR,
+        ORIGINAL_FACELANDMARKS_DIR,
+        PREPROCESSED_FRAMES_DIR,
+        PREPROCESSED_FACELANDMARKS_DIR,
+    ]
     create_directories(directories)
 
     logger.info(f"Processing UvA-NEMO SMILE DATABASE details file: {UvA_NEMO_SMILE_DETAILS}")
