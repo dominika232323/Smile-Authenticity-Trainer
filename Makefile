@@ -33,6 +33,8 @@ clean:
 	find . -type d -name "__pycache__" -delete
 	rm -r data/original_data
 	rm -r data/preprocessed_UvA-NEMO_SMILE_DATABASE
+	rm logs/app.log
+	rm logs/errors.log
 
 
 # Sort imports using isort
