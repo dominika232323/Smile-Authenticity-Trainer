@@ -8,8 +8,38 @@ from ai.data_preprocessing.face_landmarks import FaceLandmarks
 from ai.data_preprocessing.get_face_landmarks import get_face_landmark_coords
 
 
-def normalize_face(frame: cv2.Mat | np.ndarray[Any, np.dtype[Any]], frame_number: int):
-    pass
+def normalize_face(
+    frame: cv2.Mat | np.ndarray[Any, np.dtype[Any]],
+    landmarks_file_path: Path,
+    frame_number: int,
+    eye_relatives: tuple[float, float],
+    desired_image_size: tuple[int, int],
+) -> cv2.Mat | np.ndarray[Any, np.dtype[Any]]:
+    eye_relative_x, eye_relative_y = eye_relatives
+    desired_image_width, desired_image_height = desired_image_size
+
+    right_eye_center = calculate_right_eye_center(landmarks_file_path, frame_number)
+    left_eye_center = calculate_left_eye_center(landmarks_file_path, frame_number)
+
+    center_between_eyes = calculate_center_between_points(right_eye_center, left_eye_center)
+    angle_between_eyes = calculate_angle_between_points(right_eye_center, left_eye_center)
+    image_scaling_factor = calculate_image_scaling_factor(
+        right_eye_center, left_eye_center, eye_relative_x, desired_image_width
+    )
+
+    rotation_matrix = cv2.getRotationMatrix2D(center_between_eyes, angle_between_eyes, image_scaling_factor)
+
+    desired_eye_center = (0.5 * desired_image_width, eye_relative_y * desired_image_height)
+
+    translation_x = desired_eye_center[0] - center_between_eyes[0]
+    translation_y = desired_eye_center[1] - center_between_eyes[1]
+
+    rotation_matrix[0, 2] += translation_x
+    rotation_matrix[1, 2] += translation_y
+
+    normalized_face = cv2.warpAffine(frame, rotation_matrix, desired_image_size, flags=cv2.INTER_CUBIC)
+
+    return normalized_face
 
 
 def calculate_left_eye_center(landmarks_file_path: Path, frame_number: int) -> tuple[float, float]:
