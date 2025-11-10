@@ -11,7 +11,9 @@ from ai.data_preprocessing.file_utils import add_header_to_csv, append_row_to_cs
 
 
 class TestAppendRowToCsv:
-    @pytest.mark.parametrize(("row", "expected"), [([1, 2, 3, 4, 5], ["1", "2", "3", "4", "5"]), ([16], ["16"]), ([], [])])
+    @pytest.mark.parametrize(
+        ("row", "expected"), [([1, 2, 3, 4, 5], ["1", "2", "3", "4", "5"]), ([16], ["16"]), ([], [])]
+    )
     def test_append_row_to_new_csv_file(self, row, expected):
         with tempfile.TemporaryDirectory() as temp_dir:
             csv_file = Path(temp_dir) / "test_new.csv"
@@ -65,7 +67,9 @@ class TestAppendRowToCsv:
                 assert result_rows[1] == ["4", "5", "6"]
                 assert result_rows[2] == ["7", "8", "9"]
 
-    @pytest.mark.parametrize(("row", "expected"), [([1, 2, 3, 4, 5], ["1", "2", "3", "4", "5"]), ([16], ["16"]), ([], [])])
+    @pytest.mark.parametrize(
+        ("row", "expected"), [([1, 2, 3, 4, 5], ["1", "2", "3", "4", "5"]), ([16], ["16"]), ([], [])]
+    )
     def test_file_path_with_nested_directories(self, row, expected):
         with tempfile.TemporaryDirectory() as temp_dir:
             nested_dir = Path(temp_dir) / "level1" / "level2"
