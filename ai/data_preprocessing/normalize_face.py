@@ -50,4 +50,34 @@ def calculate_angle_between_points(right: tuple[float, float], left: tuple[float
     x_right, y_right = right
     x_left, y_left = left
 
-    return np.arctan2(y_right - y_left, x_right - x_left)
+    return np.degrees(np.arctan2(y_right - y_left, x_right - x_left)) - 180
+
+
+def calculate_center_between_points(right: tuple[float, float], left: tuple[float, float]) -> tuple[float, float]:
+    x_right, y_right = right
+    x_left, y_left = left
+
+    return (x_right + x_left) / 2, (y_right + y_left) / 2
+
+
+def calculate_image_scaling_factor(
+    right_eye_center: tuple[float, float],
+    left_eye_center: tuple[float, float],
+    eye_relative_x: float,
+    desired_image_width: float,
+) -> float:
+    distance_between_eyes = calculate_distance_between_points(right_eye_center, left_eye_center)
+    desired_distance = calculate_desired_eye_distance(eye_relative_x, desired_image_width)
+
+    return desired_distance / distance_between_eyes
+
+
+def calculate_desired_eye_distance(eye_relative_x: float, desired_image_width: float) -> float:
+    if not (0 < eye_relative_x < 0.5):
+        raise ValueError("eye_relative_x should be between 0 and 0.5 for symmetric placement.")
+    if desired_image_width <= 0:
+        raise ValueError("desired_image_width must be positive.")
+
+    d_desired = (1 - 2 * eye_relative_x) * desired_image_width
+
+    return d_desired
