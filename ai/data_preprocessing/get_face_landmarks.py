@@ -53,14 +53,11 @@ def get_face_landmarks(
             logger.warning(f"No face landmarks detected in frame {frame_number}")
 
 
-def create_facelandmarks_header(face_landmarks_file_path: Path) -> list[str]:
-    logger.debug(f"Creating header for face landmarks file: {face_landmarks_file_path}")
+def create_facelandmarks_header() -> list[str]:
+    logger.debug("Creating header for face landmarks csv file")
 
     header = ["frame_number"]
-
-    df = pd.read_csv(face_landmarks_file_path, header=None)
-    number_of_columns = df.shape[1]
-    number_of_landmarks = (number_of_columns - 1) // 2
+    number_of_landmarks = 478
 
     for i in range(number_of_landmarks):
         header.append(f"{i}_x")

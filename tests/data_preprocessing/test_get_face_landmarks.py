@@ -218,84 +218,82 @@ class TestGetFaceLandmarks:
             )
 
 
-class TestCreateFacelandmarksHeader:
-    @pytest.mark.parametrize(
-        ("data", "expected_header"),
-        [
-            (
-                [1, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8],
-                ["frame_number", "0_x", "0_y", "1_x", "1_y", "2_x", "2_y", "3_x", "3_y"],
-            ),
-            ([1, 0.1, 0.2, 0.3, 0.4], ["frame_number", "0_x", "0_y", "1_x", "1_y"]),
-        ],
-    )
-    def test_create_facelandmarks_header_with_existing_csv(self, data, expected_header):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            csv_file = Path(temp_dir) / "test.csv"
+class TestCreateFaceLandmarksHeader:
+    def test_create_facelandmarks_header_basic_functionality(self):
+        header = create_facelandmarks_header()
+        expected_length = 1 + (478 * 2)
 
-            with open(csv_file, "w", newline="") as f:
-                writer = csv.writer(f)
-                writer.writerow(data)
+        assert len(header) == expected_length
+        assert header[0] == "frame_number"
 
-            header = create_facelandmarks_header(csv_file)
+    def test_create_facelandmarks_header_landmark_naming_pattern(self):
+        header = create_facelandmarks_header()
 
-            assert header == expected_header
+        assert header[1] == "0_x"
+        assert header[2] == "0_y"
+        assert header[3] == "1_x"
+        assert header[4] == "1_y"
+        assert header[5] == "2_x"
+        assert header[6] == "2_y"
 
-    def test_create_facelandmarks_header_empty_csv(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            csv_file = Path(temp_dir) / "empty.csv"
-            csv_file.touch()
+    def test_create_facelandmarks_header_last_landmark(self):
+        header = create_facelandmarks_header()
 
-            with pytest.raises(pd.errors.EmptyDataError):
-                create_facelandmarks_header(csv_file)
-
-    def test_create_facelandmarks_header_nonexistent_file(self):
-        nonexistent_file = Path("/nonexistent/file.csv")
-
-        with pytest.raises(FileNotFoundError):
-            create_facelandmarks_header(nonexistent_file)
-
-    @pytest.mark.parametrize("num_landmarks", [1, 10, 50, 468])
-    def test_create_facelandmarks_header_various_sizes(self, num_landmarks):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            csv_file = Path(temp_dir) / f"test_{num_landmarks}.csv"
-
-            row = [1] + [0.5] * (2 * num_landmarks)
-
-            with open(csv_file, "w", newline="") as f:
-                writer = csv.writer(f)
-                writer.writerow(row)
-
-            header = create_facelandmarks_header(csv_file)
-
-            expected_header = ["frame_number"]
-            for i in range(num_landmarks):
-                expected_header.extend([f"{i}_x", f"{i}_y"])
-
-            assert header == expected_header
-            assert len(header) == 1 + 2 * num_landmarks
+        assert header[-2] == "477_x"
+        assert header[-1] == "477_y"
 
     @pytest.mark.parametrize(
-        ("data", "expected_header"),
+        ("x_index", "y_index", "expected_x", "expected_y"),
         [
-            (
-                [1, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],
-                ["frame_number", "0_x", "0_y", "1_x", "1_y", "2_x", "2_y", "3_x", "3_y"],
-            ),
-            ([1, 0.1, 0.2, 0.3], ["frame_number", "0_x", "0_y"]),
+            (201, 202, "100_x", "100_y"),
+            (501, 502, "250_x", "250_y"),
+            (801, 802, "400_x", "400_y"),
         ],
     )
-    def test_create_facelandmarks_header_odd_number_coordinates(self, data, expected_header):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            csv_file = Path(temp_dir) / "odd.csv"
+    def test_create_facelandmarks_header_middle_landmarks(self, x_index, y_index, expected_x, expected_y):
+        header = create_facelandmarks_header()
 
-            with open(csv_file, "w", newline="") as f:
-                writer = csv.writer(f)
-                writer.writerow(data)
+        assert header[x_index] == expected_x
+        assert header[y_index] == expected_y
 
-            header = create_facelandmarks_header(csv_file)
+    def test_create_facelandmarks_header_returns_list(self):
+        header = create_facelandmarks_header()
 
-            assert header == expected_header
+        assert isinstance(header, list)
+        assert all(isinstance(item, str) for item in header)
+
+    def test_create_facelandmarks_header_no_duplicates(self):
+        header = create_facelandmarks_header()
+
+        assert len(header) == len(set(header))
+
+    def test_create_facelandmarks_header_consistent_output(self):
+        header1 = create_facelandmarks_header()
+        header2 = create_facelandmarks_header()
+
+        assert header1 == header2
+
+    def test_create_facelandmarks_header_landmark_count(self):
+        header = create_facelandmarks_header()
+
+        coordinate_columns = header[1:]
+        x_columns = [col for col in coordinate_columns if col.endswith("_x")]
+        y_columns = [col for col in coordinate_columns if col.endswith("_y")]
+
+        assert len(x_columns) == 478
+        assert len(y_columns) == 478
+
+    def test_create_facelandmarks_header_alternating_pattern(self):
+        header = create_facelandmarks_header()
+
+        for i in range(1, len(header) - 1, 2):
+            assert header[i].endswith("_x")
+            assert header[i + 1].endswith("_y")
+
+            x_landmark_num = header[i].split("_")[0]
+            y_landmark_num = header[i + 1].split("_")[0]
+
+            assert x_landmark_num == y_landmark_num
 
 
 class TestGetFaceLandmarkCoords:
