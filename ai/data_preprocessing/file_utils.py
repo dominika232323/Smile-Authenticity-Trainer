@@ -33,6 +33,18 @@ def add_header_to_csv(file_path: Path, header: list[str]) -> None:
         raise
 
 
+def create_csv_with_header(file_path: Path, header: list[str]) -> None:
+    logger.debug(f"Creating CSV file with header: {file_path}")
+
+    try:
+        with open(file_path, mode="w", newline="", encoding="utf-8") as file:
+            writer = csv.writer(file)
+            writer.writerow(header)
+    except Exception as e:
+        logger.error(f"Failed to create CSV file with header {file_path}: {e}")
+        raise
+
+
 def save_frame(frame: cv2.Mat | np.ndarray[Any, np.dtype[Any]], frame_path: Path) -> None:
     logger.debug(f"Saving frame to {frame_path}")
 
