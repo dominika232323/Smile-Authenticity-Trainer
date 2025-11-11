@@ -7,7 +7,13 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from ai.data_preprocessing.file_utils import add_header_to_csv, append_row_to_csv, save_frame, create_directories
+from ai.data_preprocessing.file_utils import (
+    add_header_to_csv,
+    append_row_to_csv,
+    save_frame,
+    create_directories,
+    create_csv_with_header,
+)
 
 
 class TestAppendRowToCsv:
@@ -204,6 +210,216 @@ class TestAddHeaderToCsv:
                     add_header_to_csv(csv_file, header)
             finally:
                 csv_file.chmod(0o666)
+
+
+class TestCreateCsvWithHeader:
+    @pytest.mark.parametrize(
+        ("header", "expected_header"),
+        [
+            (["A", "B", "C"], ["A", "B", "C"]),
+            (["Name", "Age", "Score"], ["Name", "Age", "Score"]),
+            (["Name & Title", "Age (years)", "Score %"], ["Name & Title", "Age (years)", "Score %"]),
+            (["ID", "Timestamp", "Value", "Status"], ["ID", "Timestamp", "Value", "Status"]),
+            (["Single"], ["Single"]),
+            (
+                ["Column1", "Column2", "Column3", "Column4", "Column5", "Column6", "Column7", "Column8"],
+                ["Column1", "Column2", "Column3", "Column4", "Column5", "Column6", "Column7", "Column8"],
+            ),
+            (
+                ["Header with spaces", "Header_with_underscores", "Header-with-dashes"],
+                ["Header with spaces", "Header_with_underscores", "Header-with-dashes"],
+            ),
+            (["Unicode 🎉", "Émojis", "Spëcîál Chàrs"], ["Unicode 🎉", "Émojis", "Spëcîál Chàrs"]),
+            (
+                ["Name, Title", 'Value "quoted"', "Description\nwith\nnewlines"],
+                ["Name, Title", 'Value "quoted"', "Description\nwith\nnewlines"],
+            ),
+            (["1", "2.5", "3.14159", "-10", "0"], ["1", "2.5", "3.14159", "-10", "0"]),
+        ],
+    )
+    def test_create_csv_with_header_basic(self, header, expected_header):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            csv_file = Path(temp_dir) / "test_create_header.csv"
+
+            create_csv_with_header(csv_file, header)
+
+            assert csv_file.exists()
+
+            with open(csv_file, "r", encoding="utf-8") as f:
+                reader = csv.reader(f)
+                rows = list(reader)
+
+                assert len(rows) == 1
+                assert rows[0] == expected_header
+
+    def test_create_csv_with_header_empty_header(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            csv_file = Path(temp_dir) / "test_empty_header.csv"
+
+            create_csv_with_header(csv_file, [])
+
+            assert csv_file.exists()
+
+            with open(csv_file, "r", encoding="utf-8") as f:
+                reader = csv.reader(f)
+                rows = list(reader)
+
+                assert len(rows) == 1
+                assert rows[0] == []
+
+    @pytest.mark.parametrize(
+        ("header", "expected_header"),
+        [
+            (["A", "B", "C"], ["A", "B", "C"]),
+            (["Name", "Age", "Score"], ["Name", "Age", "Score"]),
+            (["Name & Title", "Age (years)", "Score %"], ["Name & Title", "Age (years)", "Score %"]),
+            (["ID", "Timestamp", "Value", "Status"], ["ID", "Timestamp", "Value", "Status"]),
+            (["Single"], ["Single"]),
+            (
+                ["Column1", "Column2", "Column3", "Column4", "Column5", "Column6", "Column7", "Column8"],
+                ["Column1", "Column2", "Column3", "Column4", "Column5", "Column6", "Column7", "Column8"],
+            ),
+            (
+                ["Header with spaces", "Header_with_underscores", "Header-with-dashes"],
+                ["Header with spaces", "Header_with_underscores", "Header-with-dashes"],
+            ),
+            (["Unicode 🎉", "Émojis", "Spëcîál Chàrs"], ["Unicode 🎉", "Émojis", "Spëcîál Chàrs"]),
+            (
+                ["Name, Title", 'Value "quoted"', "Description\nwith\nnewlines"],
+                ["Name, Title", 'Value "quoted"', "Description\nwith\nnewlines"],
+            ),
+            (["1", "2.5", "3.14159", "-10", "0"], ["1", "2.5", "3.14159", "-10", "0"]),
+        ],
+    )
+    def test_create_csv_with_header_nested_directory(self, header, expected_header):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            nested_dir = Path(temp_dir) / "level1" / "level2" / "level3"
+            csv_file = nested_dir / "test_nested.csv"
+
+            assert not nested_dir.exists()
+
+            create_csv_with_header(csv_file, header)
+
+            assert csv_file.exists()
+
+            with open(csv_file, "r", encoding="utf-8") as f:
+                reader = csv.reader(f)
+                rows = list(reader)
+
+                assert len(rows) == 1
+                assert rows[0] == expected_header
+
+    @pytest.mark.parametrize(
+        ("header", "expected_header"),
+        [
+            (["A", "B", "C"], ["A", "B", "C"]),
+            (["Name", "Age", "Score"], ["Name", "Age", "Score"]),
+            (["Name & Title", "Age (years)", "Score %"], ["Name & Title", "Age (years)", "Score %"]),
+            (["ID", "Timestamp", "Value", "Status"], ["ID", "Timestamp", "Value", "Status"]),
+            (["Single"], ["Single"]),
+            (
+                ["Column1", "Column2", "Column3", "Column4", "Column5", "Column6", "Column7", "Column8"],
+                ["Column1", "Column2", "Column3", "Column4", "Column5", "Column6", "Column7", "Column8"],
+            ),
+            (
+                ["Header with spaces", "Header_with_underscores", "Header-with-dashes"],
+                ["Header with spaces", "Header_with_underscores", "Header-with-dashes"],
+            ),
+            (["Unicode 🎉", "Émojis", "Spëcîál Chàrs"], ["Unicode 🎉", "Émojis", "Spëcîál Chàrs"]),
+            (
+                ["Name, Title", 'Value "quoted"', "Description\nwith\nnewlines"],
+                ["Name, Title", 'Value "quoted"', "Description\nwith\nnewlines"],
+            ),
+            (["1", "2.5", "3.14159", "-10", "0"], ["1", "2.5", "3.14159", "-10", "0"]),
+        ],
+    )
+    def test_create_csv_with_header_overwrite_existing_file(self, header, expected_header):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            csv_file = Path(temp_dir) / "test_overwrite.csv"
+
+            with open(csv_file, "w", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
+                writer.writerow(["Old", "Header"])
+                writer.writerow([1, 2])
+                writer.writerow([3, 4])
+
+            create_csv_with_header(csv_file, header)
+
+            assert csv_file.exists()
+
+            with open(csv_file, "r", encoding="utf-8") as f:
+                reader = csv.reader(f)
+                rows = list(reader)
+
+                assert len(rows) == 1
+                assert rows[0] == expected_header
+
+    @pytest.mark.parametrize(
+        "header",
+        [
+            (["A", "B", "C"]),
+            (["Name", "Age", "Score"]),
+            (["Name & Title", "Age (years)", "Score %"]),
+            (["ID", "Timestamp", "Value", "Status"]),
+            (["Single"]),
+            (["Column1", "Column2", "Column3", "Column4", "Column5", "Column6", "Column7", "Column8"]),
+            (["Header with spaces", "Header_with_underscores", "Header-with-dashes"]),
+            (["Unicode 🎉", "Émojis", "Spëcîál Chàrs"]),
+            (["Name, Title", 'Value "quoted"', "Description\nwith\nnewlines"]),
+            (["1", "2.5", "3.14159", "-10", "0"]),
+        ],
+    )
+    def test_create_csv_with_header_invalid_directory_path(self, header):
+        invalid_path = Path("/nonexistent/directory/test.csv")
+
+        with pytest.raises(PermissionError):
+            create_csv_with_header(invalid_path, header)
+
+    @pytest.mark.parametrize(
+        "header",
+        [
+            (["A", "B", "C"]),
+            (["Name", "Age", "Score"]),
+            (["Name & Title", "Age (years)", "Score %"]),
+            (["ID", "Timestamp", "Value", "Status"]),
+            (["Single"]),
+            (["Column1", "Column2", "Column3", "Column4", "Column5", "Column6", "Column7", "Column8"]),
+            (["Header with spaces", "Header_with_underscores", "Header-with-dashes"]),
+            (["Unicode 🎉", "Émojis", "Spëcîál Chàrs"]),
+            (["Name, Title", 'Value "quoted"', "Description\nwith\nnewlines"]),
+            (["1", "2.5", "3.14159", "-10", "0"]),
+        ],
+    )
+    def test_create_csv_with_header_readonly_directory(self, header):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            readonly_dir = Path(temp_dir) / "readonly"
+            readonly_dir.mkdir()
+            readonly_dir.chmod(0o444)
+
+            csv_file = readonly_dir / "test.csv"
+
+            try:
+                with pytest.raises(PermissionError):
+                    create_csv_with_header(csv_file, header)
+            finally:
+                readonly_dir.chmod(0o755)
+
+    def test_create_csv_with_header_large_header(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            csv_file = Path(temp_dir) / "test_large_header.csv"
+
+            large_header = [f"Column_{i}" for i in range(1000)]
+
+            create_csv_with_header(csv_file, large_header)
+
+            assert csv_file.exists()
+
+            with open(csv_file, "r", encoding="utf-8") as f:
+                reader = csv.reader(f)
+                rows = list(reader)
+
+                assert len(rows) == 1
+                assert rows[0] == large_header
 
 
 class TestSaveFrame:
