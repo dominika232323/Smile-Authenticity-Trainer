@@ -37,6 +37,8 @@ def create_csv_with_header(file_path: Path, header: list[str]) -> None:
     logger.debug(f"Creating CSV file with header: {file_path}")
 
     try:
+        create_directories([file_path.parent])
+
         with open(file_path, mode="w", newline="", encoding="utf-8") as file:
             writer = csv.writer(file)
             writer.writerow(header)
