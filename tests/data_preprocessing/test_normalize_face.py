@@ -9,8 +9,11 @@ from ai.data_preprocessing.normalize_face import (
     calculate_center_of_landmarks,
     calculate_left_eye_center,
     calculate_right_eye_center,
+    calculate_angle_between_points,
 )
 from unittest.mock import patch
+
+import math
 
 
 class TestCalculateDistanceBetweenPoints:
@@ -867,3 +870,155 @@ class TestCalculateRightEyeCenter:
     @pytest.fixture(autouse=True)
     def cleanup_temp_files(self):
         yield
+
+
+class TestCalculateAngleBetweenPoints:
+    @pytest.mark.parametrize(
+        ("right_point", "left_point", "expected"),
+        [
+            ((1.0, 0.0), (0.0, 0.0), -180.0),
+            ((0.0, 0.0), (1.0, 0.0), 0.0),
+            ((0.0, 1.0), (0.0, 0.0), -90.0),
+            ((0.0, 0.0), (0.0, 1.0), -270.0),
+            ((1.0, 1.0), (0.0, 0.0), -135.0),
+            ((1.0, -1.0), (0.0, 0.0), -225.0),
+            ((0.0, 0.0), (1.0, 1.0), -315.0),
+            ((0.0, 0.0), (1.0, -1.0), -45.0),
+            ((math.sqrt(3), 1.0), (0.0, 0.0), -150.0),
+            ((1.0, math.sqrt(3)), (0.0, 0.0), -120.0),
+            ((-1.0, math.sqrt(3)), (0.0, 0.0), -60.0),
+            ((-math.sqrt(3), 1.0), (0.0, 0.0), -30.0),
+            ((-math.sqrt(3), -1.0), (0.0, 0.0), -330.0),
+            ((-1.0, -math.sqrt(3)), (0.0, 0.0), -300.0),
+            ((1.0, -math.sqrt(3)), (0.0, 0.0), -240.0),
+            ((math.sqrt(3), -1.0), (0.0, 0.0), -210.0),
+        ],
+    )
+    def test_angles(self, right_point, left_point, expected):
+        result = calculate_angle_between_points(right_point, left_point)
+        assert result == pytest.approx(expected, abs=1e-10)
+
+    @pytest.mark.parametrize(
+        ("point1", "point2"),
+        [
+            ((1.0, 1.0), (0.0, 0.0)),
+            ((5.0, 3.0), (2.0, 1.0)),
+            ((-3.0, -4.0), (-1.0, -2.0)),
+            ((100.0, 200.0), (150.0, 250.0)),
+        ],
+    )
+    def test_angle_antisymmetry(self, point1, point2):
+        angle1 = calculate_angle_between_points(point1, point2)
+        angle2 = calculate_angle_between_points(point2, point1)
+
+        diff = abs(angle1 - angle2)
+
+        assert diff == pytest.approx(180.0, abs=1e-10) or diff == pytest.approx(0.0, abs=1e-10)
+
+    @pytest.mark.parametrize(
+        "point",
+        [([1.0, 1.0]), ([5.0, 3.0]), ([-3.0, -4.0]), ([100.0, 200.0]), ([5.0, 7.0])],
+    )
+    def test_same_points(self, point):
+        result = calculate_angle_between_points(point, point)
+
+        assert result == -180.0
+
+    @pytest.mark.parametrize(
+        ("right_point", "left_point", "expected"),
+        [
+            ((1000.0, 2000.0), (500.0, 1000.0), -116.565051177077),
+            ((5000.0, 3000.0), (2000.0, 1000.0), -146.309932474020),
+            ((0.001, 0.002), (0.0, 0.0), -116.565051177077),
+            ((0.0001, 0.0002), (0.0, 0.0), -116.565051177077),
+        ],
+    )
+    def test_extreme_coordinates(self, right_point, left_point, expected):
+        result = calculate_angle_between_points(right_point, left_point)
+        assert result == pytest.approx(expected, abs=1e-6)
+
+    @pytest.mark.parametrize(
+        ("right_point", "left_point", "expected"),
+        [
+            ((-1.0, -1.0), (-2.0, -2.0), -135.0),
+            ((-3.0, 4.0), (-1.0, 2.0), -45.0),
+            ((2.0, -3.0), (4.0, -1.0), -315.0),
+            ((-2.0, -3.0), (-4.0, -1.0), -225.0),
+        ],
+    )
+    def test_negative_coordinates(self, right_point, left_point, expected):
+        result = calculate_angle_between_points(right_point, left_point)
+        assert result == pytest.approx(expected, abs=1e-6)
+
+    @pytest.mark.parametrize(
+        ("right_point", "left_point"),
+        [
+            ((1.0, 0.0), (0.0, 0.0)),
+            ((0.0, 1.0), (0.0, 0.0)),
+            ((-1.0, 0.0), (0.0, 0.0)),
+            ((0.0, -1.0), (0.0, 0.0)),
+            ((5.0, 5.0), (3.0, 3.0)),
+            ((-2.0, -2.0), (-4.0, -4.0)),
+        ],
+    )
+    def test_angle_range(self, right_point, left_point):
+        result = calculate_angle_between_points(right_point, left_point)
+
+        assert -360.0 <= result <= 0.0
+
+    def test_return_type(self):
+        result = calculate_angle_between_points((1.0, 2.0), (3.0, 4.0))
+
+        assert isinstance(result, (int, float))
+
+    @pytest.mark.parametrize(
+        ("right_point", "left_point"),
+        [
+            ((1.5, 2.7), (3.2, 4.8)),
+            ((10.333, 20.666), (15.777, 25.111)),
+            ((-5.123, -3.456), (-7.890, -1.234)),
+            ((0.1, 0.2), (0.3, 0.4)),
+        ],
+    )
+    def test_floating_point_precision(self, right_point, left_point):
+        result = calculate_angle_between_points(right_point, left_point)
+
+        assert -360.0 <= result <= 0.0
+        assert isinstance(result, (int, float))
+        assert not math.isnan(result)
+        assert not math.isinf(result)
+
+    @pytest.mark.parametrize(
+        ("scale_factor", "expected"),
+        [
+            (1.0, -135.0),
+            (10.0, -135.0),
+            (100.0, -135.0),
+            (0.1, -135.0),
+            (0.01, -135.0),
+        ],
+    )
+    def test_scale_invariance(self, scale_factor, expected):
+        base_right = (1.0, 1.0)
+        base_left = (0.0, 0.0)
+
+        scaled_right = (base_right[0] * scale_factor, base_right[1] * scale_factor)
+        scaled_left = (base_left[0] * scale_factor, base_left[1] * scale_factor)
+
+        result = calculate_angle_between_points(scaled_right, scaled_left)
+
+        assert result == pytest.approx(expected, abs=1e-10)
+
+    def test_translation_invariance(self):
+        offset = (100.0, 200.0)
+
+        original_right = (3.0, 4.0)
+        original_left = (1.0, 2.0)
+
+        translated_right = (original_right[0] + offset[0], original_right[1] + offset[1])
+        translated_left = (original_left[0] + offset[0], original_left[1] + offset[1])
+
+        original_angle = calculate_angle_between_points(original_right, original_left)
+        translated_angle = calculate_angle_between_points(translated_right, translated_left)
+
+        assert original_angle == pytest.approx(translated_angle, abs=1e-10)
