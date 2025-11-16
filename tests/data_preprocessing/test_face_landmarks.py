@@ -806,3 +806,160 @@ class TestFaceLandmarks:
     )
     def test_facelandmarks_left_cheek(self, landmark, expected):
         assert (landmark in FaceLandmarks.left_cheek()) == expected
+
+    @pytest.mark.parametrize(
+        ("landmark", "expected"),
+        [
+            (33, True),
+            (0, False),
+            (-1, False),
+            (133, False),
+            (362, False),
+            (61, False),
+            (291, False),
+        ],
+    )
+    def test_facelandmarks_right_eye_right_corner(self, landmark, expected):
+        assert (landmark in FaceLandmarks.right_eye_right_corner()) == expected
+
+    @pytest.mark.parametrize(
+        ("landmark", "expected"),
+        [
+            (159, True),
+            (0, False),
+            (-1, False),
+            (33, False),
+            (133, False),
+            (362, False),
+            (61, False),
+            (291, False),
+        ],
+    )
+    def test_facelandmarks_right_eye_upper_0_middle(self, landmark, expected):
+        assert (landmark in FaceLandmarks.right_eye_upper_0_middle()) == expected
+
+    @pytest.mark.parametrize(
+        ("landmark", "expected"),
+        [
+            (133, True),
+            (0, False),
+            (-1, False),
+            (33, False),
+            (159, False),
+            (362, False),
+            (61, False),
+            (291, False),
+        ],
+    )
+    def test_facelandmarks_right_eye_left_corner(self, landmark, expected):
+        assert (landmark in FaceLandmarks.right_eye_left_corner()) == expected
+
+    @pytest.mark.parametrize(
+        ("landmark", "expected"),
+        [
+            (362, True),
+            (0, False),
+            (-1, False),
+            (33, False),
+            (133, False),
+            (159, False),
+            (61, False),
+            (291, False),
+        ],
+    )
+    def test_facelandmarks_left_eye_right_corner(self, landmark, expected):
+        assert (landmark in FaceLandmarks.left_eye_right_corner()) == expected
+
+    @pytest.mark.parametrize(
+        ("landmark", "expected"),
+        [
+            (386, True),
+            (0, False),
+            (-1, False),
+            (33, False),
+            (133, False),
+            (362, False),
+            (61, False),
+            (291, False),
+        ],
+    )
+    def test_facelandmarks_left_eye_upper_0_middle(self, landmark, expected):
+        assert (landmark in FaceLandmarks.left_eye_upper_0_middle()) == expected
+
+    @pytest.mark.parametrize(
+        ("landmark", "expected"),
+        [
+            (263, True),
+            (0, False),
+            (-1, False),
+            (33, False),
+            (133, False),
+            (362, False),
+            (61, False),
+            (291, False),
+        ],
+    )
+    def test_facelandmarks_left_eye_left_corner(self, landmark, expected):
+        assert (landmark in FaceLandmarks.left_eye_left_corner()) == expected
+
+    @pytest.mark.parametrize(
+        ("landmark", "expected"),
+        [
+            (50, True),
+            (0, False),
+            (-1, False),
+            (205, False),
+            (425, False),
+            (280, False),
+            (61, False),
+            (291, False),
+        ],
+    )
+    def test_facelandmarks_right_cheek_center(self, landmark, expected):
+        assert (landmark in FaceLandmarks.right_cheek_center()) == expected
+
+    @pytest.mark.parametrize(
+        ("landmark", "expected"),
+        [
+            (280, True),
+            (0, False),
+            (-1, False),
+            (205, False),
+            (425, False),
+            (50, False),
+            (61, False),
+            (291, False),
+        ],
+    )
+    def test_facelandmarks_left_cheek_center(self, landmark, expected):
+        assert (landmark in FaceLandmarks.left_cheek_center()) == expected
+
+    @pytest.mark.parametrize(
+        ("landmark", "expected"),
+        [
+            (61, True),
+            (0, False),
+            (-1, False),
+            (291, False),
+            (33, False),
+            (133, False),
+            (362, False),
+        ],
+    )
+    def test_facelandmarks_right_lip_corner(self, landmark, expected):
+        assert (landmark in FaceLandmarks.right_lip_corner()) == expected
+
+    @pytest.mark.parametrize(
+        ("landmark", "expected"),
+        [
+            (291, True),
+            (0, False),
+            (-1, False),
+            (61, False),
+            (33, False),
+            (133, False),
+            (362, False),
+        ],
+    )
+    def test_facelandmarks_left_lip_corner(self, landmark, expected):
+        assert (landmark in FaceLandmarks.left_lip_corner()) == expected

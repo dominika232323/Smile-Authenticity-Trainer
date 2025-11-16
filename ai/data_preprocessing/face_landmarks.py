@@ -163,3 +163,43 @@ class FaceLandmarks:
     @staticmethod
     def left_cheek():
         return [425]
+
+    @staticmethod
+    def right_eye_right_corner():
+        return [33]
+
+    @staticmethod
+    def right_eye_upper_0_middle():
+        return [159]
+
+    @staticmethod
+    def right_eye_left_corner():
+        return [133]
+
+    @staticmethod
+    def left_eye_right_corner():
+        return [362]
+
+    @staticmethod
+    def left_eye_upper_0_middle():
+        return [386]
+
+    @staticmethod
+    def left_eye_left_corner():
+        return [263]
+
+    @staticmethod
+    def right_cheek_center():
+        return [50]
+
+    @staticmethod
+    def left_cheek_center():
+        return [280]
+
+    @staticmethod
+    def right_lip_corner():
+        return [61]
+
+    @staticmethod
+    def left_lip_corner():
+        return [291]
