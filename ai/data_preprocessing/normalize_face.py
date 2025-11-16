@@ -97,6 +97,10 @@ def calculate_image_scaling_factor(
     desired_image_width: float,
 ) -> float:
     distance_between_eyes = calculate_distance_between_points(right_eye_center, left_eye_center)
+
+    if distance_between_eyes == 0:
+        raise ZeroDivisionError("Distance between eyes cannot be zero.")
+
     desired_distance = calculate_desired_eye_distance(eye_relative_x, desired_image_width)
 
     return desired_distance / distance_between_eyes
