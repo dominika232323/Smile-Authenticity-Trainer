@@ -211,6 +211,7 @@ data/
 
 # Notebooks
 notebooks/
+draw_plots/
 
 # Logs
 logs/
