@@ -59,6 +59,10 @@ def preprocess_video(video_path: Path) -> None:
     create_csv_with_header(face_landmarks_file_path, create_facelandmarks_header())
     logger.info(f"Added header to face landmarks CSV: {face_landmarks_file_path}")
 
+    normalized_face_landmarks_file_path = PREPROCESSED_FACELANDMARKS_DIR / f"{video_name}.csv"
+    create_csv_with_header(normalized_face_landmarks_file_path, create_facelandmarks_header())
+    logger.info(f"Added header to normalized face landmarks CSV: {normalized_face_landmarks_file_path}")
+
     cap = cv2.VideoCapture(str(video_path))
 
     if not cap.isOpened():
