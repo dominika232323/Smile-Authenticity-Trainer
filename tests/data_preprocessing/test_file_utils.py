@@ -12,7 +12,7 @@ from ai.data_preprocessing.file_utils import (
     append_row_to_csv,
     save_frame,
     create_directories,
-    create_csv_with_header,
+    create_csv_with_header, save_dataframe_to_csv,
 )
 
 
@@ -706,3 +706,105 @@ class TestCreateDirectories:
 
             for path in complex_paths:
                 assert path.exists() and path.is_dir()
+
+
+class TestSaveDataframeToCsv:
+    def test_save_dataframe_to_csv_basic(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_path = Path(temp_dir) / "basic.csv"
+
+            df = pd.DataFrame(
+                {
+                    "A": [1, 2, 3],
+                    "B": ["x", "y", "z"],
+                    "C": [0.1, 0.2, 0.3],
+                }
+            )
+
+            save_dataframe_to_csv(df, output_path)
+
+            assert output_path.exists()
+
+            loaded = pd.read_csv(output_path)
+            pd.testing.assert_frame_equal(loaded, df)
+
+    def test_save_dataframe_to_csv_empty_dataframe(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_path = Path(temp_dir) / "empty.csv"
+
+            df = pd.DataFrame(columns=["A", "B", "C"])
+
+            save_dataframe_to_csv(df, output_path)
+
+            assert output_path.exists()
+
+            loaded = pd.read_csv(output_path)
+            # Empty DataFrame, same columns
+            assert list(loaded.columns) == ["A", "B", "C"]
+            assert loaded.empty
+
+    def test_save_dataframe_to_csv_overwrite_existing_file(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_path = Path(temp_dir) / "overwrite.csv"
+
+            df1 = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
+            df1.to_csv(output_path, index=False)
+
+            original_size = output_path.stat().st_size
+
+            df2 = pd.DataFrame({"A": [10, 20, 30], "B": [40, 50, 60]})
+            save_dataframe_to_csv(df2, output_path)
+
+            assert output_path.exists()
+
+            new_size = output_path.stat().st_size
+
+            assert new_size != original_size
+
+            loaded = pd.read_csv(output_path)
+            pd.testing.assert_frame_equal(loaded, df2)
+
+    def test_save_dataframe_to_csv_various_dtypes(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output_path = Path(temp_dir) / "dtypes.csv"
+
+            df = pd.DataFrame(
+                {
+                    "int_col": pd.Series([1, 2, 3], dtype="int64"),
+                    "float_col": pd.Series([1.1, 2.2, 3.3], dtype="float64"),
+                    "bool_col": [True, False, True],
+                    "str_col": ["a", "b", "c"],
+                    "datetime_col": pd.date_range("2020-01-01", periods=3, freq="D"),
+                }
+            )
+
+            save_dataframe_to_csv(df, output_path)
+
+            assert output_path.exists()
+
+            loaded = pd.read_csv(output_path, parse_dates=["datetime_col"])
+
+            assert list(loaded.columns) == list(df.columns)
+            assert loaded.shape == df.shape
+
+    def test_save_dataframe_to_csv_nonexistent_directory(self):
+        df = pd.DataFrame({"A": [1, 2, 3]})
+        output_path = Path("/nonexistent/directory/df.csv")
+
+        with pytest.raises(OSError):
+            save_dataframe_to_csv(df, output_path)
+
+    def test_save_dataframe_to_csv_readonly_directory(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            readonly_dir = Path(temp_dir) / "readonly"
+            readonly_dir.mkdir()
+            readonly_dir.chmod(0o444)
+
+            output_path = readonly_dir / "df.csv"
+            df = pd.DataFrame({"A": [1, 2, 3]})
+
+            try:
+                with pytest.raises(PermissionError):
+                    save_dataframe_to_csv(df, output_path)
+            finally:
+                readonly_dir.chmod(0o755)
