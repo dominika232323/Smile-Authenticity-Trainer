@@ -31,26 +31,36 @@ requirements:
 clean:
 	find . -type f -name "*.py[co]" -delete
 	find . -type d -name "__pycache__" -delete
+
+
+## Delete preprocessed data
+.PHONY: remove_preprocessed_data
+remove_preprocessed_data:
 	rm -r data/original_data
 	rm -r data/preprocessed_UvA-NEMO_SMILE_DATABASE
+
+
+## Delete logs
+.PHONY: remove_logs
+remove_logs:
 	rm logs/app.log
 	rm logs/errors.log
 
 
-# Sort imports using isort
+## Sort imports using isort
 .PHONY: isort
 isort:
 	isort ai/
 
 
-# Lint using ruff (use `make format` to do formatting)
+## Lint using ruff (use `make format` to do formatting)
 .PHONY: lint
 lint:
 	ruff format --check
 	ruff check
 
 
-# Format source code with ruff
+## Format source code with ruff
 .PHONY: format
 format:
 	ruff check --fix
