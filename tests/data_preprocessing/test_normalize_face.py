@@ -10,6 +10,9 @@ from ai.data_preprocessing.normalize_face import (
     calculate_left_eye_center,
     calculate_right_eye_center,
     calculate_angle_between_points,
+    calculate_center_between_points,
+    calculate_image_scaling_factor,
+    calculate_desired_eye_distance,
 )
 from unittest.mock import patch
 
@@ -1022,3 +1025,213 @@ class TestCalculateAngleBetweenPoints:
         translated_angle = calculate_angle_between_points(translated_right, translated_left)
 
         assert original_angle == pytest.approx(translated_angle, abs=1e-10)
+
+
+class TestCalculateCenterBetweenPoints:
+    @pytest.mark.parametrize(
+        ("right", "left", "expected"),
+        [
+            ((0.0, 0.0), (2.0, 0.0), (1.0, 0.0)),
+            ((0.0, 0.0), (0.0, 2.0), (0.0, 1.0)),
+            ((1.0, 1.0), (3.0, 5.0), (2.0, 3.0)),
+            ((-1.0, -1.0), (1.0, 1.0), (0.0, 0.0)),
+            ((-5.0, 10.0), (15.0, -10.0), (5.0, 0.0)),
+            ((1000.0, 2000.0), (1002.0, 2004.0), (1001.0, 2002.0)),
+            ((-1.0, -2.0), (-3.0, -4.0), (-2.0, -3.0)),
+            ((-10.5, 5.5), (-2.5, -6.5), (-6.5, -0.5)),
+        ],
+    )
+    def test_basic_midpoints(self, right, left, expected):
+        result = calculate_center_between_points(right, left)
+
+        assert result == expected
+
+        assert isinstance(result, tuple)
+        assert len(result) == 2
+        assert all(isinstance(coord, (int, float)) for coord in result)
+
+    @pytest.mark.parametrize(
+        "point",
+        [
+            (0.0, 0.0),
+            (1.0, 1.0),
+            (-3.5, 4.2),
+            (1000.0, -2000.0),
+        ],
+    )
+    def test_same_points(self, point):
+        result = calculate_center_between_points(point, point)
+
+        assert result == point
+
+    @pytest.mark.parametrize(
+        ("right", "left"),
+        [
+            ((0.0, 0.0), (2.0, 4.0)),
+            ((-5.0, -5.0), (5.0, 5.0)),
+            ((10.0, 20.0), (30.0, 40.0)),
+            ((-10.0, 20.0), (30.0, -40.0)),
+        ],
+    )
+    def test_commutativity(self, right, left):
+        center1 = calculate_center_between_points(right, left)
+        center2 = calculate_center_between_points(left, right)
+
+        assert center1 == center2
+
+    @pytest.mark.parametrize(
+        ("scale_factor",),
+        [
+            (0.1,),
+            (1.0,),
+            (10.0,),
+            (100.0,),
+        ],
+    )
+    def test_scale_behavior(self, scale_factor):
+        base_right = (1.0, 2.0)
+        base_left = (3.0, 4.0)
+
+        scaled_right = (base_right[0] * scale_factor, base_right[1] * scale_factor)
+        scaled_left = (base_left[0] * scale_factor, base_left[1] * scale_factor)
+
+        base_center = calculate_center_between_points(base_right, base_left)
+        scaled_center = calculate_center_between_points(scaled_right, scaled_left)
+
+        assert scaled_center == (
+            base_center[0] * scale_factor,
+            base_center[1] * scale_factor,
+        )
+
+
+class TestCalculateImageScalingFactor:
+    @pytest.mark.parametrize(
+        ("right_eye_center", "left_eye_center", "eye_relative_x", "desired_image_width", "expected"),
+        [
+            ((1.0, 0.0), (3.0, 0.0), 0.25, 4.0, 1.0),
+            ((0.0, 0.0), (10.0, 0.0), 0.25, 20.0, 1.0),
+            ((0.0, 0.0), (4.0, 0.0), 0.1, 10.0, 2.0),
+            ((0.0, 0.0), (8.0, 0.0), 0.1, 10.0, 1.0),
+        ],
+    )
+    def test_basic_scaling_factor(
+        self, right_eye_center, left_eye_center, eye_relative_x, desired_image_width, expected
+    ):
+        result = calculate_image_scaling_factor(right_eye_center, left_eye_center, eye_relative_x, desired_image_width)
+
+        assert result == pytest.approx(expected)
+        assert isinstance(result, (int, float))
+
+    @pytest.mark.parametrize(
+        ("right_eye_center", "left_eye_center"),
+        [
+            ((0.0, 0.0), (2.0, 0.0)),
+            ((-1.0, 1.0), (3.0, 4.0)),
+            ((100.0, 200.0), (150.0, 250.0)),
+            ((-10.0, -20.0), (-15.0, -25.0)),
+        ],
+    )
+    def test_symmetry_in_eye_order(self, right_eye_center, left_eye_center):
+        eye_relative_x = 0.2
+        desired_image_width = 100.0
+
+        scale1 = calculate_image_scaling_factor(
+            right_eye_center,
+            left_eye_center,
+            eye_relative_x,
+            desired_image_width,
+        )
+        scale2 = calculate_image_scaling_factor(
+            left_eye_center,
+            right_eye_center,
+            eye_relative_x,
+            desired_image_width,
+        )
+
+        assert scale1 == pytest.approx(scale2)
+
+    @pytest.mark.parametrize(
+        ("eye_relative_x", "desired_image_width"),
+        [
+            (0.1, 10.0),
+            (0.25, 40.0),
+            (0.4, 100.0),
+        ],
+    )
+    def test_scale_changes_with_eye_distance(self, eye_relative_x, desired_image_width):
+        base_right = (0.0, 0.0)
+        left_near = (2.0, 0.0)
+        left_far = (4.0, 0.0)
+
+        scale_near = calculate_image_scaling_factor(base_right, left_near, eye_relative_x, desired_image_width)
+        scale_far = calculate_image_scaling_factor(base_right, left_far, eye_relative_x, desired_image_width)
+
+        assert scale_far < scale_near
+
+    def test_scale_inverse_proportional_to_distance(self):
+        eye_relative_x = 0.2
+        desired_image_width = 100.0
+
+        right1, left1 = (0.0, 0.0), (5.0, 0.0)
+        right2, left2 = (0.0, 0.0), (10.0, 0.0)
+
+        scale1 = calculate_image_scaling_factor(right1, left1, eye_relative_x, desired_image_width)
+        scale2 = calculate_image_scaling_factor(right2, left2, eye_relative_x, desired_image_width)
+
+        assert scale2 == pytest.approx(scale1 / 2.0)
+
+    def test_zero_distance_between_eyes_raises(self):
+        right_eye_center = (1.0, 1.0)
+        left_eye_center = (1.0, 1.0)
+
+        with pytest.raises(ZeroDivisionError):
+            calculate_image_scaling_factor(right_eye_center, left_eye_center, 0.25, 40.0)
+
+
+class TestCalculateDesiredEyeDistance:
+    @pytest.mark.parametrize(
+        ("eye_relative_x", "desired_image_width", "expected"),
+        [
+            (0.25, 4.0, 2.0),
+            (0.1, 10.0, 8.0),
+            (0.2, 100.0, 60.0),
+            (0.49, 200.0, 4.0),
+        ],
+    )
+    def test_valid_values(self, eye_relative_x, desired_image_width, expected):
+        result = calculate_desired_eye_distance(eye_relative_x, desired_image_width)
+
+        assert result == pytest.approx(expected)
+        assert isinstance(result, (int, float))
+
+    @pytest.mark.parametrize("eye_relative_x", [0.0, 0.5, -0.1, 0.51, 1.0])
+    def test_invalid_eye_relative_x_raises(self, eye_relative_x):
+        with pytest.raises(ValueError):
+            calculate_desired_eye_distance(eye_relative_x, 100.0)
+
+    @pytest.mark.parametrize("desired_image_width", [0.0, -1.0, -100.0])
+    def test_non_positive_width_raises(self, desired_image_width):
+        with pytest.raises(ValueError):
+            calculate_desired_eye_distance(0.25, desired_image_width)
+
+    @pytest.mark.parametrize(
+        "scale_factor",
+        [0.1, 0.5, 1.0, 2.0],
+    )
+    def test_linear_scaling_with_width(self, scale_factor):
+        eye_relative_x = 0.2
+        base_width = 100.0
+        base_distance = calculate_desired_eye_distance(eye_relative_x, base_width)
+
+        scaled_distance = calculate_desired_eye_distance(eye_relative_x, base_width * scale_factor)
+
+        assert scaled_distance == pytest.approx(base_distance * scale_factor)
+
+    def test_small_eye_relative_x_near_zero(self):
+        eye_relative_x = 1e-6
+        width = 100.0
+
+        result = calculate_desired_eye_distance(eye_relative_x, width)
+        expected = (1 - 2 * eye_relative_x) * width
+
+        assert result == pytest.approx(expected)
