@@ -2,6 +2,8 @@ import csv
 import tempfile
 from pathlib import Path
 
+import cv2
+import numpy as np
 import pytest
 
 from ai.data_preprocessing.normalize_face import (
@@ -13,6 +15,7 @@ from ai.data_preprocessing.normalize_face import (
     calculate_center_between_points,
     calculate_image_scaling_factor,
     calculate_desired_eye_distance,
+    normalize_face,
 )
 from unittest.mock import patch
 
@@ -1235,3 +1238,553 @@ class TestCalculateDesiredEyeDistance:
         expected = (1 - 2 * eye_relative_x) * width
 
         assert result == pytest.approx(expected)
+
+
+class TestNormalizeFace:
+    def create_landmarks_csv(self, landmark_data):
+        temp_file = tempfile.NamedTemporaryFile(mode="w", suffix=".csv", delete=False)
+
+        fieldnames = [
+            "frame_number",
+            "0_x",
+            "0_y",
+            "1_x",
+            "1_y",
+            "2_x",
+            "2_y",
+            "3_x",
+            "3_y",
+            "4_x",
+            "4_y",
+            "5_x",
+            "5_y",
+            "6_x",
+            "6_y",
+            "7_x",
+            "7_y",
+        ]
+        writer = csv.DictWriter(temp_file, fieldnames=fieldnames)
+        writer.writeheader()
+
+        for row in landmark_data:
+            writer.writerow(row)
+
+        temp_file.close()
+
+        return Path(temp_file.name)
+
+    def create_test_frame(self, width=100, height=100):
+        frame = np.zeros((height, width, 3), dtype=np.uint8)
+
+        frame[10:20, 10:20] = [255, 0, 0]
+        frame[80:90, 80:90] = [0, 255, 0]
+
+        cv2.circle(frame, (50, 50), 20, (0, 0, 255), -1)
+
+        return frame
+
+    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
+    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
+    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
+    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
+    def test_normalize_face_basic_functionality(
+        self, mock_right_upper, mock_right_lower, mock_left_upper, mock_left_lower
+    ):
+        mock_left_lower.return_value = [0, 1]
+        mock_left_upper.return_value = [2, 3]
+        mock_right_lower.return_value = [4, 5]
+        mock_right_upper.return_value = [6, 7]
+
+        landmark_data = [
+            {
+                "frame_number": 1,
+                "0_x": 30.0,
+                "0_y": 45.0,
+                "1_x": 34.0,
+                "1_y": 47.0,
+                "2_x": 32.0,
+                "2_y": 43.0,
+                "3_x": 36.0,
+                "3_y": 45.0,
+                "4_x": 60.0,
+                "4_y": 45.0,
+                "5_x": 64.0,
+                "5_y": 47.0,
+                "6_x": 62.0,
+                "6_y": 43.0,
+                "7_x": 66.0,
+                "7_y": 45.0,
+            }
+        ]
+
+        landmarks_file = self.create_landmarks_csv(landmark_data)
+        frame = self.create_test_frame(100, 100)
+
+        try:
+            result = normalize_face(
+                frame=frame,
+                landmarks_file_path=landmarks_file,
+                frame_number=1,
+                eye_relatives=(0.25, 0.35),
+                desired_image_size=(80, 80),
+            )
+
+            assert isinstance(result, np.ndarray)
+            assert result.shape == (80, 80, 3)
+            assert result.dtype == np.uint8
+
+        finally:
+            landmarks_file.unlink()
+
+    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
+    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
+    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
+    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
+    def test_normalize_face_different_sizes(self, mock_right_upper, mock_right_lower, mock_left_upper, mock_left_lower):
+        mock_left_lower.return_value = [0]
+        mock_left_upper.return_value = [1]
+        mock_right_lower.return_value = [2]
+        mock_right_upper.return_value = [3]
+
+        landmark_data = [
+            {
+                "frame_number": 1,
+                "0_x": 25.0,
+                "0_y": 40.0,
+                "1_x": 35.0,
+                "1_y": 40.0,
+                "2_x": 65.0,
+                "2_y": 40.0,
+                "3_x": 75.0,
+                "3_y": 40.0,
+                "4_x": 0.0,
+                "4_y": 0.0,
+                "5_x": 0.0,
+                "5_y": 0.0,
+                "6_x": 0.0,
+                "6_y": 0.0,
+                "7_x": 0.0,
+                "7_y": 0.0,
+            }
+        ]
+
+        landmarks_file = self.create_landmarks_csv(landmark_data)
+        frame = self.create_test_frame(100, 100)
+
+        test_sizes = [(64, 64), (128, 128), (96, 96), (112, 112)]
+
+        try:
+            for width, height in test_sizes:
+                result = normalize_face(
+                    frame=frame,
+                    landmarks_file_path=landmarks_file,
+                    frame_number=1,
+                    eye_relatives=(0.25, 0.35),
+                    desired_image_size=(width, height),
+                )
+
+                assert result.shape == (height, width, 3)
+                assert result.dtype == np.uint8
+
+        finally:
+            landmarks_file.unlink()
+
+    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
+    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
+    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
+    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
+    def test_normalize_face_different_eye_relatives(
+        self, mock_right_upper, mock_right_lower, mock_left_upper, mock_left_lower
+    ):
+        mock_left_lower.return_value = [0]
+        mock_left_upper.return_value = [1]
+        mock_right_lower.return_value = [2]
+        mock_right_upper.return_value = [3]
+
+        landmark_data = [
+            {
+                "frame_number": 1,
+                "0_x": 30.0,
+                "0_y": 40.0,
+                "1_x": 30.0,
+                "1_y": 40.0,
+                "2_x": 70.0,
+                "2_y": 40.0,
+                "3_x": 70.0,
+                "3_y": 40.0,
+                "4_x": 0.0,
+                "4_y": 0.0,
+                "5_x": 0.0,
+                "5_y": 0.0,
+                "6_x": 0.0,
+                "6_y": 0.0,
+                "7_x": 0.0,
+                "7_y": 0.0,
+            }
+        ]
+
+        landmarks_file = self.create_landmarks_csv(landmark_data)
+        frame = self.create_test_frame(100, 100)
+
+        eye_relatives_tests = [(0.1, 0.2), (0.25, 0.35), (0.3, 0.4), (0.4, 0.5)]
+
+        try:
+            for eye_rel_x, eye_rel_y in eye_relatives_tests:
+                result = normalize_face(
+                    frame=frame,
+                    landmarks_file_path=landmarks_file,
+                    frame_number=1,
+                    eye_relatives=(eye_rel_x, eye_rel_y),
+                    desired_image_size=(80, 80),
+                )
+
+                assert result.shape == (80, 80, 3)
+                assert result.dtype == np.uint8
+
+        finally:
+            landmarks_file.unlink()
+
+    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
+    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
+    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
+    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
+    def test_normalize_face_rotated_eyes(self, mock_right_upper, mock_right_lower, mock_left_upper, mock_left_lower):
+        mock_left_lower.return_value = [0]
+        mock_left_upper.return_value = [1]
+        mock_right_lower.return_value = [2]
+        mock_right_upper.return_value = [3]
+
+        landmark_data = [
+            {
+                "frame_number": 1,
+                "0_x": 30.0,
+                "0_y": 50.0,
+                "1_x": 30.0,
+                "1_y": 50.0,
+                "2_x": 70.0,
+                "2_y": 30.0,
+                "3_x": 70.0,
+                "3_y": 30.0,
+                "4_x": 0.0,
+                "4_y": 0.0,
+                "5_x": 0.0,
+                "5_y": 0.0,
+                "6_x": 0.0,
+                "6_y": 0.0,
+                "7_x": 0.0,
+                "7_y": 0.0,
+            }
+        ]
+
+        landmarks_file = self.create_landmarks_csv(landmark_data)
+        frame = self.create_test_frame(100, 100)
+
+        try:
+            result = normalize_face(
+                frame=frame,
+                landmarks_file_path=landmarks_file,
+                frame_number=1,
+                eye_relatives=(0.25, 0.35),
+                desired_image_size=(80, 80),
+            )
+
+            assert result.shape == (80, 80, 3)
+            assert result.dtype == np.uint8
+
+        finally:
+            landmarks_file.unlink()
+
+    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
+    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
+    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
+    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
+    def test_normalize_face_multiple_frames(self, mock_right_upper, mock_right_lower, mock_left_upper, mock_left_lower):
+        mock_left_lower.return_value = [0]
+        mock_left_upper.return_value = [1]
+        mock_right_lower.return_value = [2]
+        mock_right_upper.return_value = [3]
+
+        landmark_data = [
+            {
+                "frame_number": 1,
+                "0_x": 30.0,
+                "0_y": 40.0,
+                "1_x": 30.0,
+                "1_y": 40.0,
+                "2_x": 70.0,
+                "2_y": 40.0,
+                "3_x": 70.0,
+                "3_y": 40.0,
+                "4_x": 0.0,
+                "4_y": 0.0,
+                "5_x": 0.0,
+                "5_y": 0.0,
+                "6_x": 0.0,
+                "6_y": 0.0,
+                "7_x": 0.0,
+                "7_y": 0.0,
+            },
+            {
+                "frame_number": 2,
+                "0_x": 25.0,
+                "0_y": 35.0,
+                "1_x": 25.0,
+                "1_y": 35.0,
+                "2_x": 75.0,
+                "2_y": 35.0,
+                "3_x": 75.0,
+                "3_y": 35.0,
+                "4_x": 0.0,
+                "4_y": 0.0,
+                "5_x": 0.0,
+                "5_y": 0.0,
+                "6_x": 0.0,
+                "6_y": 0.0,
+                "7_x": 0.0,
+                "7_y": 0.0,
+            },
+        ]
+
+        landmarks_file = self.create_landmarks_csv(landmark_data)
+        frame = self.create_test_frame(100, 100)
+
+        try:
+            result1 = normalize_face(
+                frame=frame,
+                landmarks_file_path=landmarks_file,
+                frame_number=1,
+                eye_relatives=(0.25, 0.35),
+                desired_image_size=(80, 80),
+            )
+
+            result2 = normalize_face(
+                frame=frame,
+                landmarks_file_path=landmarks_file,
+                frame_number=2,
+                eye_relatives=(0.25, 0.35),
+                desired_image_size=(80, 80),
+            )
+
+            assert result1.shape == (80, 80, 3)
+            assert result2.shape == (80, 80, 3)
+            assert result1.dtype == np.uint8
+            assert result2.dtype == np.uint8
+
+            assert not np.array_equal(result1, result2)
+
+        finally:
+            landmarks_file.unlink()
+
+    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
+    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
+    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
+    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
+    def test_normalize_face_grayscale_input(self, mock_right_upper, mock_right_lower, mock_left_upper, mock_left_lower):
+        mock_left_lower.return_value = [0]
+        mock_left_upper.return_value = [1]
+        mock_right_lower.return_value = [2]
+        mock_right_upper.return_value = [3]
+
+        landmark_data = [
+            {
+                "frame_number": 1,
+                "0_x": 30.0,
+                "0_y": 40.0,
+                "1_x": 30.0,
+                "1_y": 40.0,
+                "2_x": 70.0,
+                "2_y": 40.0,
+                "3_x": 70.0,
+                "3_y": 40.0,
+                "4_x": 0.0,
+                "4_y": 0.0,
+                "5_x": 0.0,
+                "5_y": 0.0,
+                "6_x": 0.0,
+                "6_y": 0.0,
+                "7_x": 0.0,
+                "7_y": 0.0,
+            }
+        ]
+
+        landmarks_file = self.create_landmarks_csv(landmark_data)
+
+        gray_frame = np.random.randint(0, 255, (100, 100), dtype=np.uint8)
+
+        try:
+            result = normalize_face(
+                frame=gray_frame,
+                landmarks_file_path=landmarks_file,
+                frame_number=1,
+                eye_relatives=(0.25, 0.35),
+                desired_image_size=(80, 80),
+            )
+
+            assert isinstance(result, np.ndarray)
+            assert result.shape == (80, 80)
+            assert result.dtype == np.uint8
+
+        finally:
+            landmarks_file.unlink()
+
+    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
+    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
+    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
+    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
+    def test_normalize_face_edge_cases_small_eye_distance(
+        self, mock_right_upper, mock_right_lower, mock_left_upper, mock_left_lower
+    ):
+        mock_left_lower.return_value = [0]
+        mock_left_upper.return_value = [1]
+        mock_right_lower.return_value = [2]
+        mock_right_upper.return_value = [3]
+
+        landmark_data = [
+            {
+                "frame_number": 1,
+                "0_x": 49.0,
+                "0_y": 50.0,
+                "1_x": 49.0,
+                "1_y": 50.0,
+                "2_x": 51.0,
+                "2_y": 50.0,
+                "3_x": 51.0,
+                "3_y": 50.0,
+                "4_x": 0.0,
+                "4_y": 0.0,
+                "5_x": 0.0,
+                "5_y": 0.0,
+                "6_x": 0.0,
+                "6_y": 0.0,
+                "7_x": 0.0,
+                "7_y": 0.0,
+            }
+        ]
+
+        landmarks_file = self.create_landmarks_csv(landmark_data)
+        frame = self.create_test_frame(100, 100)
+
+        try:
+            result = normalize_face(
+                frame=frame,
+                landmarks_file_path=landmarks_file,
+                frame_number=1,
+                eye_relatives=(0.25, 0.35),
+                desired_image_size=(80, 80),
+            )
+
+            assert result.shape == (80, 80, 3)
+            assert result.dtype == np.uint8
+
+        finally:
+            landmarks_file.unlink()
+
+    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
+    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
+    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
+    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
+    def test_normalize_face_identical_eye_positions_raises_error(
+        self, mock_right_upper, mock_right_lower, mock_left_upper, mock_left_lower
+    ):
+        mock_left_lower.return_value = [0]
+        mock_left_upper.return_value = [1]
+        mock_right_lower.return_value = [2]
+        mock_right_upper.return_value = [3]
+
+        landmark_data = [
+            {
+                "frame_number": 1,
+                "0_x": 50.0,
+                "0_y": 50.0,
+                "1_x": 50.0,
+                "1_y": 50.0,
+                "2_x": 50.0,
+                "2_y": 50.0,
+                "3_x": 50.0,
+                "3_y": 50.0,
+                "4_x": 0.0,
+                "4_y": 0.0,
+                "5_x": 0.0,
+                "5_y": 0.0,
+                "6_x": 0.0,
+                "6_y": 0.0,
+                "7_x": 0.0,
+                "7_y": 0.0,
+            }
+        ]
+
+        landmarks_file = self.create_landmarks_csv(landmark_data)
+        frame = self.create_test_frame(100, 100)
+
+        try:
+            with pytest.raises(ZeroDivisionError):
+                normalize_face(
+                    frame=frame,
+                    landmarks_file_path=landmarks_file,
+                    frame_number=1,
+                    eye_relatives=(0.25, 0.35),
+                    desired_image_size=(80, 80),
+                )
+        finally:
+            landmarks_file.unlink()
+
+    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
+    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
+    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
+    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
+    def test_normalize_face_extreme_coordinates(
+        self, mock_right_upper, mock_right_lower, mock_left_upper, mock_left_lower
+    ):
+        mock_left_lower.return_value = [0]
+        mock_left_upper.return_value = [1]
+        mock_right_lower.return_value = [2]
+        mock_right_upper.return_value = [3]
+
+        landmark_data = [
+            {
+                "frame_number": 1,
+                "0_x": 10.0,
+                "0_y": 10.0,
+                "1_x": 10.0,
+                "1_y": 10.0,
+                "2_x": 90.0,
+                "2_y": 90.0,
+                "3_x": 90.0,
+                "3_y": 90.0,
+                "4_x": 0.0,
+                "4_y": 0.0,
+                "5_x": 0.0,
+                "5_y": 0.0,
+                "6_x": 0.0,
+                "6_y": 0.0,
+                "7_x": 0.0,
+                "7_y": 0.0,
+            }
+        ]
+
+        landmarks_file = self.create_landmarks_csv(landmark_data)
+        frame = self.create_test_frame(100, 100)
+
+        try:
+            result = normalize_face(
+                frame=frame,
+                landmarks_file_path=landmarks_file,
+                frame_number=1,
+                eye_relatives=(0.25, 0.35),
+                desired_image_size=(80, 80),
+            )
+
+            assert result.shape == (80, 80, 3)
+            assert result.dtype == np.uint8
+
+        finally:
+            landmarks_file.unlink()
+
+    def test_normalize_face_input_types(self):
+        frame_np = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
+
+        assert isinstance(frame_np, (np.ndarray, type(cv2.imread)))
+
+    @pytest.fixture(autouse=True)
+    def cleanup_temp_files(self):
+        yield
