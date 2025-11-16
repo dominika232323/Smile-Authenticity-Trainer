@@ -12,12 +12,14 @@ from ai.config import (
     PREPROCESSED_DATA_DIR,
     PREPROCESSED_FACELANDMARKS_DIR,
     PREPROCESSED_FRAMES_DIR,
+    PREPROCESSED_SMILE_PHASES_DIR,
     UvA_NEMO_SMILE_DETAILS,
     UvA_NEMO_SMILE_VIDEOS_DIR,
 )
 from ai.data_preprocessing.file_utils import create_csv_with_header, create_directories, save_frame
 from ai.data_preprocessing.get_details import get_details
 from ai.data_preprocessing.get_face_landmarks import create_facelandmarks_header, get_face_landmarks
+from ai.data_preprocessing.label_smile_phases import label_smile_phases
 from ai.data_preprocessing.normalize_face import normalize_face
 from ai.logging_config import setup_logging
 
@@ -92,6 +94,9 @@ def preprocess_video(video_path: Path) -> None:
     cap.release()
     logger.info(f"Finished processing all frames for video {video_name}")
 
+    smile_phase_file_path = PREPROCESSED_SMILE_PHASES_DIR / f"{video_name}.csv"
+    label_smile_phases(normalized_face_landmarks_file_path, smile_phase_file_path)
+
 
 @logger.catch
 def main() -> None:
@@ -104,6 +109,7 @@ def main() -> None:
         ORIGINAL_FACELANDMARKS_DIR,
         PREPROCESSED_FRAMES_DIR,
         PREPROCESSED_FACELANDMARKS_DIR,
+        PREPROCESSED_SMILE_PHASES_DIR,
     ]
     create_directories(directories)
 
