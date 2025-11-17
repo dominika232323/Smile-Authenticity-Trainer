@@ -2,7 +2,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from ai.data_preprocessing.label_smile_phases import calculate_radius, smooth_radius, detect_longest_segment
+from ai.data_preprocessing.label_smile_phases import calculate_radius, smooth_radius, detect_longest_segment, \
+    label_phases
 
 
 class TestCalculateRadius:
@@ -278,3 +279,72 @@ class TestDetectLongestSegment:
 
         assert start == 2
         assert end == 3
+
+
+class TestLabelPhases:
+    @pytest.mark.parametrize(
+        ("num_frames", "onset_start", "onset_end", "offset_start", "offset_end", "expected_phases"),
+        [
+            (5, 1, 1, 3, 3, ["neutral", "onset", "apex", "offset", "neutral"]),
+            (4, 0, 1, 2, 3, ["onset", "onset", "offset", "offset"]),
+            (3, 0, 0, 2, 2, ["onset", "apex", "offset"]),
+            (6, 1, 2, None, None, ["neutral", "onset", "onset", "neutral", "neutral", "neutral"]),
+            (6, None, None, 3, 4, ["neutral", "neutral", "neutral", "offset", "offset", "neutral"]),
+            (5, 2, 3, 2, 3, ["neutral", "neutral", "offset", "offset", "neutral"]),
+            (10, 0, 0, 9, 9, ["onset", "apex", "apex", "apex", "apex", "apex", "apex", "apex", "apex", "offset"]),
+            (10, 2, 3, 6, 8, ["neutral", "neutral", "onset", "onset", "apex", "apex", "offset", "offset", "offset", "neutral"]),
+            (8, 2, 4, None, None, ["neutral", "neutral", "onset", "onset", "onset", "neutral", "neutral", "neutral"]),
+            (8, None, None, 3, 5, ["neutral", "neutral", "neutral", "offset", "offset", "offset", "neutral", "neutral"]),
+            (1, None, None, None, None, ["neutral"]),
+            (8, 1, 3, 4, 6, ["neutral", "onset", "onset", "onset", "offset", "offset", "offset", "neutral"]),
+            (5, 2, 2, None, None, ["neutral", "neutral", "onset", "neutral", "neutral"]),
+            (5, None, None, 3, 3, ["neutral", "neutral", "neutral", "offset", "neutral"]),
+            (6, 0, 1, 4, 5, ["onset", "onset", "apex", "apex", "offset", "offset"]),
+            (6, 1, 2, 4, 5, ["neutral", "onset", "onset", "apex", "offset", "offset"]),
+            (7, 1, 2, 3, 5, ["neutral", "onset", "onset", "offset", "offset", "offset", "neutral"])
+        ],
+    )
+    def test_label_phases_parametrized(self, num_frames, onset_start, onset_end, offset_start, offset_end,
+                                       expected_phases):
+        result = label_phases(num_frames, onset_start, onset_end, offset_start, offset_end)
+
+        assert result == expected_phases
+        assert len(result) == num_frames
+
+        assert isinstance(result, list)
+        assert all(isinstance(phase, str) for phase in result)
+
+    def test_label_phases_zero_frames(self):
+        num_frames = 0
+        onset_start, onset_end = None, None
+        offset_start, offset_end = None, None
+
+        result = label_phases(num_frames, onset_start, onset_end, offset_start, offset_end)
+
+        assert result == []
+        assert len(result) == 0
+
+    def test_label_phases_no_phases(self):
+        num_frames = 5
+        onset_start, onset_end = None, None
+        offset_start, offset_end = None, None
+
+        result = label_phases(num_frames, onset_start, onset_end, offset_start, offset_end)
+
+        expected = ["neutral"] * 5
+        assert result == expected
+        assert len(result) == num_frames
+
+    def test_label_phases_large_sequence(self):
+        num_frames = 100
+        onset_start, onset_end = 20, 30
+        offset_start, offset_end = 70, 80
+
+        result = label_phases(num_frames, onset_start, onset_end, offset_start, offset_end)
+
+        assert all(phase == "neutral" for phase in result[:20])
+        assert all(phase == "onset" for phase in result[20:31])
+        assert all(phase == "apex" for phase in result[31:70])
+        assert all(phase == "offset" for phase in result[70:81])
+        assert all(phase == "neutral" for phase in result[81:])
+        assert len(result) == num_frames
