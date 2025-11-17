@@ -25,45 +25,39 @@ from ai.logging_config import setup_logging
 
 
 @logger.catch
-def preprocess_frame(frame: cv2.Mat | np.ndarray[Any, np.dtype[Any]], frame_number: int, video_name: str) -> None:
+def preprocess_frame(
+    frame: cv2.Mat | np.ndarray[Any, np.dtype[Any]],
+    frame_number: int,
+    video_name: str,
+    original_face_landmarks_file_path: Path,
+    normalized_face_landmarks_file_path: Path,
+) -> None:
     logger.debug(f"Processing frame {frame_number} for video {video_name}")
 
-    frame_path = ORIGINAL_FRAMES_DIR / f"{video_name}" / f"{frame_number}.jpg"
-    save_frame(frame, frame_path)
-    logger.debug(f"Saved frame to {frame_path}")
+    original_frame_path = ORIGINAL_FRAMES_DIR / f"{video_name}" / f"{frame_number}.jpg"
+    save_frame(frame, original_frame_path)
+    logger.debug(f"Saved frame to {original_frame_path}")
 
-    face_landmarks_file_path = ORIGINAL_FACELANDMARKS_DIR / f"{video_name}.csv"
-    get_face_landmarks(frame, frame_number, face_landmarks_file_path)
+    get_face_landmarks(frame, frame_number, original_face_landmarks_file_path)
     logger.debug(f"Extracted face landmarks for frame {frame_number}")
 
     normalized_frame_path = PREPROCESSED_FRAMES_DIR / f"{video_name}" / f"{frame_number}.jpg"
-    normalized_frame = normalize_face(frame, face_landmarks_file_path, frame_number, (0.35, 0.35), (256, 256))
+    normalized_frame = normalize_face(frame, original_face_landmarks_file_path, frame_number, (0.35, 0.35), (256, 256))
     save_frame(normalized_frame, normalized_frame_path)
     logger.debug(
-        f"Saved normalized frame to {normalized_frame_path} (face landmarks saved to {face_landmarks_file_path})"
+        f"Saved normalized frame to {normalized_frame_path} (face landmarks saved to {original_face_landmarks_file_path})"
     )
 
-    normalized_face_landmarks_file_path = PREPROCESSED_FACELANDMARKS_DIR / f"{video_name}.csv"
     get_face_landmarks(normalized_frame, frame_number, normalized_face_landmarks_file_path)
     logger.debug(f"Extracted normalized face landmarks for frame {frame_number}")
 
 
 @logger.catch
-def preprocess_video(video_path: Path) -> None:
+def preprocess_video(
+    video_path: Path, original_face_landmarks_file_path: Path, normalized_face_landmarks_file_path: Path
+) -> None:
     video_name = video_path.stem
     logger.info(f"Starting preprocessing video: {video_name}")
-
-    video_original_directory = ORIGINAL_FRAMES_DIR / video_name
-    video_preprocessed_directory = PREPROCESSED_FRAMES_DIR / video_name
-    create_directories([video_original_directory, video_preprocessed_directory])
-
-    face_landmarks_file_path = ORIGINAL_FACELANDMARKS_DIR / f"{video_name}.csv"
-    create_csv_with_header(face_landmarks_file_path, create_facelandmarks_header())
-    logger.info(f"Added header to face landmarks CSV: {face_landmarks_file_path}")
-
-    normalized_face_landmarks_file_path = PREPROCESSED_FACELANDMARKS_DIR / f"{video_name}.csv"
-    create_csv_with_header(normalized_face_landmarks_file_path, create_facelandmarks_header())
-    logger.info(f"Added header to normalized face landmarks CSV: {normalized_face_landmarks_file_path}")
 
     cap = cv2.VideoCapture(str(video_path))
 
@@ -86,16 +80,15 @@ def preprocess_video(video_path: Path) -> None:
 
             continue
 
-        preprocess_frame(frame, frame_number, video_name)
+        preprocess_frame(
+            frame, frame_number, video_name, original_face_landmarks_file_path, normalized_face_landmarks_file_path
+        )
 
         if frame_number % 100 == 0:
             logger.info(f"Processed {frame_number}/{total_frames} frames for video {video_name}")
 
     cap.release()
     logger.info(f"Finished processing all frames for video {video_name}")
-
-    smile_phase_file_path = PREPROCESSED_SMILE_PHASES_DIR / f"{video_name}.csv"
-    label_smile_phases(normalized_face_landmarks_file_path, smile_phase_file_path)
 
 
 @logger.catch
@@ -138,8 +131,27 @@ def main() -> None:
             logger.error(f"Video file not found: {video_path}")
             continue
 
+        video_name = video_path.stem
+
+        original_video_directory = ORIGINAL_FRAMES_DIR / video_name
+        preprocessed_video_directory = PREPROCESSED_FRAMES_DIR / video_name
+        create_directories([original_video_directory, preprocessed_video_directory])
+
+        landmarks_header = create_facelandmarks_header()
+
+        original_face_landmarks_file_path = ORIGINAL_FACELANDMARKS_DIR / f"{video_name}.csv"
+        create_csv_with_header(original_face_landmarks_file_path, landmarks_header)
+        logger.info(f"Added header to face landmarks CSV: {original_face_landmarks_file_path}")
+
+        normalized_face_landmarks_file_path = PREPROCESSED_FACELANDMARKS_DIR / f"{video_name}.csv"
+        create_csv_with_header(normalized_face_landmarks_file_path, landmarks_header)
+        logger.info(f"Added header to normalized face landmarks CSV: {normalized_face_landmarks_file_path}")
+
         logger.info(f"Processing video {i}/{len(videos_to_process)}: {video_path.name}")
-        preprocess_video(video_path)
+        preprocess_video(video_path, original_face_landmarks_file_path, normalized_face_landmarks_file_path)
+
+        smile_phase_file_path = PREPROCESSED_SMILE_PHASES_DIR / f"{video_name}.csv"
+        label_smile_phases(normalized_face_landmarks_file_path, smile_phase_file_path)
 
     logger.info("Data preprocessing pipeline completed successfully")
 
