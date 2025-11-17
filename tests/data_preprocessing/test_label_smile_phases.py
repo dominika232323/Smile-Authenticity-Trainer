@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from ai.data_preprocessing.label_smile_phases import calculate_radius, smooth_radius
+from ai.data_preprocessing.label_smile_phases import calculate_radius, smooth_radius, detect_longest_segment
 
 
 class TestCalculateRadius:
@@ -156,3 +156,125 @@ class TestSmoothRadius:
 
             assert isinstance(result, np.ndarray)
             assert len(result) == len(radius)
+
+
+class TestDetectLongestSegment:
+    @pytest.mark.parametrize(
+        ("delta", "start_expected", "end_expected"),
+        [
+            ([0.0, 1.0, 2.0, 3.0, -1.0, -2.0], 1, 3),
+            ([0.0, 1.0, 2.0, -1.0, 3.0, 4.0, 5.0, 6.0, -2.0], 4, 7),
+            ([0.0, 1.0, 2.0, -1.0, 3.0, 4.0, -2.0], 1, 2),
+            ([0.0, 1.0, 2.0, 3.0, 4.0], 1, 4),
+            ([0.0, -1.0, 1.0, 2.0, 3.0], 2, 4),
+            ([5.0, 1.0, 2.0, -1.0], 1, 2),
+            ([0.0, 1.0, -1.0, 2.0, 3.0, 4.0, 5.0, -2.0, 1.0, -3.0], 3, 6),
+            ([0.0, 1.0, 2.0, 0.0, 3.0, 4.0, 5.0], 4, 6),
+            ([0.0, 1.0, -1.0], 1, 1),
+            ([0.0, -1.0, 1.0], 2, 2),
+            ([0.0, 0.0, 1.0, 0.0], 2, 2),
+            ([0.0, 1.0, 0.0, 1.0, 0.0], 1, 1),
+            ([0.0, 0.0, 0.0, 1.0], 3, 3),
+        ],
+    )
+    def test_detect_longest_segment_d_greater_than_0(self, delta, start_expected, end_expected):
+        delta = np.array(delta)
+
+        def condition(d):
+            return d > 0
+
+        start, end = detect_longest_segment(delta, condition)
+
+        assert start == start_expected
+        assert end == end_expected
+
+        assert isinstance(start, int)
+        assert isinstance(end, int)
+
+    @pytest.mark.parametrize(
+        ("delta", "start_expected", "end_expected"),
+        [
+            ([0.0, 1.0, 2.0, -1.0, -2.0, -3.0], 3, 5),
+            ([0.0, -1.0, -2.0, 1.0, -3.0, -4.0, -5.0, -6.0, 2.0], 4, 7),
+            ([0.0, 1.0, -1.0, 1.0], 2, 2),
+        ],
+    )
+    def test_detect_longest_segment_d_lesser_than_0(self, delta, start_expected, end_expected):
+        delta = np.array(delta)
+
+        def condition(d):
+            return d < 0
+
+        start, end = detect_longest_segment(delta, condition)
+
+        assert start == start_expected
+        assert end == end_expected
+
+        assert isinstance(start, int)
+        assert isinstance(end, int)
+
+    def test_detect_longest_segment_no_matching_values(self):
+        delta = np.array([0.0, -1.0, -2.0, -3.0])
+
+        def condition(d):
+            return d > 0
+
+        start, end = detect_longest_segment(delta, condition)
+
+        assert start is None
+        assert end is None
+
+    def test_detect_longest_segment_single_element_array(self):
+        delta = np.array([1.0])
+
+        def condition(d):
+            return d > 0
+
+        start, end = detect_longest_segment(delta, condition)
+
+        assert start is None
+        assert end is None
+
+    def test_detect_longest_segment_empty_array(self):
+        delta = np.array([])
+
+        def condition(d):
+            return d > 0
+
+        start, end = detect_longest_segment(delta, condition)
+
+        assert start is None
+        assert end is None
+
+    def test_detect_longest_segment_custom_condition(self):
+        delta = np.array([0.0, 1.0, 3.0, 4.0, 1.0, -3.0, -4.0, -5.0, 1.0])
+
+        def condition(d):
+            return abs(d) > 2
+
+        start, end = detect_longest_segment(delta, condition)
+
+        assert start == 5
+        assert end == 7
+
+    def test_detect_longest_segment_equal_condition(self):
+        delta = np.array([0.0, 1.0, 2.0, 2.0, 2.0, 1.0])
+
+        def condition(d):
+            return d == 2.0
+
+        start, end = detect_longest_segment(delta, condition)
+
+        assert start == 2
+        assert end == 4
+
+    def test_detect_longest_segment_floating_point_precision(self):
+        delta = np.array([0.0, 0.1, 0.2, 0.3, -0.1, 0.4, 0.5])
+
+        def condition(d):
+            return d > 0.15
+
+        start, end = detect_longest_segment(delta, condition)
+
+        assert start == 2
+        assert end == 3
