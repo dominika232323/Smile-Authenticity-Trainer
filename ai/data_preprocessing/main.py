@@ -3,10 +3,13 @@ from typing import Any
 
 import cv2
 import numpy as np
+import pandas as pd
 from loguru import logger
 from tqdm import tqdm
 
 from ai.config import (
+    ALL_LIP_FEATURES_CSV,
+    LIP_FEATURES_DIR,
     ORIGINAL_FACELANDMARKS_DIR,
     ORIGINAL_FRAMES_DIR,
     PREPROCESSED_DATA_DIR,
@@ -16,7 +19,13 @@ from ai.config import (
     UvA_NEMO_SMILE_DETAILS,
     UvA_NEMO_SMILE_VIDEOS_DIR,
 )
-from ai.data_preprocessing.file_utils import create_csv_with_header, create_directories, save_frame
+from ai.data_preprocessing.extract_lip_features import extract_lip_features
+from ai.data_preprocessing.file_utils import (
+    create_csv_with_header,
+    create_directories,
+    save_dataframe_to_csv,
+    save_frame,
+)
 from ai.data_preprocessing.get_details import get_details
 from ai.data_preprocessing.get_face_landmarks import create_facelandmarks_header, get_face_landmarks
 from ai.data_preprocessing.label_smile_phases import label_smile_phases
@@ -55,7 +64,7 @@ def preprocess_frame(
 @logger.catch
 def preprocess_video(
     video_path: Path, original_face_landmarks_file_path: Path, normalized_face_landmarks_file_path: Path
-) -> None:
+) -> float | None:
     video_name = video_path.stem
     logger.info(f"Starting preprocessing video: {video_name}")
 
@@ -63,8 +72,9 @@ def preprocess_video(
 
     if not cap.isOpened():
         logger.error(f"Failed to open video file: {video_path}")
+        return None
 
-        return
+    fps = cap.get(cv2.CAP_PROP_FPS)
 
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     logger.info(f"Video {video_name} has {total_frames} frames")
@@ -90,6 +100,8 @@ def preprocess_video(
     cap.release()
     logger.info(f"Finished processing all frames for video {video_name}")
 
+    return fps
+
 
 @logger.catch
 def main() -> None:
@@ -103,6 +115,7 @@ def main() -> None:
         PREPROCESSED_FRAMES_DIR,
         PREPROCESSED_FACELANDMARKS_DIR,
         PREPROCESSED_SMILE_PHASES_DIR,
+        LIP_FEATURES_DIR,
     ]
     create_directories(directories)
 
@@ -126,6 +139,8 @@ def main() -> None:
 
     logger.info(f"Processing {len(videos_to_process)} videos")
 
+    lip_features_list = []
+
     for i, video_path in enumerate(videos_to_process, 1):
         if not video_path.exists():
             logger.error(f"Video file not found: {video_path}")
@@ -148,10 +163,31 @@ def main() -> None:
         logger.info(f"Added header to normalized face landmarks CSV: {normalized_face_landmarks_file_path}")
 
         logger.info(f"Processing video {i}/{len(videos_to_process)}: {video_path.name}")
-        preprocess_video(video_path, original_face_landmarks_file_path, normalized_face_landmarks_file_path)
+        video_fps = preprocess_video(video_path, original_face_landmarks_file_path, normalized_face_landmarks_file_path)
 
+        if video_fps is None:
+            continue
+
+        logger.info(f"Labeling smile phases for video {video_name}")
         smile_phase_file_path = PREPROCESSED_SMILE_PHASES_DIR / f"{video_name}.csv"
         label_smile_phases(normalized_face_landmarks_file_path, smile_phase_file_path)
+
+        logger.info(f"Extracting lip features for video {video_name}")
+        video_lip_features_df = extract_lip_features(
+            normalized_face_landmarks_file_path, smile_phase_file_path, video_fps
+        )
+        video_lip_features_df["filename"] = video_path.name
+
+        save_dataframe_to_csv(video_lip_features_df, LIP_FEATURES_DIR / f"{video_name}.csv")
+
+        lip_features_list.append(video_lip_features_df)
+
+    if lip_features_list:
+        lip_features_df = pd.concat(lip_features_list, ignore_index=True)
+        save_dataframe_to_csv(lip_features_df, ALL_LIP_FEATURES_CSV)
+        logger.info(f"Saved combined lip features to {ALL_LIP_FEATURES_CSV}")
+    else:
+        logger.warning("No lip features were generated — nothing to save.")
 
     logger.info("Data preprocessing pipeline completed successfully")
 
