@@ -23,6 +23,7 @@ from ai.config import (
     UvA_NEMO_SMILE_DETAILS,
     UvA_NEMO_SMILE_VIDEOS_DIR,
 )
+from ai.data_preprocessing.assign_labels import assign_labels
 from ai.data_preprocessing.extract_cheek_features import extract_cheek_features
 from ai.data_preprocessing.extract_eye_features import extract_eye_features
 from ai.data_preprocessing.extract_lip_features import extract_lip_features
@@ -208,6 +209,7 @@ def main() -> None:
 
     if lip_features_list:
         lip_features_df = pd.concat(lip_features_list, ignore_index=True)
+        lip_features_df = assign_labels(lip_features_df, details_path)
         save_dataframe_to_csv(lip_features_df, ALL_LIP_FEATURES_CSV)
         logger.info(f"Saved combined lip features to {ALL_LIP_FEATURES_CSV}")
     else:
@@ -215,6 +217,7 @@ def main() -> None:
 
     if eyes_features_list:
         eyes_features_df = pd.concat(eyes_features_list, ignore_index=True)
+        eyes_features_df = assign_labels(eyes_features_df, details_path)
         save_dataframe_to_csv(eyes_features_df, ALL_EYES_FEATURES_CSV)
         logger.info(f"Saved combined eye features to {ALL_EYES_FEATURES_CSV}")
     else:
@@ -222,6 +225,7 @@ def main() -> None:
 
     if cheeks_features_list:
         cheeks_features_df = pd.concat(cheeks_features_list, ignore_index=True)
+        cheeks_features_df = assign_labels(cheeks_features_df, details_path)
         save_dataframe_to_csv(cheeks_features_df, ALL_CHEEKS_FEATURES_CSV)
         logger.info(f"Saved combined cheek features to {ALL_CHEEKS_FEATURES_CSV}")
     else:
