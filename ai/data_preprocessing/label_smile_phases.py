@@ -51,10 +51,10 @@ def label_smile_phases(landmarks_file_path: Path, output_csv: Path, smoothing_wi
 
 def calculate_radius(landmarks_df: pd.DataFrame) -> np.ndarray:
     logger.debug("Extracting lip corner coordinates")
-    left_lip_corner_coords_x = landmarks_df[f"{FaceLandmarks.left_lip_corner()[0]}_x"].values
-    left_lip_corner_coords_y = landmarks_df[f"{FaceLandmarks.left_lip_corner()[0]}_y"].values
-    right_lip_corner_coords_x = landmarks_df[f"{FaceLandmarks.right_lip_corner()[0]}_x"].values
-    right_lip_corner_coords_y = landmarks_df[f"{FaceLandmarks.right_lip_corner()[0]}_y"].values
+    left_lip_corner_coords_x = landmarks_df[f"{FaceLandmarks.left_lip_corner()[0]}_x"].to_numpy(dtype=float)
+    left_lip_corner_coords_y = landmarks_df[f"{FaceLandmarks.left_lip_corner()[0]}_y"].to_numpy(dtype=float)
+    right_lip_corner_coords_x = landmarks_df[f"{FaceLandmarks.right_lip_corner()[0]}_x"].to_numpy(dtype=float)
+    right_lip_corner_coords_y = landmarks_df[f"{FaceLandmarks.right_lip_corner()[0]}_y"].to_numpy(dtype=float)
 
     logger.debug("Calculating lips midpoint coordinates")
     lips_midpoint_coords_x = (left_lip_corner_coords_x + right_lip_corner_coords_x) / 2
@@ -72,7 +72,7 @@ def calculate_radius(landmarks_df: pd.DataFrame) -> np.ndarray:
 
 def smooth_radius(radius: np.ndarray, smoothing_window: int) -> np.ndarray:
     logger.debug(f"Applying rolling window smoothing with window size {smoothing_window}")
-    smoothed = pd.Series(radius).rolling(smoothing_window, center=True, min_periods=1).mean().values
+    smoothed = pd.Series(radius).rolling(smoothing_window, center=True, min_periods=1).mean().to_numpy(dtype=float)
 
     logger.debug("Radius smoothing completed")
     return smoothed
