@@ -73,7 +73,7 @@ def save_dataframe_to_csv(df: pd.DataFrame, output_path: Path) -> None:
     logger.debug(f"Saving dataframe to file: {output_path}")
 
     try:
-        df.to_csv(output_path, index=False)
+        df.to_csv(output_path, index=False, header=True)
         logger.info(f"Dataframe saved to file: {output_path}")
     except Exception as e:
         logger.error(f"Failed to save dataframe to file: {output_path}: {e}")
