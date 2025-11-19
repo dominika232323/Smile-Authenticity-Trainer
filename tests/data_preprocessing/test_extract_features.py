@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from ai.data_preprocessing.extract_features import safe_len, safe_sum
+from ai.data_preprocessing.extract_features import safe_len, safe_sum, safe_mean
 
 
 class TestSafeLen:
@@ -68,3 +68,38 @@ class TestSafeSum:
         arr = base.view(MyArray)
 
         assert safe_sum(arr) == 30.0
+
+
+class TestSafeMean:
+    def test_safe_mean_basic(self):
+        arr = np.array([1, 2, 3])
+        assert safe_mean(arr) == 2.0
+
+    def test_safe_mean_empty_array(self):
+        arr = np.array([])
+        assert safe_mean(arr) == 0.0
+
+    def test_safe_mean_negative_values(self):
+        arr = np.array([-5, 10, -3])
+        assert safe_mean(arr) == pytest.approx(0.6666667)
+
+    def test_safe_mean_float_values(self):
+        arr = np.array([0.1, 0.2, 0.3])
+        assert safe_mean(arr) == pytest.approx(0.2)
+
+    def test_safe_mean_2d_array(self):
+        arr = np.array([[1, 2], [3, 4]])
+        assert safe_mean(arr) == 2.5
+
+    def test_safe_mean_object_array(self):
+        arr = np.array([1, 2, 3], dtype=object)
+        assert safe_mean(arr) == 2.0
+
+    def test_safe_mean_ndarray_subclass(self):
+        class MyArray(np.ndarray):
+            pass
+
+        base = np.array([10, 20, 30])
+        arr = base.view(MyArray)
+
+        assert safe_mean(arr) == 20.0
