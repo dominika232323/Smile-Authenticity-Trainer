@@ -2,33 +2,48 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+from loguru import logger
 
 
 def extract_features(df: pd.DataFrame, omega: float) -> pd.DataFrame:
+    logger.info(f"Starting feature extraction with omega={omega}, dataframe shape={df.shape}")
+
     phases = ["onset", "apex", "offset"]
     all_features_dict = {}
 
     for phase in phases:
         if phase not in df["smile_phase"].unique():
+            logger.warning(f"Phase '{phase}' not found in data, using zero values")
             phase_features_dict = {f"{phase}_{k}": 0.0 for k in extract_features_for_phase(df.iloc[:1], omega).keys()}
         else:
             df_phase = df[df["smile_phase"] == phase].reset_index(drop=True)
+            logger.debug(f"Processing phase '{phase}' with {len(df_phase)} data points")
             phase_features_raw = extract_features_for_phase(df_phase, omega)
             phase_features_dict = {f"{phase}_{k}": v for k, v in phase_features_raw.items()}
+            logger.debug(f"Extracted {len(phase_features_dict)} features for phase '{phase}'")
 
         all_features_dict.update(phase_features_dict)
 
+    logger.info(f"Feature extraction completed, total features: {len(all_features_dict)}")
     return pd.DataFrame([all_features_dict])
 
 
 def extract_features_for_phase(df_phase: pd.DataFrame, omega: float) -> dict[str, float | int]:
+    logger.debug(f"Extracting features for phase with {len(df_phase)} samples")
+
     D = df_phase["D"].to_numpy(dtype=float)
     V = df_phase["V"].to_numpy(dtype=float)
     A = df_phase["A"].to_numpy(dtype=float)
 
+    logger.debug(
+        f"Signal ranges - D: [{np.min(D):.3f}, {np.max(D):.3f}], V: [{np.min(V):.3f}, {np.max(V):.3f}], A: [{np.min(A):.3f}, {np.max(A):.3f}]"
+    )
+
     D_plus_segs, D_minus_segs = segment_increasing_decreasing(D)
     V_plus_segs, V_minus_segs = segment_increasing_decreasing(V)
     A_plus_segs, A_minus_segs = segment_increasing_decreasing(A)
+
+    logger.debug(f"Segmentation results - D: {len(D_plus_segs)} positive, {len(D_minus_segs)} negative segments")
 
     D_plus = join_segments(D_plus_segs)
     D_minus = join_segments(D_minus_segs)
@@ -46,7 +61,10 @@ def extract_features_for_phase(df_phase: pd.DataFrame, omega: float) -> dict[str
 
     combined_amplitude = sum_D_plus + sum_D_minus
 
-    return {
+    logger.debug(f"Duration metrics - total: {eta_D}, positive: {eta_D_plus}, negative: {eta_D_minus}")
+    logger.debug(f"Amplitude metrics - positive sum: {sum_D_plus:.3f}, negative sum: {sum_D_minus:.3f}")
+
+    features = {
         "duration_plus": eta_D_plus / omega,
         "duration_minus": eta_D_minus / omega,
         "duration_all": eta_D / omega,
@@ -73,8 +91,13 @@ def extract_features_for_phase(df_phase: pd.DataFrame, omega: float) -> dict[str
         "net_amplitude_duration_ratio": (sum_D_plus - sum_D_minus) * omega / eta_D if eta_D else 0,
     }
 
+    logger.debug(f"Generated {len(features)} features for phase")
+    return features
+
 
 def segment_increasing_decreasing(signal: np.ndarray) -> tuple[list[np.ndarray], list[np.ndarray]]:
+    logger.debug(f"Segmenting signal of length {len(signal)}")
+
     D_plus, D_minus = [], []
     current = [signal[0]]
     trend = None
@@ -112,6 +135,7 @@ def segment_increasing_decreasing(signal: np.ndarray) -> tuple[list[np.ndarray],
     elif trend == "-":
         D_minus.append(np.array(current))
 
+    logger.debug(f"Segmentation complete: {len(D_plus)} increasing, {len(D_minus)} decreasing segments")
     return D_plus, D_minus
 
 
