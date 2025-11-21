@@ -3,6 +3,7 @@ from typing import Any
 
 import cv2
 import numpy as np
+import pandas as pd
 from loguru import logger
 from tqdm import tqdm
 
@@ -10,6 +11,7 @@ from ai.config import (
     ALL_CHEEKS_FEATURES_CSV,
     ALL_EYES_FEATURES_CSV,
     ALL_LIP_FEATURES_CSV,
+    CHECKPOINT_FILE_PATH,
     CHEEKS_FEATURES_DIR,
     DESIRED_FRAME_SIZE,
     EYE_RELATIVE_SIZE,
@@ -29,9 +31,11 @@ from ai.data_preprocessing.extract_cheek_features import extract_cheek_features
 from ai.data_preprocessing.extract_eye_features import extract_eye_features
 from ai.data_preprocessing.extract_lip_features import extract_lip_features
 from ai.data_preprocessing.file_utils import (
+    append_row_to_csv,
     concat_csvs,
     create_csv_with_header,
     create_directories,
+    ensure_checkpoint_file_exists,
     save_dataframe_to_csv,
     save_frame,
 )
@@ -114,6 +118,20 @@ def preprocess_video(
     return fps
 
 
+def get_videos_to_process() -> list[Path]:
+    all_videos = list(UvA_NEMO_SMILE_VIDEOS_DIR.glob("*.mp4"))
+
+    if ensure_checkpoint_file_exists():
+        processed_videos_df = pd.read_csv(CHECKPOINT_FILE_PATH)
+        processed_videos = set(processed_videos_df["file_path"].tolist())
+
+        videos_to_process = [path for path in all_videos if str(path) not in processed_videos]
+    else:
+        videos_to_process = all_videos
+
+    return videos_to_process
+
+
 @logger.catch
 def main() -> None:
     setup_logging()
@@ -145,7 +163,7 @@ def main() -> None:
 
         return
 
-    videos_to_process = list(UvA_NEMO_SMILE_VIDEOS_DIR.glob("*.mp4"))
+    videos_to_process = get_videos_to_process()
 
     # videos_to_process = [
     #     UvA_NEMO_SMILE_VIDEOS_DIR / "001_deliberate_smile_2.mp4",
@@ -205,6 +223,8 @@ def main() -> None:
         )
         video_cheeks_features_df["filename"] = video_path.name
         save_dataframe_to_csv(video_cheeks_features_df, CHEEKS_FEATURES_DIR / f"{video_name}.csv")
+
+        append_row_to_csv(CHECKPOINT_FILE_PATH, [str(video_path), 1])
 
     lip_features_df = concat_csvs(LIP_FEATURES_DIR)
     lip_features_df = assign_labels(lip_features_df, details_path)
