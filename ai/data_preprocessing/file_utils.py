@@ -78,3 +78,19 @@ def save_dataframe_to_csv(df: pd.DataFrame, output_path: Path) -> None:
     except Exception as e:
         logger.error(f"Failed to save dataframe to file: {output_path}: {e}")
         raise
+
+
+def concat_csvs(input_dir: Path) -> pd.DataFrame:
+    logger.debug(f"Concatenating CSV files in directory: {input_dir}")
+
+    csv_files = list(input_dir.glob("*.csv"))
+
+    if not csv_files:
+        logger.error(f"No CSV files found in directory: {input_dir}")
+        raise ValueError(f"No CSV files found in directory: {input_dir}")
+
+    df_list = [pd.read_csv(csv_path) for csv_path in csv_files]
+    final_df = pd.concat(df_list, ignore_index=True)
+
+    logger.debug(f"Concatenated dataframe with shape {final_df.shape}")
+    return final_df
