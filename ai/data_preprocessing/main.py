@@ -3,7 +3,6 @@ from typing import Any
 
 import cv2
 import numpy as np
-import pandas as pd
 from loguru import logger
 from tqdm import tqdm
 
@@ -28,6 +27,7 @@ from ai.data_preprocessing.extract_cheek_features import extract_cheek_features
 from ai.data_preprocessing.extract_eye_features import extract_eye_features
 from ai.data_preprocessing.extract_lip_features import extract_lip_features
 from ai.data_preprocessing.file_utils import (
+    concat_csvs,
     create_csv_with_header,
     create_directories,
     save_dataframe_to_csv,
@@ -141,6 +141,8 @@ def main() -> None:
 
         return
 
+    videos_to_process = list(UvA_NEMO_SMILE_VIDEOS_DIR.glob("*.mp4"))
+
     videos_to_process = [
         UvA_NEMO_SMILE_VIDEOS_DIR / "001_deliberate_smile_2.mp4",
         UvA_NEMO_SMILE_VIDEOS_DIR / "001_deliberate_smile_3.mp4",
@@ -148,11 +150,7 @@ def main() -> None:
 
     logger.info(f"Processing {len(videos_to_process)} videos")
 
-    lip_features_list = []
-    eyes_features_list = []
-    cheeks_features_list = []
-
-    for i, video_path in enumerate(videos_to_process, 1):
+    for video_path in tqdm(videos_to_process, desc="Processing videos"):
         if not video_path.exists():
             logger.error(f"Video file not found: {video_path}")
             continue
@@ -173,7 +171,7 @@ def main() -> None:
         create_csv_with_header(normalized_face_landmarks_file_path, landmarks_header)
         logger.info(f"Added header to normalized face landmarks CSV: {normalized_face_landmarks_file_path}")
 
-        logger.info(f"Processing video {i}/{len(videos_to_process)}: {video_path.name}")
+        logger.info(f"Processing video: {video_path.name}")
         video_fps = preprocess_video(video_path, original_face_landmarks_file_path, normalized_face_landmarks_file_path)
 
         if video_fps is None:
@@ -189,7 +187,6 @@ def main() -> None:
         )
         video_lip_features_df["filename"] = video_path.name
         save_dataframe_to_csv(video_lip_features_df, LIP_FEATURES_DIR / f"{video_name}.csv")
-        lip_features_list.append(video_lip_features_df)
 
         logger.info(f"Extracting eye features for video {video_name}")
         video_eyes_features_df = extract_eye_features(
@@ -197,7 +194,6 @@ def main() -> None:
         )
         video_eyes_features_df["filename"] = video_path.name
         save_dataframe_to_csv(video_eyes_features_df, EYES_FEATURES_DIR / f"{video_name}.csv")
-        eyes_features_list.append(video_eyes_features_df)
 
         logger.info(f"Extracting cheek features for video {video_name}")
         video_cheeks_features_df = extract_cheek_features(
@@ -205,31 +201,21 @@ def main() -> None:
         )
         video_cheeks_features_df["filename"] = video_path.name
         save_dataframe_to_csv(video_cheeks_features_df, CHEEKS_FEATURES_DIR / f"{video_name}.csv")
-        cheeks_features_list.append(video_cheeks_features_df)
 
-    if lip_features_list:
-        lip_features_df = pd.concat(lip_features_list, ignore_index=True)
-        lip_features_df = assign_labels(lip_features_df, details_path)
-        save_dataframe_to_csv(lip_features_df, ALL_LIP_FEATURES_CSV)
-        logger.info(f"Saved combined lip features to {ALL_LIP_FEATURES_CSV}")
-    else:
-        logger.warning("No lip features were generated — nothing to save.")
+    lip_features_df = concat_csvs(LIP_FEATURES_DIR)
+    lip_features_df = assign_labels(lip_features_df, details_path)
+    save_dataframe_to_csv(lip_features_df, ALL_LIP_FEATURES_CSV)
+    logger.info(f"Saved combined lip features to {ALL_LIP_FEATURES_CSV}")
 
-    if eyes_features_list:
-        eyes_features_df = pd.concat(eyes_features_list, ignore_index=True)
-        eyes_features_df = assign_labels(eyes_features_df, details_path)
-        save_dataframe_to_csv(eyes_features_df, ALL_EYES_FEATURES_CSV)
-        logger.info(f"Saved combined eye features to {ALL_EYES_FEATURES_CSV}")
-    else:
-        logger.warning("No eye features were generated - nothing to save.")
+    eyes_features_df = concat_csvs(EYES_FEATURES_DIR)
+    eyes_features_df = assign_labels(eyes_features_df, details_path)
+    save_dataframe_to_csv(eyes_features_df, ALL_EYES_FEATURES_CSV)
+    logger.info(f"Saved combined eye features to {ALL_EYES_FEATURES_CSV}")
 
-    if cheeks_features_list:
-        cheeks_features_df = pd.concat(cheeks_features_list, ignore_index=True)
-        cheeks_features_df = assign_labels(cheeks_features_df, details_path)
-        save_dataframe_to_csv(cheeks_features_df, ALL_CHEEKS_FEATURES_CSV)
-        logger.info(f"Saved combined cheek features to {ALL_CHEEKS_FEATURES_CSV}")
-    else:
-        logger.warning("No cheek features were generated - nothing to save.")
+    cheeks_features_df = concat_csvs(CHEEKS_FEATURES_DIR)
+    cheeks_features_df = assign_labels(cheeks_features_df, details_path)
+    save_dataframe_to_csv(cheeks_features_df, ALL_CHEEKS_FEATURES_CSV)
+    logger.info(f"Saved combined cheek features to {ALL_CHEEKS_FEATURES_CSV}")
 
     logger.info("Data preprocessing pipeline completed successfully")
 
