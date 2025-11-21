@@ -403,7 +403,7 @@ class TestLabelSmilePhases:
 
         result_df = pd.read_csv(output_file)
 
-        expected_columns = ["frame_number", "smile_phase", "radius"]
+        expected_columns = ["frame_number", "smile_phase", "radius", "dist_smooth", "delta"]
 
         assert list(result_df.columns) == expected_columns
 
@@ -497,7 +497,7 @@ class TestLabelSmilePhases:
 
         saved_df = mock_save_csv.call_args[0][0]
 
-        assert list(saved_df.columns) == ["frame_number", "smile_phase", "radius"]
+        assert list(saved_df.columns) == ["frame_number", "smile_phase", "radius", "dist_smooth", "delta"]
         assert len(saved_df) == 5
 
     def test_label_smile_phases_realistic_smile_sequence(self, temp_csv_files):
@@ -659,12 +659,14 @@ class TestLabelSmilePhases:
         label_smile_phases(landmarks_file, output_file)
 
         result_df = pd.read_csv(output_file)
-        expected_columns = ["frame_number", "smile_phase", "radius"]
+        expected_columns = ["frame_number", "smile_phase", "radius", "dist_smooth", "delta"]
 
         assert list(result_df.columns) == expected_columns
 
         assert all(isinstance(frame, (int, np.integer)) for frame in result_df["frame_number"])
         assert all(isinstance(phase, str) for phase in result_df["smile_phase"])
         assert all(isinstance(radius, (int, float, np.number)) for radius in result_df["radius"])
+        assert all(isinstance(radius, (int, float, np.number)) for radius in result_df["dist_smooth"])
+        assert all(isinstance(radius, (int, float, np.number)) for radius in result_df["delta"])
 
         assert list(result_df["frame_number"]) == list(sample_landmarks_data["frame_number"])
