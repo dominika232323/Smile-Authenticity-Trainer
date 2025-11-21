@@ -41,6 +41,8 @@ def label_smile_phases(landmarks_file_path: Path, output_csv: Path, smoothing_wi
             "frame_number": landmarks_df["frame_number"],
             "smile_phase": phases,
             "radius": radius,
+            "dist_smooth": dist_smooth,
+            "delta": delta,
         }
     )
 
