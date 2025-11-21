@@ -7,8 +7,10 @@ import numpy as np
 import pandas as pd
 from loguru import logger
 
+from ai.config import CHECKPOINT_FILE_PATH
 
-def append_row_to_csv(file_path: Path, row: list[int]) -> None:
+
+def append_row_to_csv(file_path: Path, row: list[Any]) -> None:
     logger.debug(f"Appending row with {len(row)} values to {file_path}")
 
     try:
@@ -94,3 +96,13 @@ def concat_csvs(input_dir: Path) -> pd.DataFrame:
 
     logger.debug(f"Concatenated dataframe with shape {final_df.shape}")
     return final_df
+
+
+def ensure_checkpoint_file_exists() -> bool:
+    file_path = Path(CHECKPOINT_FILE_PATH)
+
+    if not file_path.exists():
+        create_csv_with_header(CHECKPOINT_FILE_PATH, ["file_path", "preprocessed"])
+        return False
+
+    return True
