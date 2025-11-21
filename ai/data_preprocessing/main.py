@@ -11,6 +11,8 @@ from ai.config import (
     ALL_EYES_FEATURES_CSV,
     ALL_LIP_FEATURES_CSV,
     CHEEKS_FEATURES_DIR,
+    DESIRED_FRAME_SIZE,
+    EYE_RELATIVE_SIZE,
     EYES_FEATURES_DIR,
     LIP_FEATURES_DIR,
     ORIGINAL_FACELANDMARKS_DIR,
@@ -58,7 +60,9 @@ def preprocess_frame(
     logger.debug(f"Extracted face landmarks for frame {frame_number}")
 
     normalized_frame_path = PREPROCESSED_FRAMES_DIR / f"{video_name}" / f"{frame_number}.jpg"
-    normalized_frame = normalize_face(frame, original_face_landmarks_file_path, frame_number, (0.35, 0.35), (256, 256))
+    normalized_frame = normalize_face(
+        frame, original_face_landmarks_file_path, frame_number, EYE_RELATIVE_SIZE, DESIRED_FRAME_SIZE
+    )
     save_frame(normalized_frame, normalized_frame_path)
     logger.debug(
         f"Saved normalized frame to {normalized_frame_path} (face landmarks saved to {original_face_landmarks_file_path})"
@@ -143,10 +147,10 @@ def main() -> None:
 
     videos_to_process = list(UvA_NEMO_SMILE_VIDEOS_DIR.glob("*.mp4"))
 
-    videos_to_process = [
-        UvA_NEMO_SMILE_VIDEOS_DIR / "001_deliberate_smile_2.mp4",
-        UvA_NEMO_SMILE_VIDEOS_DIR / "001_deliberate_smile_3.mp4",
-    ]
+    # videos_to_process = [
+    #     UvA_NEMO_SMILE_VIDEOS_DIR / "001_deliberate_smile_2.mp4",
+    #     UvA_NEMO_SMILE_VIDEOS_DIR / "001_deliberate_smile_3.mp4",
+    # ]
 
     logger.info(f"Processing {len(videos_to_process)} videos")
 
