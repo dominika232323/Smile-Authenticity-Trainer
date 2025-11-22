@@ -52,9 +52,9 @@ def extract_lip_features(landmarks_file_path: Path, smile_phases_file_path: Path
 def normalized_amplitude_signal_of_lip_corners(landmarks_df: pd.DataFrame) -> pd.DataFrame:
     logger.debug("Computing normalized amplitude signal of lip corners")
 
-    frame_0 = landmarks_df.loc[landmarks_df["frame_number"] == 0]
+    frame_ref = landmarks_df.loc[landmarks_df["frame_number"] == landmarks_df.iloc[0]["frame_number"]]
 
-    if frame_0.empty:
+    if frame_ref.empty:
         logger.error("Frame 0 not found in landmarks data - cannot establish reference points")
         raise ValueError("Frame 0 not found in landmarks data")
 
@@ -66,10 +66,10 @@ def normalized_amplitude_signal_of_lip_corners(landmarks_df: pd.DataFrame) -> pd
     )
 
     left_lip_corner_ref = np.array(
-        [frame_0[f"{left_lip_corner_landmark_index}_x"], frame_0[f"{left_lip_corner_landmark_index}_y"]]
+        [frame_ref[f"{left_lip_corner_landmark_index}_x"], frame_ref[f"{left_lip_corner_landmark_index}_y"]]
     )
     right_lip_corner_ref = np.array(
-        [frame_0[f"{right_lip_corner_landmark_index}_x"], frame_0[f"{right_lip_corner_landmark_index}_y"]]
+        [frame_ref[f"{right_lip_corner_landmark_index}_x"], frame_ref[f"{right_lip_corner_landmark_index}_y"]]
     )
 
     lips_midpoint_ref = (right_lip_corner_ref + left_lip_corner_ref) / 2

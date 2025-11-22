@@ -52,9 +52,9 @@ def extract_cheek_features(landmarks_file_path: Path, smile_phases_file_path: Pa
 def normalized_amplitude_signal_of_cheeks(landmarks_df: pd.DataFrame) -> pd.DataFrame:
     logger.debug("Computing normalized amplitude signal of cheeks")
 
-    frame_0 = landmarks_df.loc[landmarks_df["frame_number"] == 0]
+    frame_ref = landmarks_df.loc[landmarks_df["frame_number"] == landmarks_df.iloc[0]["frame_number"]]
 
-    if frame_0.empty:
+    if frame_ref.empty:
         logger.error("Frame 0 not found in landmarks data - cannot establish reference points")
         raise ValueError("Frame 0 not found in landmarks data")
 
@@ -63,8 +63,12 @@ def normalized_amplitude_signal_of_cheeks(landmarks_df: pd.DataFrame) -> pd.Data
 
     logger.debug(f"Using cheek landmarks: left={left_cheek_landmark_index}, right={right_cheek_landmark_index}")
 
-    right_cheek_ref = np.array([frame_0[f"{right_cheek_landmark_index}_x"], frame_0[f"{right_cheek_landmark_index}_y"]])
-    left_cheek_ref = np.array([frame_0[f"{left_cheek_landmark_index}_x"], frame_0[f"{left_cheek_landmark_index}_y"]])
+    right_cheek_ref = np.array(
+        [frame_ref[f"{right_cheek_landmark_index}_x"], frame_ref[f"{right_cheek_landmark_index}_y"]]
+    )
+    left_cheek_ref = np.array(
+        [frame_ref[f"{left_cheek_landmark_index}_x"], frame_ref[f"{left_cheek_landmark_index}_y"]]
+    )
 
     cheeks_midpoint_ref = (right_cheek_ref + left_cheek_ref) / 2
     denominator = 2 * np.linalg.norm(right_cheek_ref - left_cheek_ref)
