@@ -14,7 +14,7 @@ def get_face_landmarks(
     frame: cv2.Mat | np.ndarray[Any, np.dtype[Any]],
     frame_number: int,
     landmarks_file_path: Path,
-) -> None:
+) -> bool:
     logger.debug(f"Extracting face landmarks for frame {frame_number}")
 
     mp_face_mesh = mp.solutions.face_mesh
@@ -45,12 +45,16 @@ def get_face_landmarks(
 
                     append_row_to_csv(landmarks_file_path, row)
                     logger.debug(f"Successfully saved {len(landmarks)} landmarks for frame {frame_number}")
+                    return True
 
                 except Exception as e:
                     logger.error(f"Error processing face landmarks for frame {frame_number}: {e}")
                     raise e
         else:
             logger.warning(f"No face landmarks detected in frame {frame_number}")
+            return False
+
+        return False
 
 
 def create_facelandmarks_header() -> list[str]:
