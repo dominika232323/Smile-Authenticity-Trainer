@@ -215,3 +215,6 @@ draw_plots/
 
 # Logs
 logs/
+
+# Runs
+runs/
