@@ -8,11 +8,9 @@ class SimpleMultiLayerPerceptron(nn.Module):
             nn.Linear(input_dim, 32),
             nn.ReLU(),
             nn.Dropout(p=dropout_p),
-
             nn.Linear(32, 16),
             nn.ReLU(),
             nn.Dropout(p=dropout_p),
-
             nn.Linear(16, 1),
             nn.Sigmoid(),
         )
