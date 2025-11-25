@@ -90,6 +90,12 @@ train_lips:
 	$(PYTHON_INTERPRETER) -m ai.modeling.lips
 
 
+## Train eyes model
+.PHONY: train_eyes
+train_eyes:
+	$(PYTHON_INTERPRETER) -m ai.modeling.eyes
+
+
 ## Run tests
 .PHONY: test
 test:
