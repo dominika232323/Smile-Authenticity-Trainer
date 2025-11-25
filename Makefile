@@ -84,6 +84,12 @@ data_preprocessing:
 	$(PYTHON_INTERPRETER) -m ai.data_preprocessing.main
 
 
+## Train lips model
+.PHONY: train_lips
+train_lips:
+	$(PYTHON_INTERPRETER) -m ai.modeling.lips
+
+
 ## Run tests
 .PHONY: test
 test:
