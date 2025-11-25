@@ -11,7 +11,7 @@ from ai.modeling.pipeline import get_timestamp, pipeline
 @logger.catch
 def main() -> None:
     setup_logging()
-    logger.info("Starting training on eys features pipeline")
+    logger.info("Starting training on eyes features pipeline")
 
     output_dir = EYES_RUNS_DIR / get_timestamp()
     create_directories([RUNS_DIR, EYES_RUNS_DIR, output_dir])
