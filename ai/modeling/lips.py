@@ -16,7 +16,7 @@ def main() -> None:
     output_dir = LIPS_RUNS_DIR / get_timestamp()
     create_directories([RUNS_DIR, LIPS_RUNS_DIR, output_dir])
 
-    batch_size = 32
+    batch_size = 8
     dropout = 0.2
     epochs = 500
     patience = 5

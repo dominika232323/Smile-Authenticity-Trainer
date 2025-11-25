@@ -25,6 +25,8 @@ def train_model(
     criterion = nn.BCELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
+
     best_loss = float("inf")
     best_state = model.state_dict()
     early_stop_counter = 0
@@ -34,6 +36,7 @@ def train_model(
         "val_loss": [],
         "train_accuracy": [],
         "val_accuracy": [],
+        "lr": [],
     }
 
     model.to(device)
@@ -49,8 +52,8 @@ def train_model(
 
             optimizer.zero_grad()
             outputs = model(X_batch)
-
             loss = criterion(outputs, y_batch)
+
             loss.backward()
             optimizer.step()
 
@@ -83,13 +86,17 @@ def train_model(
         val_loss /= len(val_loader)
         val_accuracy = correct_val / total_val
 
+        current_lr = optimizer.param_groups[0]["lr"]
+
         history["train_loss"].append(train_loss)
         history["val_loss"].append(val_loss)
         history["train_accuracy"].append(train_accuracy)
         history["val_accuracy"].append(val_accuracy)
+        history["lr"].append(current_lr)
 
         print(
             f"Epoch {epoch + 1}/{epochs} | "
+            f"LR: {current_lr:.6f} | "
             f"Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} | "
             f"Train Acc: {train_accuracy:.4f} | Val Acc: {val_accuracy:.4f}"
         )
@@ -102,7 +109,6 @@ def train_model(
             if save_path is not None:
                 logger.info(f"Saving model checkpoint to {save_path}")
                 torch.save(best_state, save_path)
-
         else:
             early_stop_counter += 1
 
@@ -110,6 +116,8 @@ def train_model(
                 logger.info("\nEarly stopping activated!")
                 logger.info(f"Finished at epoch {epoch + 1}.")
                 break
+
+        scheduler.step()
 
     model.load_state_dict(best_state)
 
