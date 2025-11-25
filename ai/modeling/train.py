@@ -18,6 +18,7 @@ def train_model(
     epochs: int = 50,
     patience: int = 5,
     lr: float = 1e-3,
+    save_path: Path | None = None,
 ) -> tuple[M, dict]:
     logger.info("Training model...")
 
@@ -97,6 +98,11 @@ def train_model(
             best_loss = val_loss
             early_stop_counter = 0
             best_state = model.state_dict()
+
+            if save_path is not None:
+                logger.info(f"Saving model checkpoint to {save_path}")
+                torch.save(best_state, save_path)
+
         else:
             early_stop_counter += 1
 
