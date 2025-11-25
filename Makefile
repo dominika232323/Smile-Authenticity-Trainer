@@ -96,6 +96,12 @@ train_eyes:
 	$(PYTHON_INTERPRETER) -m ai.modeling.eyes
 
 
+## Train cheeks model
+.PHONY: train_cheeks
+train_cheeks:
+	$(PYTHON_INTERPRETER) -m ai.modeling.cheeks
+
+
 ## Run tests
 .PHONY: test
 test:
