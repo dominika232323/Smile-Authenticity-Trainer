@@ -1,3 +1,5 @@
+import json
+
 from loguru import logger
 
 from ai.config import ALL_LIP_FEATURES_CSV, LIPS_RUNS_DIR, RUNS_DIR
@@ -7,14 +9,25 @@ from ai.modeling.pipeline import get_timestamp, pipeline
 
 
 @logger.catch
-def main():
+def main() -> None:
     setup_logging()
     logger.info("Starting training on lips features pipeline")
 
     output_dir = LIPS_RUNS_DIR / get_timestamp()
     create_directories([RUNS_DIR, LIPS_RUNS_DIR, output_dir])
 
-    pipeline(ALL_LIP_FEATURES_CSV, output_dir)
+    batch_size = 32
+    dropout = 0.2
+    epochs = 500
+    patience = 5
+    lr = 1e-4
+
+    pipeline(ALL_LIP_FEATURES_CSV, output_dir, batch_size, dropout, epochs, patience, lr)
+
+    config = {"batch_size": batch_size, "dropout": dropout, "epochs": epochs, "patience": patience, "lr": lr}
+    json.dump(config, open(output_dir / "config.json", "w"), indent=4)
+
+    logger.info(f"Training complete. Saved results to {output_dir}. Config: {config}")
 
 
 if __name__ == "__main__":

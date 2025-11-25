@@ -20,7 +20,15 @@ def get_timestamp() -> str:
     return ct.strftime("%Y-%m-%d_%H-%M-%S")
 
 
-def pipeline(dataset_path: Path, output_dir: Path):
+def pipeline(
+    dataset_path: Path,
+    output_dir: Path,
+    batch_size: int = 32,
+    dropout: float = 0.3,
+    epochs: int = 50,
+    patience: int = 5,
+    lr: float = 1e-3,
+) -> None:
     training_curves_directory = output_dir / "training_curves"
     evaluation_metrics_directory = output_dir / "evaluation_metrics"
 
@@ -34,13 +42,22 @@ def pipeline(dataset_path: Path, output_dir: Path):
     X, y = create_data_tensors(dataset_df)
     print(X.shape, y.shape)
 
-    train_loader, val_loader, X_val, y_val = create_dataloaders(X, y, batch_size=32)
+    train_loader, val_loader, X_val, y_val = create_dataloaders(X, y, batch_size)
     print(len(train_loader), len(val_loader))
     print(X_val.shape, y_val.shape)
 
-    model = SimpleMultiLayerPerceptron(input_dim=X.shape[1])
+    model = SimpleMultiLayerPerceptron(input_dim=X.shape[1], dropout_p=dropout)
 
-    model, history = train_model(model, train_loader, val_loader, device)
+    model, history = train_model(
+        model,
+        train_loader,
+        val_loader,
+        device,
+        epochs,
+        patience,
+        lr,
+        save_path=output_dir / "simple_multi_layer_perceptron.pth",
+    )
     plot_training_curves(history, training_curves_directory)
 
     probs, preds = evaluate_model(model, X_val, y_val, device, evaluation_metrics_directory)
