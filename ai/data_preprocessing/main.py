@@ -167,12 +167,6 @@ def main() -> None:
         return
 
     videos_to_process = get_videos_to_process()
-
-    # videos_to_process = [
-    #     UvA_NEMO_SMILE_VIDEOS_DIR / "001_deliberate_smile_2.mp4",
-    #     UvA_NEMO_SMILE_VIDEOS_DIR / "001_deliberate_smile_3.mp4",
-    # ]
-
     logger.info(f"Processing {len(videos_to_process)} videos")
 
     for video_path in tqdm(videos_to_process, desc="Processing videos"):
