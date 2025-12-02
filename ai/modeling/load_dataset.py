@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -20,7 +21,7 @@ def read_dataset(path: Path) -> pd.DataFrame:
     return df
 
 
-def create_data_tensors(df: pd.DataFrame) -> tuple[torch.Tensor, torch.Tensor]:
+def create_data_tensors(df: pd.DataFrame, output_dir: Path) -> tuple[torch.Tensor, torch.Tensor]:
     logger.info(f"Loading dataset with shape: {df.shape}")
 
     X: torch.Tensor
@@ -35,8 +36,24 @@ def create_data_tensors(df: pd.DataFrame) -> tuple[torch.Tensor, torch.Tensor]:
     X = torch.tensor(features, dtype=torch.float32)
     y = torch.tensor(labels, dtype=torch.float32).unsqueeze(1)
 
+    save_scaler(scaler, output_dir)
+
     logger.info(f"Dataset tensors shape: {X.shape}, {y.shape}")
     return X, y
+
+
+def save_scaler(scaler: StandardScaler, output_dir: Path) -> None:
+    logger.info(f"Saving scaler to {output_dir}")
+
+    torch.save(scaler, output_dir / "scaler.pt")
+    logger.info("Scaler saved as scaler.pt")
+
+    scaler_data = {"mean": scaler.mean_.tolist(), "std": scaler.scale_.tolist()}
+
+    with open(output_dir / "scaler.json", "w") as f:
+        json.dump(scaler_data, f, indent=4)
+
+    logger.info("Scaler saved as scaler.json")
 
 
 def create_dataloaders(
