@@ -2,7 +2,7 @@ import json
 
 from loguru import logger
 
-from ai.config import RUNS_DIR, CHEEKS_RUNS_DIR, ALL_CHEEKS_FEATURES_CSV
+from ai.config import ALL_CHEEKS_FEATURES_CSV, CHEEKS_RUNS_DIR, RUNS_DIR
 from ai.data_preprocessing.file_utils import create_directories
 from ai.logging_config import setup_logging
 from ai.modeling.pipeline import get_timestamp, pipeline

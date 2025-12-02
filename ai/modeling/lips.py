@@ -17,10 +17,10 @@ def main() -> None:
     create_directories([RUNS_DIR, LIPS_RUNS_DIR, output_dir])
 
     batch_size = 8
-    dropout = 0.2
+    dropout = 0.3
     epochs = 500
     patience = 5
-    lr = 1e-4
+    lr = 1e-3
 
     pipeline(ALL_LIP_FEATURES_CSV, output_dir, batch_size, dropout, epochs, patience, lr)
 

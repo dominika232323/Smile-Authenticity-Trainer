@@ -2,7 +2,7 @@ import json
 
 from loguru import logger
 
-from ai.config import RUNS_DIR, EYES_RUNS_DIR, ALL_EYES_FEATURES_CSV
+from ai.config import ALL_EYES_FEATURES_CSV, EYES_RUNS_DIR, RUNS_DIR
 from ai.data_preprocessing.file_utils import create_directories
 from ai.logging_config import setup_logging
 from ai.modeling.pipeline import get_timestamp, pipeline
@@ -17,10 +17,10 @@ def main() -> None:
     create_directories([RUNS_DIR, EYES_RUNS_DIR, output_dir])
 
     batch_size = 8
-    dropout = 0.2
+    dropout = 0.3
     epochs = 500
     patience = 5
-    lr = 1e-4
+    lr = 1e-3
 
     pipeline(ALL_EYES_FEATURES_CSV, output_dir, batch_size, dropout, epochs, patience, lr)
 
