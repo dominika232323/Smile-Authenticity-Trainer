@@ -7,10 +7,16 @@ import torch
 import torch.nn as nn
 from loguru import logger
 from sklearn.metrics import auc, classification_report, confusion_matrix, roc_curve
+from torch.utils.tensorboard import SummaryWriter
 
 
 def evaluate_model(
-    model: nn.Module, X_val: torch.Tensor, y_val: torch.Tensor, device: torch.device, output_dir: Path
+        model: nn.Module,
+        X_val: torch.Tensor,
+        y_val: torch.Tensor,
+        device: torch.device,
+        output_dir: Path,
+        writer: SummaryWriter | None = None
 ) -> tuple[torch.Tensor, torch.Tensor]:
     logger.info("Evaluating model...")
 
@@ -22,6 +28,30 @@ def evaluate_model(
         predictions = (probabilities > 0.5).astype(int)
 
     y_true = y_val.cpu().numpy()
+
+    if writer is not None:
+        cm = confusion_matrix(y_true, predictions)
+        tn, fp, fn, tp = cm.ravel()
+
+        precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+        recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+        f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+        specificity = tn / (tn + fp) if (tn + fp) > 0 else 0
+
+        fpr, tpr, _ = roc_curve(y_true, probabilities)
+        roc_auc = auc(fpr, tpr)
+
+        writer.add_scalar('Evaluation/precision', precision, 0)
+        writer.add_scalar('Evaluation/recall', recall, 0)
+        writer.add_scalar('Evaluation/f1_score', f1_score, 0)
+        writer.add_scalar('Evaluation/specificity', specificity, 0)
+        writer.add_scalar('Evaluation/auc', roc_auc, 0)
+        writer.add_scalar('Evaluation/true_positives', tp, 0)
+        writer.add_scalar('Evaluation/true_negatives', tn, 0)
+        writer.add_scalar('Evaluation/false_positives', fp, 0)
+        writer.add_scalar('Evaluation/false_negatives', fn, 0)
+
+        writer.add_histogram('Evaluation/prediction_probabilities', probabilities, 0)
 
     save_classification_report(y_true, predictions, output_dir)
     save_confusion_matrix(y_true, predictions, output_dir)

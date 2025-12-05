@@ -6,19 +6,21 @@ import torch
 import torch.nn as nn
 from loguru import logger
 from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
 
 M = TypeVar("M", bound=nn.Module)
 
 
 def train_model(
-    model: M,
-    train_loader: DataLoader,
-    val_loader: DataLoader,
-    device: torch.device,
-    epochs: int = 50,
-    patience: int = 5,
-    lr: float = 1e-3,
-    save_path: Path | None = None,
+        model: M,
+        train_loader: DataLoader,
+        val_loader: DataLoader,
+        device: torch.device,
+        epochs: int = 50,
+        patience: int = 5,
+        lr: float = 1e-3,
+        save_path: Path | None = None,
+        writer: SummaryWriter | None = None,
 ) -> tuple[M, dict]:
     logger.info("Training model...")
 
@@ -47,7 +49,7 @@ def train_model(
         correct_train = 0
         total_train = 0
 
-        for X_batch, y_batch in train_loader:
+        for batch_idx, (X_batch, y_batch) in enumerate(train_loader):
             X_batch, y_batch = X_batch.to(device), y_batch.to(device)
 
             optimizer.zero_grad()
@@ -62,6 +64,10 @@ def train_model(
             preds = (outputs > 0.5).float()
             correct_train += (preds == y_batch).sum().item()
             total_train += y_batch.size(0)
+
+            if writer is not None:
+                global_step = epoch * len(train_loader) + batch_idx
+                writer.add_scalar('Batch/train_loss', loss.item(), global_step)
 
         train_loss /= len(train_loader)
         train_accuracy = correct_train / total_train
@@ -94,6 +100,19 @@ def train_model(
         history["val_accuracy"].append(val_accuracy)
         history["lr"].append(current_lr)
 
+        if writer is not None:
+            writer.add_scalar('Epoch/train_loss', train_loss, epoch)
+            writer.add_scalar('Epoch/val_loss', val_loss, epoch)
+            writer.add_scalar('Epoch/train_accuracy', train_accuracy, epoch)
+            writer.add_scalar('Epoch/val_accuracy', val_accuracy, epoch)
+            writer.add_scalar('Epoch/learning_rate', current_lr, epoch)
+
+            for name, param in model.named_parameters():
+                writer.add_histogram(f'Parameters/{name}', param, epoch)
+
+                if param.grad is not None:
+                    writer.add_histogram(f'Gradients/{name}', param.grad, epoch)
+
         print(
             f"Epoch {epoch + 1}/{epochs} | "
             f"LR: {current_lr:.6f} | "
@@ -109,12 +128,20 @@ def train_model(
             if save_path is not None:
                 logger.info(f"Saving model checkpoint to {save_path}")
                 torch.save(best_state, save_path)
+
+            if writer is not None:
+                writer.add_scalar('Best/val_loss', best_loss, epoch)
+                writer.add_scalar('Best/train_loss', train_loss, epoch)
         else:
             early_stop_counter += 1
 
             if early_stop_counter >= patience:
                 logger.info("\nEarly stopping activated!")
                 logger.info(f"Finished at epoch {epoch + 1}.")
+
+                if writer is not None:
+                    writer.add_scalar('Training/early_stop_epoch', epoch + 1, 0)
+
                 break
 
         scheduler.step()
