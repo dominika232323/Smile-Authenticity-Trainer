@@ -114,6 +114,25 @@ coverage:
 	$(PYTHON_INTERPRETER) -m pytest --cov=ai/data_preprocessing --cov-report=term-missing tests
 
 
+## Run tensorboard for lips runs
+.PHONY: tensorboard_lips
+tensorboard_lips:
+	tensorboard --logdir=runs/lips_runs/
+
+
+## Run tensorboard for eyes runs
+.PHONY: tensorboard_eyes
+tensorboard_eyes:
+	tensorboard --logdir=runs/eyes_runs/
+
+
+## Run tensorboard for cheeks runs
+.PHONY: tensorboard_cheeks
+tensorboard_cheeks:
+	tensorboard --logdir=runs/cheek_runs/
+
+
+
 #################################################################################
 # Self Documenting Commands                                                     #
 #################################################################################
