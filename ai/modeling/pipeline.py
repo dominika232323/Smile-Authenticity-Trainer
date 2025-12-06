@@ -23,13 +23,13 @@ def get_timestamp() -> str:
 
 
 def pipeline(
-        dataset_path: Path,
-        output_dir: Path,
-        batch_size: int = 32,
-        dropout: float = 0.3,
-        epochs: int = 50,
-        patience: int = 5,
-        lr: float = 1e-3,
+    dataset_path: Path,
+    output_dir: Path,
+    batch_size: int = 32,
+    dropout: float = 0.3,
+    epochs: int = 50,
+    patience: int = 5,
+    lr: float = 1e-3,
 ) -> None:
     training_curves_directory = output_dir / "training_curves"
     evaluation_metrics_directory = output_dir / "evaluation_metrics"
@@ -52,12 +52,12 @@ def pipeline(
     writer.add_graph(model, sample_input)
 
     hparams = {
-        'batch_size': batch_size,
-        'dropout': dropout,
-        'epochs': epochs,
-        'patience': patience,
-        'lr': lr,
-        'input_dim': X.shape[1]
+        "batch_size": batch_size,
+        "dropout": dropout,
+        "epochs": epochs,
+        "patience": patience,
+        "lr": lr,
+        "input_dim": X.shape[1],
     }
     writer.add_hparams(hparams, {})
 
@@ -84,10 +84,10 @@ def pipeline(
     final_train_acc = history["train_accuracy"][-1]
     final_val_acc = history["val_accuracy"][-1]
 
-    writer.add_scalar('Final/train_loss', final_train_loss, 0)
-    writer.add_scalar('Final/val_loss', final_val_loss, 0)
-    writer.add_scalar('Final/train_accuracy', final_train_acc, 0)
-    writer.add_scalar('Final/val_accuracy', final_val_acc, 0)
+    writer.add_scalar("Final/train_loss", final_train_loss, 0)
+    writer.add_scalar("Final/val_loss", final_val_loss, 0)
+    writer.add_scalar("Final/train_accuracy", final_train_acc, 0)
+    writer.add_scalar("Final/val_accuracy", final_val_acc, 0)
 
     onnx_path = output_dir / "model.onnx"
     save_model_to_onnx(model, onnx_path, input_shape=(1, X.shape[1]))
@@ -111,7 +111,7 @@ def save_model_to_onnx(model: nn.Module, output_path: Path, input_shape: tuple) 
 
         torch.onnx.export(
             model_cpu,
-            dummy_input_cpu,
+            (dummy_input_cpu,),
             str(output_path),
             export_params=True,
             opset_version=17,

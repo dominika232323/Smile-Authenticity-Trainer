@@ -12,15 +12,15 @@ M = TypeVar("M", bound=nn.Module)
 
 
 def train_model(
-        model: M,
-        train_loader: DataLoader,
-        val_loader: DataLoader,
-        device: torch.device,
-        epochs: int = 50,
-        patience: int = 5,
-        lr: float = 1e-3,
-        save_path: Path | None = None,
-        writer: SummaryWriter | None = None,
+    model: M,
+    train_loader: DataLoader,
+    val_loader: DataLoader,
+    device: torch.device,
+    epochs: int = 50,
+    patience: int = 5,
+    lr: float = 1e-3,
+    save_path: Path | None = None,
+    writer: SummaryWriter | None = None,
 ) -> tuple[M, dict]:
     logger.info("Training model...")
 
@@ -67,7 +67,7 @@ def train_model(
 
             if writer is not None:
                 global_step = epoch * len(train_loader) + batch_idx
-                writer.add_scalar('Batch/train_loss', loss.item(), global_step)
+                writer.add_scalar("Batch/train_loss", loss.item(), global_step)
 
         train_loss /= len(train_loader)
         train_accuracy = correct_train / total_train
@@ -101,17 +101,17 @@ def train_model(
         history["lr"].append(current_lr)
 
         if writer is not None:
-            writer.add_scalar('Epoch/train_loss', train_loss, epoch)
-            writer.add_scalar('Epoch/val_loss', val_loss, epoch)
-            writer.add_scalar('Epoch/train_accuracy', train_accuracy, epoch)
-            writer.add_scalar('Epoch/val_accuracy', val_accuracy, epoch)
-            writer.add_scalar('Epoch/learning_rate', current_lr, epoch)
+            writer.add_scalar("Epoch/train_loss", train_loss, epoch)
+            writer.add_scalar("Epoch/val_loss", val_loss, epoch)
+            writer.add_scalar("Epoch/train_accuracy", train_accuracy, epoch)
+            writer.add_scalar("Epoch/val_accuracy", val_accuracy, epoch)
+            writer.add_scalar("Epoch/learning_rate", current_lr, epoch)
 
             for name, param in model.named_parameters():
-                writer.add_histogram(f'Parameters/{name}', param, epoch)
+                writer.add_histogram(f"Parameters/{name}", param, epoch)
 
                 if param.grad is not None:
-                    writer.add_histogram(f'Gradients/{name}', param.grad, epoch)
+                    writer.add_histogram(f"Gradients/{name}", param.grad, epoch)
 
         print(
             f"Epoch {epoch + 1}/{epochs} | "
@@ -130,8 +130,8 @@ def train_model(
                 torch.save(best_state, save_path)
 
             if writer is not None:
-                writer.add_scalar('Best/val_loss', best_loss, epoch)
-                writer.add_scalar('Best/train_loss', train_loss, epoch)
+                writer.add_scalar("Best/val_loss", best_loss, epoch)
+                writer.add_scalar("Best/train_loss", train_loss, epoch)
         else:
             early_stop_counter += 1
 
@@ -140,7 +140,7 @@ def train_model(
                 logger.info(f"Finished at epoch {epoch + 1}.")
 
                 if writer is not None:
-                    writer.add_scalar('Training/early_stop_epoch', epoch + 1, 0)
+                    writer.add_scalar("Training/early_stop_epoch", epoch + 1, 0)
 
                 break
 
