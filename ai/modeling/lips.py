@@ -1,6 +1,7 @@
 import json
 
 from loguru import logger
+from sklearn.model_selection import ParameterGrid
 
 from ai.config import ALL_LIP_FEATURES_CSV, LIPS_RUNS_DIR, RUNS_DIR
 from ai.data_preprocessing.file_utils import create_directories
@@ -13,21 +14,37 @@ def main() -> None:
     setup_logging()
     logger.info("Starting training on lips features pipeline")
 
-    output_dir = LIPS_RUNS_DIR / get_timestamp()
-    create_directories([RUNS_DIR, LIPS_RUNS_DIR, output_dir])
+    param_grid = {
+        "batch_size": [8, 16, 32, 64],
+        "dropout": [0.1, 0.2, 0.3, 0.4, 0.5],
+        "epochs": [500],
+        "patience": [5, 7, 10],
+        "lr": [1e-3, 1e-4, 5e-4, 1e-5, 5e-5, 1e-6],
+    }
+    grid = ParameterGrid(param_grid)
 
-    batch_size = 8
-    dropout = 0.3
-    epochs = 500
-    patience = 5
-    lr = 1e-3
+    create_directories([RUNS_DIR, LIPS_RUNS_DIR])
 
-    pipeline(ALL_LIP_FEATURES_CSV, output_dir, batch_size, dropout, epochs, patience, lr)
+    for params in grid:
+        logger.info(f"Running with params: {params}")
 
-    config = {"batch_size": batch_size, "dropout": dropout, "epochs": epochs, "patience": patience, "lr": lr}
-    json.dump(config, open(output_dir / "config.json", "w"), indent=4)
+        output_dir = LIPS_RUNS_DIR / get_timestamp()
+        create_directories([output_dir])
 
-    logger.info(f"Training complete. Saved results to {output_dir}. Config: {config}")
+        pipeline(
+            ALL_LIP_FEATURES_CSV,
+            output_dir,
+            params["batch_size"],
+            params["dropout"],
+            params["epochs"],
+            params["patience"],
+            params["lr"],
+        )
+
+        with open(output_dir / "config.json", "w") as f:
+            json.dump(params, f, indent=4)
+
+        logger.info(f"Completed run. Saved results to {output_dir}. Config: {params}")
 
 
 if __name__ == "__main__":
