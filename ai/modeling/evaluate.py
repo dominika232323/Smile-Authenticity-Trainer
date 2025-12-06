@@ -6,7 +6,16 @@ import seaborn as sns
 import torch
 import torch.nn as nn
 from loguru import logger
-from sklearn.metrics import auc, classification_report, confusion_matrix, roc_curve
+from sklearn.metrics import (
+    auc,
+    classification_report,
+    confusion_matrix,
+    roc_curve,
+    accuracy_score,
+    f1_score,
+    precision_score,
+    recall_score,
+)
 from torch.utils.tensorboard import SummaryWriter
 
 
@@ -24,7 +33,8 @@ def evaluate_model(
     X_val, y_val = X_val.to(device), y_val.to(device)
 
     with torch.no_grad():
-        probabilities = model(X_val).cpu().numpy()
+        outputs = model(X_val).cpu()
+        probabilities = torch.sigmoid(outputs).numpy()
         predictions = (probabilities > 0.5).astype(int)
 
     y_true = y_val.cpu().numpy()
@@ -33,25 +43,26 @@ def evaluate_model(
         cm = confusion_matrix(y_true, predictions)
         tn, fp, fn, tp = cm.ravel()
 
-        precision = tp / (tp + fp) if (tp + fp) > 0 else 0
-        recall = tp / (tp + fn) if (tp + fn) > 0 else 0
-        f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
-        specificity = tn / (tn + fp) if (tn + fp) > 0 else 0
+        precision = precision_score(y_true, predictions)
+        recall = recall_score(y_true, predictions, zero_division=0)
+        f1 = f1_score(y_true, predictions)
+        accuracy = accuracy_score(y_true, predictions)
 
         fpr, tpr, _ = roc_curve(y_true, probabilities)
         roc_auc = auc(fpr, tpr)
 
         writer.add_scalar("Evaluation/precision", precision, 0)
         writer.add_scalar("Evaluation/recall", recall, 0)
-        writer.add_scalar("Evaluation/f1_score", f1_score, 0)
-        writer.add_scalar("Evaluation/specificity", specificity, 0)
+        writer.add_scalar("Evaluation/f1", f1, 0)
+        writer.add_scalar("Evaluation/accuracy", accuracy, 0)
         writer.add_scalar("Evaluation/auc", roc_auc, 0)
+
         writer.add_scalar("Evaluation/true_positives", tp, 0)
         writer.add_scalar("Evaluation/true_negatives", tn, 0)
         writer.add_scalar("Evaluation/false_positives", fp, 0)
         writer.add_scalar("Evaluation/false_negatives", fn, 0)
 
-        writer.add_histogram("Evaluation/prediction_probabilities", probabilities, 0)
+        writer.add_histogram("Evaluation_prediction_probabilities/prediction_probabilities", probabilities, 0)
 
     save_classification_report(y_true, predictions, output_dir)
     save_confusion_matrix(y_true, predictions, output_dir)

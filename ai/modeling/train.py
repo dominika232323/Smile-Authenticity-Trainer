@@ -24,7 +24,8 @@ def train_model(
 ) -> tuple[M, dict]:
     logger.info("Training model...")
 
-    criterion = nn.BCELoss()
+    # criterion = nn.BCELoss()
+    criterion = nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
@@ -61,7 +62,8 @@ def train_model(
 
             train_loss += loss.item()
 
-            preds = (outputs > 0.5).float()
+            probs = torch.sigmoid(outputs)
+            preds = (probs > 0.5).float()
             correct_train += (preds == y_batch).sum().item()
             total_train += y_batch.size(0)
 
@@ -85,7 +87,8 @@ def train_model(
                 loss = criterion(outputs, y_val)
                 val_loss += loss.item()
 
-                preds = (outputs > 0.5).float()
+                probs = torch.sigmoid(outputs)
+                preds = (probs > 0.5).float()
                 correct_val += (preds == y_val).sum().item()
                 total_val += y_val.size(0)
 
