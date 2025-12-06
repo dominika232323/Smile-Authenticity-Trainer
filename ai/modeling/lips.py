@@ -6,7 +6,7 @@ from sklearn.model_selection import ParameterGrid
 from ai.config import ALL_LIP_FEATURES_CSV, LIPS_RUNS_DIR, RUNS_DIR
 from ai.data_preprocessing.file_utils import create_directories
 from ai.logging_config import setup_logging
-from ai.modeling.pipeline import get_timestamp, pipeline
+from ai.modeling.pipeline import get_timestamp, pipeline_mlp
 
 
 @logger.catch
@@ -31,7 +31,7 @@ def main() -> None:
         output_dir = LIPS_RUNS_DIR / get_timestamp()
         create_directories([output_dir])
 
-        pipeline(
+        pipeline_mlp(
             ALL_LIP_FEATURES_CSV,
             output_dir,
             params["batch_size"],

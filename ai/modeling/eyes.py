@@ -5,7 +5,7 @@ from loguru import logger
 from ai.config import ALL_EYES_FEATURES_CSV, EYES_RUNS_DIR, RUNS_DIR
 from ai.data_preprocessing.file_utils import create_directories
 from ai.logging_config import setup_logging
-from ai.modeling.pipeline import get_timestamp, pipeline
+from ai.modeling.pipeline import get_timestamp, pipeline_mlp
 
 
 @logger.catch
@@ -22,7 +22,7 @@ def main() -> None:
     patience = 5
     lr = 1e-3
 
-    pipeline(ALL_EYES_FEATURES_CSV, output_dir, batch_size, dropout, epochs, patience, lr)
+    pipeline_mlp(ALL_EYES_FEATURES_CSV, output_dir, batch_size, dropout, epochs, patience, lr)
 
     config = {"batch_size": batch_size, "dropout": dropout, "epochs": epochs, "patience": patience, "lr": lr}
     json.dump(config, open(output_dir / "config.json", "w"), indent=4)

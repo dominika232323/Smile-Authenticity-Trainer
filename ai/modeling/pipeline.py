@@ -22,7 +22,7 @@ def get_timestamp() -> str:
     return ct.strftime("%Y-%m-%d_%H-%M-%S")
 
 
-def pipeline(
+def pipeline_mlp(
     dataset_path: Path,
     output_dir: Path,
     batch_size: int = 32,
