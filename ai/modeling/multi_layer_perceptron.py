@@ -1,7 +1,7 @@
 import torch.nn as nn
 
 
-class SimpleMultiLayerPerceptron(nn.Module):
+class MultiLayerPerceptron(nn.Module):
     def __init__(self, input_dim, dropout_p: float = 0.3):
         super().__init__()
         self.net = nn.Sequential(

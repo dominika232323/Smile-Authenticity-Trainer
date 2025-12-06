@@ -9,7 +9,7 @@ from torch.utils.tensorboard import SummaryWriter
 from ai.data_preprocessing.file_utils import create_directories
 from ai.modeling.evaluate import evaluate_model
 from ai.modeling.load_dataset import create_data_tensors, create_dataloaders, read_dataset
-from ai.modeling.simple_multi_layer_perceptron import SimpleMultiLayerPerceptron
+from ai.modeling.multi_layer_perceptron import MultiLayerPerceptron
 from ai.modeling.train import plot_training_curves, train_model
 
 
@@ -46,7 +46,7 @@ def pipeline(
     X, y = create_data_tensors(dataset_df, output_dir)
     train_loader, val_loader, X_val, y_val = create_dataloaders(X, y, batch_size)
 
-    model = SimpleMultiLayerPerceptron(input_dim=X.shape[1], dropout_p=dropout)
+    model = MultiLayerPerceptron(input_dim=X.shape[1], dropout_p=dropout)
 
     sample_input = torch.randn(1, X.shape[1])
     writer.add_graph(model, sample_input)
