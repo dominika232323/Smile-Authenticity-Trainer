@@ -8,7 +8,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from ai.data_preprocessing.file_utils import create_directories
 from ai.modeling.evaluate import evaluate_model
-from ai.modeling.load_dataset import create_data_tensors, create_dataloaders, read_dataset
+from ai.modeling.load_dataset import create_data_tensors, create_dataloaders, read_dataset, scale_features
 from ai.modeling.multi_layer_perceptron import MultiLayerPerceptron
 from ai.modeling.train import plot_training_curves, train_model
 
@@ -43,7 +43,8 @@ def pipeline_mlp(
     logger.info(f"Using device: {device}")
 
     dataset_df = read_dataset(dataset_path)
-    X, y = create_data_tensors(dataset_df, output_dir)
+    features, labels = scale_features(dataset_df, output_dir)
+    X, y = create_data_tensors(features, labels)
     train_loader, val_loader, X_val, y_val = create_dataloaders(X, y, batch_size)
 
     model = MultiLayerPerceptron(input_dim=X.shape[1], dropout_p=dropout)
@@ -97,6 +98,10 @@ def pipeline_mlp(
     logger.info(f"TensorBoard logs saved to {tensorboard_logs_directory}")
     logger.info("To view TensorBoard, run: tensorboard --logdir=" + str(tensorboard_logs_directory))
 
+
+def pipeline_xgboost(dataset_path: Path, output_dir: Path) -> None:
+    dataset_df = read_dataset(dataset_path)
+    features, labels = scale_features(dataset_df, output_dir)
 
 def save_model_to_onnx(model: nn.Module, output_path: Path, input_shape: tuple) -> None:
     try:

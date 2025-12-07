@@ -1,9 +1,12 @@
 import json
 from pathlib import Path
+from typing import Any
 
 import pandas as pd
 import torch
 from loguru import logger
+from numpy import ndarray
+from pandas.core.arrays import ExtensionArray
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from torch.utils.data import DataLoader, TensorDataset
@@ -21,11 +24,8 @@ def read_dataset(path: Path) -> pd.DataFrame:
     return df
 
 
-def create_data_tensors(df: pd.DataFrame, output_dir: Path) -> tuple[torch.Tensor, torch.Tensor]:
-    logger.info(f"Loading dataset with shape: {df.shape}")
-
-    X: torch.Tensor
-    y: torch.Tensor
+def scale_features(df: pd.DataFrame, output_dir: Path) -> tuple[Any, ExtensionArray | ndarray]:
+    logger.info(f"Scaling dataset with shape: {df.shape}")
 
     features = df.drop(columns=["label"]).values
     labels = df["label"].values
@@ -33,13 +33,9 @@ def create_data_tensors(df: pd.DataFrame, output_dir: Path) -> tuple[torch.Tenso
     scaler = StandardScaler()
     features = scaler.fit_transform(features)
 
-    X = torch.tensor(features, dtype=torch.float32)
-    y = torch.tensor(labels, dtype=torch.float32).unsqueeze(1)
-
     save_scaler(scaler, output_dir)
 
-    logger.info(f"Dataset tensors shape: {X.shape}, {y.shape}")
-    return X, y
+    return features, labels
 
 
 def save_scaler(scaler: StandardScaler, output_dir: Path) -> None:
@@ -56,12 +52,22 @@ def save_scaler(scaler: StandardScaler, output_dir: Path) -> None:
     logger.info("Scaler saved as scaler.json")
 
 
+def create_data_tensors(features: ndarray, labels: ExtensionArray | ndarray) -> tuple[torch.Tensor, torch.Tensor]:
+    logger.info("Creating tensors from dataset")
+
+    X = torch.tensor(features, dtype=torch.float32)
+    y = torch.tensor(labels, dtype=torch.float32).unsqueeze(1)
+
+    logger.info(f"Dataset tensors shape: {X.shape}, {y.shape}")
+    return X, y
+
+
 def create_dataloaders(
-    X: torch.Tensor, y: torch.Tensor, batch_size: int = 32
+    X: torch.Tensor, y: torch.Tensor, batch_size: int = 32, test_size: float = 0.2
 ) -> tuple[DataLoader, DataLoader, torch.Tensor, torch.Tensor]:
     logger.info(f"Creating dataloaders with batch size: {batch_size}")
 
-    X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+    X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=test_size, random_state=42, stratify=y)
 
     train_ds = TensorDataset(X_train, y_train)
     val_ds = TensorDataset(X_val, y_val)
