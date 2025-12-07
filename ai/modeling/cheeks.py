@@ -21,8 +21,9 @@ def main() -> None:
     epochs = 500
     patience = 5
     lr = 1e-3
+    test_size = 0.2
 
-    pipeline_mlp(ALL_CHEEKS_FEATURES_CSV, output_dir, batch_size, dropout, epochs, patience, lr)
+    pipeline_mlp(ALL_CHEEKS_FEATURES_CSV, output_dir, batch_size, dropout, epochs, patience, lr, test_size)
 
     config = {"batch_size": batch_size, "dropout": dropout, "epochs": epochs, "patience": patience, "lr": lr}
     json.dump(config, open(output_dir / "config.json", "w"), indent=4)

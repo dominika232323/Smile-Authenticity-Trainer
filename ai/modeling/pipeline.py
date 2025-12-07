@@ -30,6 +30,7 @@ def pipeline_mlp(
     epochs: int = 50,
     patience: int = 5,
     lr: float = 1e-3,
+    test_size: float = 0.2,
 ) -> None:
     training_curves_directory = output_dir / "training_curves"
     evaluation_metrics_directory = output_dir / "evaluation_metrics"
@@ -45,7 +46,7 @@ def pipeline_mlp(
     dataset_df = read_dataset(dataset_path)
     features, labels = scale_features(dataset_df, output_dir)
     X, y = create_data_tensors(features, labels)
-    train_loader, val_loader, X_val, y_val = create_dataloaders(X, y, batch_size)
+    train_loader, val_loader, X_val, y_val = create_dataloaders(X, y, batch_size, test_size)
 
     model = MultiLayerPerceptron(input_dim=X.shape[1], dropout_p=dropout)
 
@@ -54,6 +55,7 @@ def pipeline_mlp(
 
     hparams = {
         "batch_size": batch_size,
+        "test_size": test_size,
         "dropout": dropout,
         "epochs": epochs,
         "patience": patience,
@@ -70,7 +72,7 @@ def pipeline_mlp(
         epochs,
         patience,
         lr,
-        save_path=output_dir / "simple_multi_layer_perceptron.pth",
+        save_path=output_dir / "multi_layer_perceptron.pth",
         writer=writer,
     )
     plot_training_curves(history, training_curves_directory)

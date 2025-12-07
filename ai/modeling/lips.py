@@ -16,6 +16,7 @@ def main() -> None:
 
     param_grid = {
         "batch_size": [8, 16, 32, 64],
+        "test_size": [0.2, 0.3],
         "dropout": [0.1, 0.2, 0.3, 0.4, 0.5],
         "epochs": [500],
         "patience": [5, 7, 10],
@@ -39,6 +40,7 @@ def main() -> None:
             params["epochs"],
             params["patience"],
             params["lr"],
+            params["test_size"],
         )
 
         with open(output_dir / "config.json", "w") as f:
