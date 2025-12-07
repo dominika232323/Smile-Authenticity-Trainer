@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -6,6 +7,7 @@ import seaborn as sns
 import torch
 import torch.nn as nn
 from loguru import logger
+from numpy import ndarray, dtype
 from sklearn.metrics import (
     auc,
     classification_report,
@@ -26,7 +28,7 @@ def evaluate_model(
     device: torch.device,
     output_dir: Path,
     writer: SummaryWriter | None = None,
-) -> tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[ndarray, ndarray[tuple[int, ...], dtype[Any]]]:
     logger.info("Evaluating model...")
 
     model.eval()
