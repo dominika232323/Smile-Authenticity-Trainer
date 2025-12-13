@@ -14,6 +14,7 @@ from ai.data_preprocessing.file_utils import (
     create_directories,
     create_csv_with_header,
     save_dataframe_to_csv,
+    concat_csvs,
 )
 
 
@@ -809,3 +810,76 @@ class TestSaveDataframeToCsv:
                     save_dataframe_to_csv(df, output_path)
             finally:
                 readonly_dir.chmod(0o755)
+            
+
+class TestConcatCsvs:
+    def test_concat_csvs_basic(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            input_dir = Path(temp_dir)
+
+            df1 = pd.DataFrame({"id": [1, 2], "val": ["a", "b"]})
+            df2 = pd.DataFrame({"id": [3, 4], "val": ["c", "d"]})
+
+            df1.to_csv(input_dir / "001.csv", index=False)
+            df2.to_csv(input_dir / "002.csv", index=False)
+
+            result = concat_csvs(input_dir)
+
+            result_sorted = result.sort_values("id").reset_index(drop=True)
+            expected = pd.concat([df1, df2], ignore_index=True).sort_values("id").reset_index(drop=True)
+
+            pd.testing.assert_frame_equal(result_sorted, expected)
+
+    def test_concat_csvs_no_csv_files_empty_dir(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            input_dir = Path(temp_dir)
+
+            with pytest.raises(ValueError):
+                concat_csvs(input_dir)
+
+    def test_concat_csvs_no_csv_files_only_others(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            input_dir = Path(temp_dir)
+
+            (input_dir / "data.txt").write_text("hello")
+            (input_dir / "data.json").write_text("{}")
+
+            with pytest.raises(ValueError):
+                concat_csvs(input_dir)
+
+    def test_concat_csvs_mismatched_columns(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            input_dir = Path(temp_dir)
+
+            df1 = pd.DataFrame({"row_id": [1], "A": [10], "B": [20]})
+            df2 = pd.DataFrame({"row_id": [2], "B": [200], "C": [300]})
+
+            df1.to_csv(input_dir / "part1.csv", index=False)
+            df2.to_csv(input_dir / "part2.csv", index=False)
+
+            result = concat_csvs(input_dir)
+            result_sorted = result.sort_values("row_id").reset_index(drop=True)
+
+            expected = pd.concat([df1, df2], ignore_index=True)
+            expected_sorted = expected.sort_values("row_id").reset_index(drop=True)
+            expected_sorted = expected_sorted[result_sorted.columns]
+
+            pd.testing.assert_frame_equal(result_sorted, expected_sorted)
+
+    def test_concat_csvs_ignores_non_csv_files(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            input_dir = Path(temp_dir)
+
+            df1 = pd.DataFrame({"id": [1], "x": [0.1]})
+            df2 = pd.DataFrame({"id": [2], "x": [0.2]})
+
+            df1.to_csv(input_dir / "a.csv", index=False)
+            (input_dir / "readme.txt").write_text("info")
+            (input_dir / "notes.md").write_text("- note")
+            df2.to_csv(input_dir / "b.csv", index=False)
+
+            result = concat_csvs(input_dir)
+
+            assert set(result.columns) == {"id", "x"}
+            assert len(result) == 2
+            assert set(result["id"]) == {1, 2}
