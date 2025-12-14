@@ -15,6 +15,7 @@ from ai.data_preprocessing.file_utils import (
     create_csv_with_header,
     save_dataframe_to_csv,
     concat_csvs,
+    ensure_checkpoint_file_exists,
 )
 
 
@@ -810,7 +811,7 @@ class TestSaveDataframeToCsv:
                     save_dataframe_to_csv(df, output_path)
             finally:
                 readonly_dir.chmod(0o755)
-            
+
 
 class TestConcatCsvs:
     def test_concat_csvs_basic(self):
@@ -883,3 +884,71 @@ class TestConcatCsvs:
             assert set(result.columns) == {"id", "x"}
             assert len(result) == 2
             assert set(result["id"]) == {1, 2}
+
+
+class TestEnsureCheckpointFileExists:
+    def test_creates_file_when_missing_and_returns_false(self, monkeypatch):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            checkpoint_path = Path(temp_dir) / "processed_files.csv"
+            monkeypatch.setattr("ai.data_preprocessing.file_utils.CHECKPOINT_FILE_PATH", checkpoint_path, raising=False)
+
+            assert not checkpoint_path.exists()
+
+            result = ensure_checkpoint_file_exists()
+
+            assert result is False
+            assert checkpoint_path.exists()
+
+            with open(checkpoint_path, "r", encoding="utf-8") as f:
+                reader = csv.reader(f)
+                rows = list(reader)
+                assert len(rows) == 1
+                assert rows[0] == ["file_path", "preprocessed"]
+
+    def test_returns_true_when_file_exists_and_does_not_modify(self, monkeypatch):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            checkpoint_path = Path(temp_dir) / "processed_files.csv"
+            checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(checkpoint_path, "w", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
+                writer.writerow(["custom", "header"])
+                writer.writerow(["a", "1"])
+
+            original_content = checkpoint_path.read_text(encoding="utf-8")
+
+            monkeypatch.setattr("ai.data_preprocessing.file_utils.CHECKPOINT_FILE_PATH", checkpoint_path, raising=False)
+
+            result = ensure_checkpoint_file_exists()
+
+            assert result is True
+            assert checkpoint_path.read_text(encoding="utf-8") == original_content
+
+    def test_readonly_directory_raises_permission_error(self, monkeypatch):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            readonly_dir = Path(temp_dir) / "readonly"
+            readonly_dir.mkdir()
+            readonly_dir.chmod(0o444)
+
+            try:
+                checkpoint_path = readonly_dir / "processed_files.csv"
+                monkeypatch.setattr(
+                    "ai.data_preprocessing.file_utils.CHECKPOINT_FILE_PATH", checkpoint_path, raising=False
+                )
+
+                with pytest.raises(PermissionError):
+                    ensure_checkpoint_file_exists()
+            finally:
+                readonly_dir.chmod(0o755)
+
+    def test_path_exists_as_directory_returns_true(self, monkeypatch):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Make the checkpoint path itself a directory
+            checkpoint_dir = Path(temp_dir) / "processed_files.csv"
+            checkpoint_dir.mkdir()
+
+            monkeypatch.setattr("ai.data_preprocessing.file_utils.CHECKPOINT_FILE_PATH", checkpoint_dir, raising=False)
+
+            result = ensure_checkpoint_file_exists()
+
+            assert result is True
+            assert checkpoint_dir.exists() and checkpoint_dir.is_dir()
