@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import pytest
 
 from ai.data_preprocessing.extract_features import (
@@ -9,6 +10,7 @@ from ai.data_preprocessing.extract_features import (
     safe_std,
     join_segments,
     segment_increasing_decreasing,
+    extract_features_for_phase,
 )
 
 
@@ -287,3 +289,118 @@ class TestSegmentIncreasingDecreasing:
         assert np.array_equal(dec[0], np.array([0.0, -1.0, -2.0]))
         assert np.array_equal(inc[0], np.array([-2.0, -1.5]))
         assert np.array_equal(dec[1], np.array([-1.5, -3.0]))
+
+
+class TestExtractFeaturesForPhase:
+    def test_all_increasing_signals(self):
+        D = np.array([1.0, 2.0, 3.0])
+        V = np.array([1.0, 2.0, 3.0])
+        A = np.array([1.0, 2.0, 3.0])
+
+        df = pd.DataFrame({"D": D, "V": V, "A": A})
+        omega = 2.0
+
+        feats = extract_features_for_phase(df, omega)
+
+        assert feats["duration_all"] == pytest.approx(3 / omega)
+        assert feats["duration_plus"] == pytest.approx(3 / omega)
+        assert feats["duration_minus"] == pytest.approx(0.0)
+        assert feats["duration_ratio_plus"] == pytest.approx(1.0)
+        assert feats["duration_ratio_minus"] == pytest.approx(0.0)
+
+        assert feats["max_amplitude"] == pytest.approx(3.0)
+        assert feats["mean_amplitude"] == pytest.approx(2.0)
+        assert feats["mean_amplitude_plus"] == pytest.approx(2.0)
+        assert feats["mean_amplitude_minus"] == pytest.approx(0.0)
+        assert feats["std_amplitude"] == pytest.approx(np.std(D))
+        assert feats["total_amplitude_plus"] == pytest.approx(6.0)
+        assert feats["total_amplitude_minus"] == pytest.approx(0.0)
+        assert feats["net_amplitude"] == pytest.approx(6.0)
+        assert feats["amplitude_ratio_plus"] == pytest.approx(1.0)
+        assert feats["amplitude_ratio_minus"] == pytest.approx(0.0)
+        assert feats["net_amplitude_duration_ratio"] == pytest.approx((6.0 - 0.0) * omega / 3)
+
+        assert feats["max_speed_plus"] == pytest.approx(3.0)
+        assert feats["max_speed_minus"] == pytest.approx(0.0)
+        assert feats["mean_speed_plus"] == pytest.approx(2.0)
+        assert feats["mean_speed_minus"] == pytest.approx(0.0)
+
+        assert feats["max_acceleration_plus"] == pytest.approx(3.0)
+        assert feats["max_acceleration_minus"] == pytest.approx(0.0)
+        assert feats["mean_acceleration_plus"] == pytest.approx(2.0)
+        assert feats["mean_acceleration_minus"] == pytest.approx(0.0)
+
+    def test_all_decreasing_amplitude_flat_speed_and_accel(self):
+        D = np.array([3.0, 2.0, 1.0, 0.0])
+        V = np.array([0.0, 0.0, 0.0, 0.0])
+        A = np.array([0.0, 0.0, 0.0, 0.0])
+
+        df = pd.DataFrame({"D": D, "V": V, "A": A})
+        omega = 1.0
+
+        feats = extract_features_for_phase(df, omega)
+
+        assert feats["duration_all"] == pytest.approx(4 / omega)
+        assert feats["duration_plus"] == pytest.approx(0.0)
+        assert feats["duration_minus"] == pytest.approx(4 / omega)
+        assert feats["duration_ratio_plus"] == pytest.approx(0.0)
+        assert feats["duration_ratio_minus"] == pytest.approx(1.0)
+
+        assert feats["max_amplitude"] == pytest.approx(3.0)
+        assert feats["mean_amplitude"] == pytest.approx(np.mean(D))
+        assert feats["mean_amplitude_plus"] == pytest.approx(0.0)
+        assert feats["mean_amplitude_minus"] == pytest.approx(np.mean(np.abs([3.0, 2.0, 1.0, 0.0])))
+        assert feats["std_amplitude"] == pytest.approx(np.std(D))
+        assert feats["total_amplitude_plus"] == pytest.approx(0.0)
+        assert feats["total_amplitude_minus"] == pytest.approx(6.0)
+        assert feats["net_amplitude"] == pytest.approx(-6.0)
+        assert feats["amplitude_ratio_plus"] == pytest.approx(0.0)
+        assert feats["amplitude_ratio_minus"] == pytest.approx(1.0)
+        assert feats["net_amplitude_duration_ratio"] == pytest.approx((-6.0) * omega / 4)
+
+        assert feats["max_speed_plus"] == pytest.approx(0.0)
+        assert feats["max_speed_minus"] == pytest.approx(0.0)
+        assert feats["mean_speed_plus"] == pytest.approx(0.0)
+        assert feats["mean_speed_minus"] == pytest.approx(0.0)
+        assert feats["max_acceleration_plus"] == pytest.approx(0.0)
+        assert feats["max_acceleration_minus"] == pytest.approx(0.0)
+        assert feats["mean_acceleration_plus"] == pytest.approx(0.0)
+        assert feats["mean_acceleration_minus"] == pytest.approx(0.0)
+
+    def test_increase_then_decrease_overlap(self):
+        D = np.array([1.0, 3.0, 2.0])
+        V = np.array([1.0, 2.0, 1.0])
+        A = np.array([0.0, 0.0, 0.0])
+
+        df = pd.DataFrame({"D": D, "V": V, "A": A})
+        omega = 1.0
+
+        feats = extract_features_for_phase(df, omega)
+
+        assert feats["duration_all"] == pytest.approx(3.0)
+        assert feats["duration_plus"] == pytest.approx(2.0)
+        assert feats["duration_minus"] == pytest.approx(2.0)
+        assert feats["duration_ratio_plus"] == pytest.approx(2 / 3)
+        assert feats["duration_ratio_minus"] == pytest.approx(2 / 3)
+
+        assert feats["max_amplitude"] == pytest.approx(3.0)
+        assert feats["mean_amplitude"] == pytest.approx(np.mean(D))
+        assert feats["mean_amplitude_plus"] == pytest.approx(np.mean([1.0, 3.0]))
+        assert feats["mean_amplitude_minus"] == pytest.approx(np.mean([3.0, 2.0]))
+        assert feats["std_amplitude"] == pytest.approx(np.std(D))
+        assert feats["total_amplitude_plus"] == pytest.approx(4.0)
+        assert feats["total_amplitude_minus"] == pytest.approx(5.0)
+        assert feats["net_amplitude"] == pytest.approx(-1.0)
+        assert feats["amplitude_ratio_plus"] == pytest.approx(4.0 / 9.0)
+        assert feats["amplitude_ratio_minus"] == pytest.approx(5.0 / 9.0)
+        assert feats["net_amplitude_duration_ratio"] == pytest.approx((-1.0) * omega / 3.0)
+
+        assert feats["max_speed_plus"] == pytest.approx(2.0)
+        assert feats["max_speed_minus"] == pytest.approx(2.0)
+        assert feats["mean_speed_plus"] == pytest.approx(1.5)
+        assert feats["mean_speed_minus"] == pytest.approx(1.5)
+
+        assert feats["max_acceleration_plus"] == pytest.approx(0.0)
+        assert feats["max_acceleration_minus"] == pytest.approx(0.0)
+        assert feats["mean_acceleration_plus"] == pytest.approx(0.0)
+        assert feats["mean_acceleration_minus"] == pytest.approx(0.0)
