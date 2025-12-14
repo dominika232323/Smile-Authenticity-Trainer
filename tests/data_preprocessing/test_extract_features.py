@@ -8,6 +8,7 @@ from ai.data_preprocessing.extract_features import (
     safe_max,
     safe_std,
     join_segments,
+    segment_increasing_decreasing,
 )
 
 
@@ -207,3 +208,82 @@ class TestJoinSegments:
         result = join_segments(segs)
         assert result.dtype == object
         assert np.array_equal(result, np.array([1, 2, 3], dtype=object))
+
+
+class TestSegmentIncreasingDecreasing:
+    def test_all_increasing_single_segment(self):
+        signal = np.array([1, 2, 3, 4])
+        inc, dec = segment_increasing_decreasing(signal)
+
+        assert len(inc) == 1
+        assert len(dec) == 0
+        assert np.array_equal(inc[0], np.array([1, 2, 3, 4]))
+
+    def test_all_decreasing_single_segment(self):
+        signal = np.array([4, 3, 2, 1])
+        inc, dec = segment_increasing_decreasing(signal)
+
+        assert len(inc) == 0
+        assert len(dec) == 1
+        assert np.array_equal(dec[0], np.array([4, 3, 2, 1]))
+
+    def test_increase_then_decrease_overlap_at_turning_point(self):
+        signal = np.array([1, 2, 1])
+        inc, dec = segment_increasing_decreasing(signal)
+
+        assert len(inc) == 1
+        assert len(dec) == 1
+        assert np.array_equal(inc[0], np.array([1, 2]))
+        assert np.array_equal(dec[0], np.array([2, 1]))
+
+    def test_plateau_splits_segments(self):
+        signal = np.array([1, 2, 2, 3])
+        inc, dec = segment_increasing_decreasing(signal)
+
+        assert len(dec) == 0
+        assert len(inc) == 2
+        assert np.array_equal(inc[0], np.array([1, 2]))
+        assert np.array_equal(inc[1], np.array([2, 3]))
+
+    def test_plateau_after_decrease_appends_decreasing_segment(self):
+        signal = np.array([3, 2, 2])
+        inc, dec = segment_increasing_decreasing(signal)
+
+        assert inc == []
+        assert len(dec) == 1
+        assert np.array_equal(dec[0], np.array([3, 2]))
+
+    def test_flat_sequence_no_segments(self):
+        signal = np.array([1, 1, 1, 1])
+        inc, dec = segment_increasing_decreasing(signal)
+
+        assert inc == []
+        assert dec == []
+
+    def test_zigzag_multiple_segments(self):
+        signal = np.array([1, 2, 1, 2, 1])
+        inc, dec = segment_increasing_decreasing(signal)
+
+        assert len(inc) == 2
+        assert len(dec) == 2
+        assert np.array_equal(inc[0], np.array([1, 2]))
+        assert np.array_equal(dec[0], np.array([2, 1]))
+        assert np.array_equal(inc[1], np.array([1, 2]))
+        assert np.array_equal(dec[1], np.array([2, 1]))
+
+    def test_single_element_no_segments(self):
+        signal = np.array([5])
+        inc, dec = segment_increasing_decreasing(signal)
+
+        assert inc == []
+        assert dec == []
+
+    def test_float_and_negative_values(self):
+        signal = np.array([0.0, -1.0, -2.0, -1.5, -3.0])
+        inc, dec = segment_increasing_decreasing(signal)
+
+        assert len(dec) == 2
+        assert len(inc) == 1
+        assert np.array_equal(dec[0], np.array([0.0, -1.0, -2.0]))
+        assert np.array_equal(inc[0], np.array([-2.0, -1.5]))
+        assert np.array_equal(dec[1], np.array([-1.5, -3.0]))
