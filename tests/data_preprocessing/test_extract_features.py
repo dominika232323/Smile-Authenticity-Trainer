@@ -1,7 +1,13 @@
 import numpy as np
 import pytest
 
-from ai.data_preprocessing.extract_features import safe_len, safe_sum, safe_mean
+from ai.data_preprocessing.extract_features import (
+    safe_len,
+    safe_sum,
+    safe_mean,
+    safe_max,
+    safe_std,
+)
 
 
 class TestSafeLen:
@@ -103,3 +109,73 @@ class TestSafeMean:
         arr = base.view(MyArray)
 
         assert safe_mean(arr) == 20.0
+
+
+class TestSafeMax:
+    def test_safe_max_basic(self):
+        arr = np.array([1, 2, 3])
+        assert safe_max(arr) == 3.0
+
+    def test_safe_max_empty_array(self):
+        arr = np.array([])
+        assert safe_max(arr) == 0.0
+
+    def test_safe_max_negative_values(self):
+        arr = np.array([-5, -2, -10])
+        assert safe_max(arr) == -2.0
+
+    def test_safe_max_float_values(self):
+        arr = np.array([0.1, 0.2, 0.3])
+        assert safe_max(arr) == pytest.approx(0.3)
+
+    def test_safe_max_2d_array(self):
+        arr = np.array([[1, 2], [3, 4]])
+        assert safe_max(arr) == 4.0
+
+    def test_safe_max_object_array(self):
+        arr = np.array([1, 2, 3], dtype=object)
+        assert safe_max(arr) == 3.0
+
+    def test_safe_max_ndarray_subclass(self):
+        class MyArray(np.ndarray):
+            pass
+
+        base = np.array([10, 20, 5])
+        arr = base.view(MyArray)
+
+        assert safe_max(arr) == 20.0
+
+
+class TestSafeStd:
+    def test_safe_std_basic(self):
+        arr = np.array([1, 2, 3])
+        assert safe_std(arr) == pytest.approx(np.std(arr))
+
+    def test_safe_std_empty_array(self):
+        arr = np.array([])
+        assert safe_std(arr) == 0.0
+
+    def test_safe_std_negative_values(self):
+        arr = np.array([-5, 10, -3])
+        assert safe_std(arr) == pytest.approx(np.std(arr))
+
+    def test_safe_std_float_values(self):
+        arr = np.array([0.1, 0.2, 0.3])
+        assert safe_std(arr) == pytest.approx(np.std(arr))
+
+    def test_safe_std_2d_array(self):
+        arr = np.array([[1, 2], [3, 4]])
+        assert safe_std(arr) == pytest.approx(np.std(arr))
+
+    def test_safe_std_object_array(self):
+        arr = np.array([1, 2, 3], dtype=object)
+        assert safe_std(arr) == pytest.approx(np.std(arr))
+
+    def test_safe_std_ndarray_subclass(self):
+        class MyArray(np.ndarray):
+            pass
+
+        base = np.array([10, 20, 30])
+        arr = base.view(MyArray)
+
+        assert safe_std(arr) == pytest.approx(np.std(arr))
