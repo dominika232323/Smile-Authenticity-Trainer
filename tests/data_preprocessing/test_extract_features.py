@@ -10,6 +10,7 @@ from ai.data_preprocessing.extract_features import (
     safe_std,
     join_segments,
     segment_increasing_decreasing,
+    extract_features,
     extract_features_for_phase,
 )
 
@@ -404,3 +405,99 @@ class TestExtractFeaturesForPhase:
         assert feats["max_acceleration_minus"] == pytest.approx(0.0)
         assert feats["mean_acceleration_plus"] == pytest.approx(0.0)
         assert feats["mean_acceleration_minus"] == pytest.approx(0.0)
+
+
+class TestExtractFeatures:
+    def test_all_phases_present_values_and_columns(self):
+        df = pd.DataFrame(
+            {
+                "D": [1.0, 2.0, 2.0, 3.0, 4.0, 4.0, 3.0],
+                "V": [1.0, 1.0, 0.0, 1.0, 2.0, 1.0, 0.0],
+                "A": [0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+                "smile_phase": [
+                    "onset",
+                    "onset",
+                    "apex",
+                    "apex",
+                    "apex",
+                    "offset",
+                    "offset",
+                ],
+            }
+        )
+
+        omega = 2.0
+        out = extract_features(df, omega)
+
+        assert isinstance(out, pd.DataFrame)
+        assert out.shape[0] == 1
+
+        base_keys = list(
+            extract_features_for_phase(df[df["smile_phase"] == "onset"].reset_index(drop=True), omega).keys()
+        )
+
+        for phase in ["onset", "apex", "offset"]:
+            df_phase = df[df["smile_phase"] == phase].reset_index(drop=True)
+            phase_feats = extract_features_for_phase(df_phase, omega)
+
+            for k in base_keys:
+                col = f"{phase}_{k}"
+
+                assert col in out.columns
+                assert out.at[0, col] == pytest.approx(phase_feats[k])
+
+        assert out.shape[1] == 3 * len(base_keys)
+
+    def test_missing_phase_yields_zero_features(self):
+        df = pd.DataFrame(
+            {
+                "D": [1.0, 2.0, 4.0, 3.0],
+                "V": [1.0, 1.0, 1.0, 0.0],
+                "A": [0.0, 0.0, 0.0, 0.0],
+                "smile_phase": ["onset", "onset", "offset", "offset"],
+            }
+        )
+
+        omega = 1.5
+        out = extract_features(df, omega)
+
+        base_keys = list(
+            extract_features_for_phase(df[df["smile_phase"] == "onset"].reset_index(drop=True), omega).keys()
+        )
+
+        for k in base_keys:
+            col = f"apex_{k}"
+            assert col in out.columns
+            assert out.at[0, col] == pytest.approx(0.0)
+
+        for phase in ["onset", "offset"]:
+            df_phase = df[df["smile_phase"] == phase].reset_index(drop=True)
+            phase_feats = extract_features_for_phase(df_phase, omega)
+            for k in base_keys:
+                col = f"{phase}_{k}"
+                assert out.at[0, col] == pytest.approx(phase_feats[k])
+
+    def test_single_row_per_phase_minimal_durations(self):
+        df = pd.DataFrame(
+            {
+                "D": [2.0, 5.0, 3.0],
+                "V": [0.0, 1.0, 0.0],
+                "A": [0.0, 0.0, 0.0],
+                "smile_phase": ["onset", "apex", "offset"],
+            }
+        )
+
+        omega = 5.0
+        out = extract_features(df, omega)
+
+        for phase in ["onset", "apex", "offset"]:
+            df_phase = df[df["smile_phase"] == phase].reset_index(drop=True)
+            exp = extract_features_for_phase(df_phase, omega)
+
+            assert out.at[0, f"{phase}_duration_all"] == pytest.approx(1.0 / omega)
+            assert out.at[0, f"{phase}_duration_plus"] == pytest.approx(0.0)
+            assert out.at[0, f"{phase}_duration_minus"] == pytest.approx(0.0)
+            assert out.at[0, f"{phase}_std_amplitude"] == pytest.approx(0.0)
+
+            for k, v in exp.items():
+                assert out.at[0, f"{phase}_{k}"] == pytest.approx(v)
