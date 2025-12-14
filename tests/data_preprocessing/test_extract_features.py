@@ -7,6 +7,7 @@ from ai.data_preprocessing.extract_features import (
     safe_mean,
     safe_max,
     safe_std,
+    join_segments,
 )
 
 
@@ -179,3 +180,30 @@ class TestSafeStd:
         arr = base.view(MyArray)
 
         assert safe_std(arr) == pytest.approx(np.std(arr))
+
+
+class TestJoinSegments:
+    def test_empty_list_returns_empty_array(self):
+        result = join_segments([])
+        assert np.array_equal(result, np.array([]))
+
+    def test_single_segment_returns_same(self):
+        seg = np.array([1, 2, 3])
+        result = join_segments([seg])
+        assert np.array_equal(result, seg)
+
+    def test_multiple_segments_concatenate(self):
+        segs = [np.array([1, 2]), np.array([3]), np.array([4, 5])]
+        result = join_segments(segs)
+        assert np.array_equal(result, np.array([1, 2, 3, 4, 5]))
+
+    def test_segments_with_empty_arrays(self):
+        segs = [np.array([]), np.array([1, 2]), np.array([]), np.array([3])]
+        result = join_segments(segs)
+        assert np.array_equal(result, np.array([1, 2, 3]))
+
+    def test_object_dtype_segments(self):
+        segs = [np.array([1, 2], dtype=object), np.array([3], dtype=object)]
+        result = join_segments(segs)
+        assert result.dtype == object
+        assert np.array_equal(result, np.array([1, 2, 3], dtype=object))
