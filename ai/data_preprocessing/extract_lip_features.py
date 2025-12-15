@@ -66,10 +66,18 @@ def normalized_amplitude_signal_of_lip_corners(landmarks_df: pd.DataFrame) -> pd
     )
 
     left_lip_corner_ref = np.array(
-        [frame_ref[f"{left_lip_corner_landmark_index}_x"], frame_ref[f"{left_lip_corner_landmark_index}_y"]]
+        [
+            float(frame_ref[f"{left_lip_corner_landmark_index}_x"].iloc[0]),
+            float(frame_ref[f"{left_lip_corner_landmark_index}_y"].iloc[0]),
+        ],
+        dtype=float,
     )
     right_lip_corner_ref = np.array(
-        [frame_ref[f"{right_lip_corner_landmark_index}_x"], frame_ref[f"{right_lip_corner_landmark_index}_y"]]
+        [
+            float(frame_ref[f"{right_lip_corner_landmark_index}_x"].iloc[0]),
+            float(frame_ref[f"{right_lip_corner_landmark_index}_y"].iloc[0]),
+        ],
+        dtype=float,
     )
 
     lips_midpoint_ref = (right_lip_corner_ref + left_lip_corner_ref) / 2
@@ -78,7 +86,7 @@ def normalized_amplitude_signal_of_lip_corners(landmarks_df: pd.DataFrame) -> pd
     logger.debug(f"Reference lip width: {denominator / 2:.2f} pixels")
     logger.debug(f"Reference midpoint: ({lips_midpoint_ref.flatten()[0]:.1f}, {lips_midpoint_ref.flatten()[1]:.1f})")
 
-    if denominator == 0:
+    if np.isclose(denominator, 0.0):
         logger.error("Reference lip corner distance is zero - invalid landmark data")
         raise ValueError("Invalid reference lip corner positions")
 
