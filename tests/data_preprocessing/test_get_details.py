@@ -151,3 +151,19 @@ file003.jpg SUB003 M 28 positive"""
         assert isinstance(result, pd.DataFrame)
         assert len(result) == 1000
         assert list(result.columns) == ["filename", "subject_code", "gender", "age", "label"]
+
+    def test_get_details_read_csv_exception(self, create_test_file, monkeypatch):
+        content = """# Header line 1
+# Header line 2
+# Header line 3
+# Header line 4
+file001.jpg    SUB001    M    25    positive"""
+        file_path = create_test_file(content)
+
+        def _boom(*args, **kwargs):
+            raise ValueError("forced read_csv failure for testing")
+
+        monkeypatch.setattr(pd, "read_csv", _boom)
+
+        with pytest.raises(ValueError, match="forced read_csv failure for testing"):
+            get_details(file_path)
