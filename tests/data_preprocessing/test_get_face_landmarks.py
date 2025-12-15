@@ -171,6 +171,31 @@ class TestGetFaceLandmarks:
                 get_face_landmarks(frame, frame_number, landmarks_file)
 
     @patch("ai.data_preprocessing.get_face_landmarks.mp.solutions.face_mesh.FaceMesh")
+    def test_get_face_landmarks_truthy_empty_iterable(self, mock_face_mesh_class):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            landmarks_file = Path(temp_dir) / "landmarks.csv"
+            frame = create_test_face_image()
+
+            mock_face_mesh = Mock()
+            mock_face_mesh_class.return_value.__enter__.return_value = mock_face_mesh
+
+            class TruthyEmpty:
+                def __bool__(self):
+                    return True
+
+                def __iter__(self):
+                    return iter(())
+
+            mock_results = Mock()
+            mock_results.multi_face_landmarks = TruthyEmpty()
+            mock_face_mesh.process.return_value = mock_results
+
+            result = get_face_landmarks(frame, 1, landmarks_file)
+
+            assert result is False
+            assert not landmarks_file.exists()
+
+    @patch("ai.data_preprocessing.get_face_landmarks.mp.solutions.face_mesh.FaceMesh")
     def test_get_face_landmarks_different_frame_types_and_sizes(self, mock_face_mesh_class):
         with tempfile.TemporaryDirectory() as temp_dir:
             landmarks_file = Path(temp_dir) / "landmarks.csv"
