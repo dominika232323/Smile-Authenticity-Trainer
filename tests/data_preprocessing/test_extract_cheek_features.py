@@ -3,6 +3,7 @@ import pandas as pd
 import pytest
 
 from ai.data_preprocessing.extract_cheek_features import (
+    extract_cheek_features,
     normalized_amplitude_signal_of_cheeks,
 )
 from ai.data_preprocessing.face_landmarks import FaceLandmarks
@@ -197,3 +198,100 @@ class TestsNormalizedAmplitudeSignalOfCheeks:
 
         with pytest.raises(ValueError, match="Invalid reference cheek positions"):
             normalized_amplitude_signal_of_cheeks(df)
+
+
+class TestExtractCheekFeatures:
+    @pytest.fixture
+    def setup_landmarks_and_smile(self, cheek_center_indices):
+        li, ri = cheek_center_indices
+
+        landmarks_df = _df_with_cheeks(
+            frames=[0, 1, 2, 3],
+            left_points=[(0, 0), (-1, 0), (-2, 1), (-3, 1)],
+            right_points=[(4, 0), (5, 0), (6, 1), (7, 1)],
+            li=li,
+            ri=ri,
+        )
+
+        smile_phases_df = pd.DataFrame(
+            {
+                "frame_number": [0, 2, 3],
+                "phase": ["onset", "apex", "offset"],
+            }
+        )
+
+        return landmarks_df, smile_phases_df
+
+    def test_happy_path_calls_extract_features_with_expected_df(self, monkeypatch, setup_landmarks_and_smile):
+        landmarks_df, smile_phases_df = setup_landmarks_and_smile
+
+        read_calls = {"count": 0}
+
+        def fake_read_csv(path):
+            if read_calls["count"] == 0:
+                read_calls["count"] += 1
+
+                return landmarks_df.copy()
+
+            read_calls["count"] += 1
+
+            return smile_phases_df.copy()
+
+        monkeypatch.setattr(pd, "read_csv", fake_read_csv)
+
+        captured = {}
+
+        def fake_extract_features(df, fps):
+            captured["df"] = df.copy()
+            captured["fps"] = fps
+            return pd.DataFrame({"some_feature": [1, 2, 3]})
+
+        import ai.data_preprocessing.extract_cheek_features as cheek_mod
+
+        monkeypatch.setattr(cheek_mod, "extract_features", fake_extract_features)
+
+        fps = 25.0
+        result = extract_cheek_features(PathLikeDummy("landmarks.csv"), PathLikeDummy("smile.csv"), fps)
+
+        pd.testing.assert_frame_equal(result, pd.DataFrame({"some_feature": [1, 2, 3]}))
+
+        assert captured["fps"] == fps
+
+        df_passed = captured["df"]
+        expected_cols = {"frame_number", "D", "V", "A", "phase"}
+
+        assert expected_cols.issubset(set(df_passed.columns))
+        assert df_passed["frame_number"].tolist() == [0, 2, 3]
+
+        merged_frames = df_passed["frame_number"].tolist()
+
+        D = (
+            normalized_amplitude_signal_of_cheeks(landmarks_df)
+            .set_index("frame_number")
+            .loc[merged_frames, "normalized_amplitude_signal_of_cheeks"]
+            .reset_index(drop=True)
+        )
+        V = D.diff().fillna(0.0)
+        A = D.diff().diff().fillna(0.0)
+
+        np.testing.assert_allclose(df_passed["D"].to_numpy(), D.to_numpy(), rtol=0, atol=1e-12)
+        np.testing.assert_allclose(df_passed["V"].to_numpy(), V.to_numpy(), rtol=0, atol=1e-12)
+        np.testing.assert_allclose(df_passed["A"].to_numpy(), A.to_numpy(), rtol=0, atol=1e-12)
+
+        assert not df_passed.isna().any().any()
+
+    def test_raises_when_reading_files_fails(self, monkeypatch):
+        def boom(_):
+            raise IOError("failed to read")
+
+        monkeypatch.setattr(pd, "read_csv", boom)
+
+        with pytest.raises(Exception):
+            extract_cheek_features(PathLikeDummy("landmarks.csv"), PathLikeDummy("smile.csv"), 30.0)
+
+
+class PathLikeDummy:
+    """Minimal path-like object exposing .name used by the function under test."""
+
+    def __init__(self, name: str):
+        self.name = name
