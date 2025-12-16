@@ -27,16 +27,24 @@ def extract_lip_features(landmarks_file_path: Path, smile_phases_file_path: Path
     lips_features_df = normalized_amplitude_signal_of_lip_corners(landmarks_df)
 
     logger.debug("Merging landmarks with smile phases data")
-    lips_features_df = pd.merge(lips_features_df, smile_phases_df, on="frame_number")
+    lips_features_df = (
+        pd.merge(lips_features_df, smile_phases_df, on="frame_number", how="inner")
+        .sort_values("frame_number")
+        .reset_index(drop=True)
+    )
     logger.debug(f"Merged data shape: {lips_features_df.shape}")
 
     logger.debug("Computing speed and acceleration derivatives")
-    lips_features_df["speed"] = lips_features_df["normalized_amplitude_signal_of_lip_corners"].diff()
-    lips_features_df["acceleration"] = lips_features_df["speed"].diff()
+    D_series = lips_features_df["normalized_amplitude_signal_of_lip_corners"].astype(float)
+    V_series = D_series.diff().fillna(0.0)
+    A_series = V_series.diff().fillna(0.0)
+
+    lips_features_df["speed"] = V_series
+    lips_features_df["acceleration"] = A_series
 
     nan_count = lips_features_df.isna().sum().sum()
     logger.debug(f"Filling {nan_count} NaN values with zeros")
-    lips_features_df = lips_features_df.fillna(0)
+    lips_features_df = lips_features_df.fillna(0.0)
 
     lips_features_df = lips_features_df.rename(
         columns={"normalized_amplitude_signal_of_lip_corners": "D", "speed": "V", "acceleration": "A"}
