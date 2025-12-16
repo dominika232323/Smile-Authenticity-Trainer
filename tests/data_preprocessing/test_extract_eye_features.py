@@ -7,6 +7,7 @@ from ai.data_preprocessing.extract_eye_features import (
     kappa,
     tau,
     compute_eyelid_amplitude,
+    extract_eye_features,
 )
 from ai.data_preprocessing.face_landmarks import FaceLandmarks
 
@@ -369,3 +370,128 @@ class TestComputeEyelidAmplitude:
 
         assert np.isinf(out[0])
         assert np.isfinite(out[1])
+
+
+class TestExtractEyeFeatures:
+    @pytest.fixture
+    def eye_landmark_indices(self, monkeypatch):
+        monkeypatch.setattr(FaceLandmarks, "right_eye_right_corner", staticmethod(lambda: [10]))
+        monkeypatch.setattr(FaceLandmarks, "right_eye_upper_0_middle", staticmethod(lambda: [11]))
+        monkeypatch.setattr(FaceLandmarks, "right_eye_left_corner", staticmethod(lambda: [12]))
+
+        monkeypatch.setattr(FaceLandmarks, "left_eye_right_corner", staticmethod(lambda: [20]))
+        monkeypatch.setattr(FaceLandmarks, "left_eye_upper_0_middle", staticmethod(lambda: [21]))
+        monkeypatch.setattr(FaceLandmarks, "left_eye_left_corner", staticmethod(lambda: [22]))
+
+        return {"RRC": 10, "REM": 11, "RLC": 12, "LRC": 20, "LEM": 21, "LLC": 22}
+
+    def _df_with_eyes(self, frames, right_eye, right_mid, left_eye, left_mid, idx):
+        rows = []
+
+        for f, (rc_r, rc_l), rm, (lc_r, lc_l), lm in zip(frames, right_eye, right_mid, left_eye, left_mid):
+            rows.append(
+                {
+                    "frame_number": f,
+                    f"{idx['RRC']}_x": float(rc_r[0]),
+                    f"{idx['RRC']}_y": float(rc_r[1]),
+                    f"{idx['REM']}_x": float(rm[0]),
+                    f"{idx['REM']}_y": float(rm[1]),
+                    f"{idx['RLC']}_x": float(rc_l[0]),
+                    f"{idx['RLC']}_y": float(rc_l[1]),
+                    f"{idx['LRC']}_x": float(lc_r[0]),
+                    f"{idx['LRC']}_y": float(lc_r[1]),
+                    f"{idx['LEM']}_x": float(lm[0]),
+                    f"{idx['LEM']}_y": float(lm[1]),
+                    f"{idx['LLC']}_x": float(lc_l[0]),
+                    f"{idx['LLC']}_y": float(lc_l[1]),
+                }
+            )
+
+        return pd.DataFrame(rows)
+
+    @pytest.fixture
+    def setup_landmarks_and_smile(self, eye_landmark_indices):
+        idx = eye_landmark_indices
+
+        frames = [0, 1, 2, 3]
+        right_eye = [((4, 0), (0, 0)), ((4, 0), (0, 0)), ((4, 1), (0, 1)), ((4, 1), (0, 1))]
+        left_eye = [((14, 0), (10, 0)), ((14, 0), (10, 0)), ((14, 1), (10, 1)), ((14, 1), (10, 1))]
+        right_mid = [(2, 0), (2, 1), (2, 2), (2, 3)]
+        left_mid = [(12, 0), (12, 1), (12, 2), (12, 3)]
+
+        landmarks_df = self._df_with_eyes(frames, right_eye, right_mid, left_eye, left_mid, idx)
+
+        smile_phases_df = pd.DataFrame(
+            {
+                "frame_number": [0, 2, 3],
+                "phase": ["onset", "apex", "offset"],
+            }
+        )
+
+        return landmarks_df, smile_phases_df, idx
+
+    def test_happy_path_calls_extract_features_with_expected_df(self, monkeypatch, setup_landmarks_and_smile):
+        landmarks_df, smile_phases_df, idx = setup_landmarks_and_smile
+
+        read_calls = {"count": 0}
+
+        def fake_read_csv(path):
+            if read_calls["count"] == 0:
+                read_calls["count"] += 1
+                return landmarks_df.copy()
+
+            read_calls["count"] += 1
+            return smile_phases_df.copy()
+
+        monkeypatch.setattr(pd, "read_csv", fake_read_csv)
+
+        captured = {}
+
+        def fake_extract_features(df, fps):
+            captured["df"] = df.copy()
+            captured["fps"] = fps
+            return pd.DataFrame({"some_feature": [1, 2, 3]})
+
+        import ai.data_preprocessing.extract_eye_features as eye_mod
+
+        monkeypatch.setattr(eye_mod, "extract_features", fake_extract_features)
+
+        fps = 25.0
+        result = extract_eye_features(PathLikeDummy("landmarks.csv"), PathLikeDummy("smile.csv"), fps)
+
+        pd.testing.assert_frame_equal(result, pd.DataFrame({"some_feature": [1, 2, 3]}))
+        assert captured["fps"] == fps
+
+        df_passed = captured["df"]
+        expected_cols = {"frame_number", "D", "V", "A", "phase"}
+        assert expected_cols.issubset(set(df_passed.columns))
+        assert df_passed["frame_number"].tolist() == [0, 2, 3]
+
+        merged_frames = df_passed["frame_number"].tolist()
+
+        D_full = pd.Series(compute_eyelid_amplitude(landmarks_df), index=landmarks_df["frame_number"], dtype=float)
+        D = D_full.loc[merged_frames].reset_index(drop=True)
+        V = D.diff()
+        A = V.diff()
+
+        np.testing.assert_allclose(df_passed["D"].to_numpy(), D.to_numpy(), rtol=0, atol=1e-12)
+        np.testing.assert_allclose(df_passed["V"].to_numpy(), V.fillna(0.0).to_numpy(), rtol=0, atol=1e-12)
+        np.testing.assert_allclose(df_passed["A"].to_numpy(), A.fillna(0.0).to_numpy(), rtol=0, atol=1e-12)
+
+        assert not df_passed.isna().any().any()
+
+    def test_raises_when_reading_files_fails(self, monkeypatch):
+        def boom(_):
+            raise IOError("failed to read")
+
+        monkeypatch.setattr(pd, "read_csv", boom)
+
+        with pytest.raises(Exception):
+            extract_eye_features(PathLikeDummy("landmarks.csv"), PathLikeDummy("smile.csv"), 30.0)
+
+
+class PathLikeDummy:
+    """Minimal path-like object exposing .name used by the function under test."""
+
+    def __init__(self, name: str):
+        self.name = name
