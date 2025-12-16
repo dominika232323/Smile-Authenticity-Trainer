@@ -1,6 +1,6 @@
 import numpy as np
 
-from ai.data_preprocessing.extract_eye_features import euclidean, kappa
+from ai.data_preprocessing.extract_eye_features import euclidean, kappa, tau
 
 
 class TestEuclidean:
@@ -121,3 +121,75 @@ class TestKappa:
         out = kappa(a, b)
 
         np.testing.assert_array_equal(out, expected)
+
+
+class TestTau:
+    def test_basic_values_match_kappa_times_euclidean(self):
+        a = np.array([[0.0, 0.0], [1.0, 2.0], [5.0, 5.0]], dtype=float)
+        b = np.array([[3.0, 4.0], [4.0, 1.0], [10.0, 10.0]], dtype=float)
+
+        t = tau(a, b)
+        k = kappa(a, b).astype(float)
+        d = euclidean(a, b)
+
+        np.testing.assert_allclose(t, k * d, rtol=0, atol=1e-12)
+
+        expected_signs = np.array([-1.0, 1.0, -1.0])
+        np.testing.assert_array_equal(np.sign(t), expected_signs)
+
+    def test_zero_when_points_identical(self):
+        a = np.array([[2.5, -7.0], [0.0, 0.0], [100.0, 100.0]], dtype=float)
+        b = a.copy()
+
+        t = tau(a, b)
+
+        np.testing.assert_allclose(t, np.zeros(3), rtol=0, atol=0)
+
+    def test_translation_invariance(self):
+        rng = np.random.default_rng(2025)
+        a = rng.normal(size=(20, 2))
+        b = rng.normal(size=(20, 2))
+
+        shift = np.array([123.456, -78.9])
+        a_shift = a + shift
+        b_shift = b + shift
+
+        t = tau(a, b)
+        t_shift = tau(a_shift, b_shift)
+
+        np.testing.assert_allclose(t, t_shift, rtol=0, atol=1e-12)
+
+    def test_abs_equals_euclidean_and_sign_equals_kappa(self):
+        rng = np.random.default_rng(7)
+        a = rng.uniform(-10, 10, size=(30, 2))
+        b = rng.uniform(-10, 10, size=(30, 2))
+
+        t = tau(a, b)
+        d = euclidean(a, b)
+        k = kappa(a, b)
+
+        np.testing.assert_allclose(np.abs(t), d, rtol=0, atol=1e-12)
+        np.testing.assert_array_equal(np.sign(t).astype(int), k)
+
+    def test_handles_non_contiguous_inputs(self):
+        base = np.vstack([np.arange(0, 60, dtype=float), np.arange(100, 160, dtype=float)]).T  # (60, 2)
+        a = base[::4]
+        b = base[1::4]
+
+        n = min(len(a), len(b))
+        a = a[:n]
+        b = b[:n]
+
+        manual = kappa(a, b).astype(float) * np.linalg.norm(a - b, axis=1)
+        t = tau(a, b)
+
+        np.testing.assert_allclose(t, manual, rtol=0, atol=1e-12)
+
+    def test_output_shape_and_dtype(self):
+        a = np.array([[0.0, 0.0], [3.0, 4.0], [6.0, 8.0]], dtype=np.float64)
+        b = np.array([[1.0, 0.0], [0.0, 5.0], [6.0, 10.0]], dtype=np.float64)
+
+        t = tau(a, b)
+
+        assert t.shape == (3,)
+        assert np.issubdtype(t.dtype, np.floating)
