@@ -1,6 +1,14 @@
 import numpy as np
+import pandas as pd
+import pytest
 
-from ai.data_preprocessing.extract_eye_features import euclidean, kappa, tau
+from ai.data_preprocessing.extract_eye_features import (
+    euclidean,
+    kappa,
+    tau,
+    compute_eyelid_amplitude,
+)
+from ai.data_preprocessing.face_landmarks import FaceLandmarks
 
 
 class TestEuclidean:
@@ -193,3 +201,171 @@ class TestTau:
 
         assert t.shape == (3,)
         assert np.issubdtype(t.dtype, np.floating)
+
+
+class TestComputeEyelidAmplitude:
+    @pytest.fixture
+    def eye_landmark_indices(self, monkeypatch):
+        monkeypatch.setattr(FaceLandmarks, "right_eye_right_corner", staticmethod(lambda: [10]))
+        monkeypatch.setattr(FaceLandmarks, "right_eye_upper_0_middle", staticmethod(lambda: [11]))
+        monkeypatch.setattr(FaceLandmarks, "right_eye_left_corner", staticmethod(lambda: [12]))
+
+        monkeypatch.setattr(FaceLandmarks, "left_eye_right_corner", staticmethod(lambda: [20]))
+        monkeypatch.setattr(FaceLandmarks, "left_eye_upper_0_middle", staticmethod(lambda: [21]))
+        monkeypatch.setattr(FaceLandmarks, "left_eye_left_corner", staticmethod(lambda: [22]))
+
+        return {"RRC": 10, "REM": 11, "RLC": 12, "LRC": 20, "LEM": 21, "LLC": 22}
+
+    def _df_with_eyes(self, frames, right_eye, right_mid, left_eye, left_mid, idx):
+        rows = []
+
+        for f, (rc_r, rc_l), rm, (lc_r, lc_l), lm in zip(frames, right_eye, right_mid, left_eye, left_mid):
+            rows.append(
+                {
+                    "frame_number": f,
+                    f"{idx['RRC']}_x": float(rc_r[0]),
+                    f"{idx['RRC']}_y": float(rc_r[1]),
+                    f"{idx['REM']}_x": float(rm[0]),
+                    f"{idx['REM']}_y": float(rm[1]),
+                    f"{idx['RLC']}_x": float(rc_l[0]),
+                    f"{idx['RLC']}_y": float(rc_l[1]),
+                    f"{idx['LRC']}_x": float(lc_r[0]),
+                    f"{idx['LRC']}_y": float(lc_r[1]),
+                    f"{idx['LEM']}_x": float(lm[0]),
+                    f"{idx['LEM']}_y": float(lm[1]),
+                    f"{idx['LLC']}_x": float(lc_l[0]),
+                    f"{idx['LLC']}_y": float(lc_l[1]),
+                }
+            )
+
+        return pd.DataFrame(rows)
+
+    def test_happy_path_known_geometry(self, eye_landmark_indices):
+        idx = eye_landmark_indices
+        frames = [0, 1]
+
+        right_eye = [((4, 0), (0, 0)), ((4, 0), (0, 0))]
+        left_eye = [((14, 0), (10, 0)), ((14, 0), (10, 0))]
+
+        right_mid = [(2, 0), (2, 1)]
+        left_mid = [(12, 0), (12, 1)]
+
+        df = self._df_with_eyes(frames, right_eye, right_mid, left_eye, left_mid, idx)
+
+        out = compute_eyelid_amplitude(df)
+
+        l1 = df[[f"{idx['RRC']}_x", f"{idx['RRC']}_y"]].values
+        l3 = df[[f"{idx['RLC']}_x", f"{idx['RLC']}_y"]].values
+        r_mid = (l1 + l3) / 2
+        l2 = df[[f"{idx['REM']}_x", f"{idx['REM']}_y"]].values
+
+        l4 = df[[f"{idx['LRC']}_x", f"{idx['LRC']}_y"]].values
+        l6 = df[[f"{idx['LLC']}_x", f"{idx['LLC']}_y"]].values
+        l_mid = (l4 + l6) / 2
+        l5 = df[[f"{idx['LEM']}_x", f"{idx['LEM']}_y"]].values
+
+        expected = (tau(r_mid, l2) + tau(l_mid, l5)) / (2 * euclidean(l1, l3))
+
+        np.testing.assert_allclose(out, expected, rtol=0, atol=1e-12)
+        assert out.shape == (len(frames),)
+        assert np.issubdtype(out.dtype, np.floating)
+
+    def test_translation_invariance(self, eye_landmark_indices):
+        idx = eye_landmark_indices
+        rng = np.random.default_rng(123)
+        frames = list(range(10))
+
+        right_eye = []
+        left_eye = []
+        right_mid = []
+        left_mid = []
+
+        for _ in frames:
+            r0 = rng.uniform(-5, 5, size=2)
+            r1 = r0 + np.array([4.0, 0.0])
+
+            r_m = (r0 + r1) / 2 + np.array([0.0, rng.uniform(-2, 2)])
+            right_eye.append((r1, r0))
+            right_mid.append(tuple(r_m))
+
+            l0 = rng.uniform(8, 15, size=2)
+            l1c = l0 + np.array([4.0, 0.0])
+            l_m = (l0 + l1c) / 2 + np.array([0.0, rng.uniform(-2, 2)])
+            left_eye.append((l1c, l0))
+            left_mid.append(tuple(l_m))
+
+        df = self._df_with_eyes(frames, right_eye, right_mid, left_eye, left_mid, idx)
+
+        shift = np.array([123.456, -78.9])
+        df_shift = df.copy()
+
+        for key in ["RRC", "REM", "RLC", "LRC", "LEM", "LLC"]:
+            df_shift[[f"{idx[key]}_x", f"{idx[key]}_y"]] = df_shift[[f"{idx[key]}_x", f"{idx[key]}_y"]] + shift
+
+        base = compute_eyelid_amplitude(df)
+        shifted = compute_eyelid_amplitude(df_shift)
+
+        np.testing.assert_allclose(base, shifted, rtol=0, atol=1e-12)
+
+    def test_scale_invariance(self, eye_landmark_indices):
+        idx = eye_landmark_indices
+        frames = [0, 1, 2]
+
+        right_eye = [((4, 0), (0, 0)), ((4, 0), (0, 0)), ((4, 1), (0, 1))]
+        left_eye = [((14, 0), (10, 0)), ((14, 0), (10, 0)), ((14, 1), (10, 1))]
+        right_mid = [(2, 0), (2, 1), (2, 2)]
+        left_mid = [(12, 0), (12, 1), (12, 2)]
+
+        df = self._df_with_eyes(frames, right_eye, right_mid, left_eye, left_mid, idx)
+
+        s = 3.5
+        df_scaled = df.copy()
+        for key in ["RRC", "REM", "RLC", "LRC", "LEM", "LLC"]:
+            df_scaled[[f"{idx[key]}_x", f"{idx[key]}_y"]] = df_scaled[[f"{idx[key]}_x", f"{idx[key]}_y"]] * s
+
+        base = compute_eyelid_amplitude(df)
+        scaled = compute_eyelid_amplitude(df_scaled)
+
+        np.testing.assert_allclose(base, scaled, rtol=0, atol=1e-12)
+
+    def test_raises_keyerror_when_required_columns_missing(self, eye_landmark_indices):
+        idx = eye_landmark_indices
+        df = pd.DataFrame(
+            [
+                {
+                    "frame_number": 0,
+                    f"{idx['RRC']}_x": 4.0,
+                    f"{idx['RRC']}_y": 0.0,
+                    f"{idx['REM']}_x": 2.0,
+                    f"{idx['REM']}_y": 0.0,
+                    f"{idx['RLC']}_x": 0.0,
+                    f"{idx['RLC']}_y": 0.0,
+                    f"{idx['LRC']}_x": 14.0,
+                    f"{idx['LRC']}_y": 0.0,
+                    f"{idx['LEM']}_x": 12.0,
+                    f"{idx['LEM']}_y": 0.5,
+                    f"{idx['LLC']}_x": 10.0,
+                    # f"{idx['LLC']}_y" missing
+                }
+            ]
+        )
+
+        with pytest.raises(KeyError):
+            compute_eyelid_amplitude(df)
+
+    def test_warns_path_zero_right_eye_corner_distance_results_in_inf(self, eye_landmark_indices):
+        idx = eye_landmark_indices
+        frames = [0, 1]
+
+        right_eye = [((0, 0), (0, 0)), ((4, 0), (0, 0))]
+        left_eye = [((14, 0), (10, 0)), ((14, 0), (10, 0))]
+
+        right_mid = [(0, 1), (2, 1)]
+        left_mid = [(12, 0), (12, 1)]
+
+        df = self._df_with_eyes(frames, right_eye, right_mid, left_eye, left_mid, idx)
+
+        out = compute_eyelid_amplitude(df)
+
+        assert np.isinf(out[0])
+        assert np.isfinite(out[1])

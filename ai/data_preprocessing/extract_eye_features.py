@@ -95,7 +95,11 @@ def compute_eyelid_amplitude(df: pd.DataFrame) -> np.ndarray:
     if zero_denominators > 0:
         logger.warning(f"Found {zero_denominators} frames with zero eye corner distance")
 
-    D_eyelid = (tau_1 + tau_2) / denominator
+    numerator = (tau_1 + tau_2).astype(float)
+    D_eyelid = np.empty_like(numerator, dtype=float)
+    nonzero_mask = denominator != 0
+    np.divide(numerator, denominator, out=D_eyelid, where=nonzero_mask)
+    D_eyelid[~nonzero_mask] = np.inf
 
     logger.debug("Eyelid amplitude computation completed")
     return D_eyelid
