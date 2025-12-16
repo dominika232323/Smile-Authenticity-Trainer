@@ -64,10 +64,18 @@ def normalized_amplitude_signal_of_cheeks(landmarks_df: pd.DataFrame) -> pd.Data
     logger.debug(f"Using cheek landmarks: left={left_cheek_landmark_index}, right={right_cheek_landmark_index}")
 
     right_cheek_ref = np.array(
-        [frame_ref[f"{right_cheek_landmark_index}_x"], frame_ref[f"{right_cheek_landmark_index}_y"]]
+        [
+            float(frame_ref[f"{right_cheek_landmark_index}_x"].iloc[0]),
+            float(frame_ref[f"{right_cheek_landmark_index}_y"].iloc[0]),
+        ],
+        dtype=float,
     )
     left_cheek_ref = np.array(
-        [frame_ref[f"{left_cheek_landmark_index}_x"], frame_ref[f"{left_cheek_landmark_index}_y"]]
+        [
+            float(frame_ref[f"{left_cheek_landmark_index}_x"].iloc[0]),
+            float(frame_ref[f"{left_cheek_landmark_index}_y"].iloc[0]),
+        ],
+        dtype=float,
     )
 
     cheeks_midpoint_ref = (right_cheek_ref + left_cheek_ref) / 2
@@ -78,7 +86,7 @@ def normalized_amplitude_signal_of_cheeks(landmarks_df: pd.DataFrame) -> pd.Data
         f"Reference midpoint: ({cheeks_midpoint_ref.flatten()[0]:.1f}, {cheeks_midpoint_ref.flatten()[1]:.1f})"
     )
 
-    if denominator == 0:
+    if np.isclose(denominator, 0.0):
         logger.error("Reference cheek distance is zero - invalid landmark data")
         raise ValueError("Invalid reference cheek positions")
 
