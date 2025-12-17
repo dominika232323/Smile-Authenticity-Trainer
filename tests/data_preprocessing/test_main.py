@@ -191,3 +191,142 @@ class TestPreprocessFrame:
 
         assert len(calls["norm"]) == 0
         assert len(calls["get"]) == 1
+
+
+class TestPreprocessVideo:
+    def test_returns_none_when_cannot_open_video(self, tmp_path, monkeypatch):
+        from ai.data_preprocessing import main as main_mod
+
+        created = {}
+
+        class DummyCap:
+            def __init__(self, _path):
+                self.release_called = False
+
+            def isOpened(self):
+                return False
+
+            def get(self, _prop):
+                return 0
+
+            def set(self, _prop, _value):
+                pass
+
+            def read(self):
+                return False, None
+
+            def release(self):
+                self.release_called = True
+
+        def make_cap(_):
+            c = DummyCap(_)
+            created["cap"] = c
+            return c
+
+        CV2Stub = type(
+            "CV2Stub",
+            (),
+            {
+                "CAP_PROP_FPS": 5,
+                "CAP_PROP_FRAME_COUNT": 7,
+                "CAP_PROP_POS_FRAMES": 1,
+                "VideoCapture": make_cap,
+            },
+        )
+
+        monkeypatch.setattr(main_mod, "cv2", CV2Stub)
+
+        called = {"count": 0}
+
+        def fake_preprocess_frame(*args, **kwargs):
+            called["count"] += 1
+
+        monkeypatch.setattr(main_mod, "preprocess_frame", fake_preprocess_frame)
+
+        res = main_mod.preprocess_video(tmp_path / "v.mp4", tmp_path / "orig.csv", tmp_path / "norm.csv")
+
+        assert res is None
+        assert called["count"] == 0
+        assert created["cap"].release_called is False
+
+    def test_processes_frames_and_returns_fps(self, tmp_path, monkeypatch):
+        from ai.data_preprocessing import main as main_mod
+
+        config = {
+            "opened": True,
+            "fps": 25.0,
+            "total": 5,
+            "reads": {
+                0: (True, np.array([[0]], dtype="uint8")),
+                1: (False, None),
+                2: (True, np.array([[2]], dtype="uint8")),
+                3: (True, np.array([[3]], dtype="uint8")),
+                4: (False, None),
+            },
+        }
+
+        class DummyCap2:
+            def __init__(self, _path):
+                self.release_called = False
+                self.last_pos = None
+                self.set_calls = []
+
+            def isOpened(self):
+                return config["opened"]
+
+            def get(self, prop):
+                if prop == 5:
+                    return config["fps"]
+                if prop == 7:
+                    return config["total"]
+                return 0
+
+            def set(self, prop, value):
+                self.last_pos = value
+                self.set_calls.append((prop, value))
+
+            def read(self):
+                return config["reads"].get(self.last_pos, (False, None))
+
+            def release(self):
+                self.release_called = True
+
+        created = {}
+
+        def make_cap2(_):
+            c = DummyCap2(_)
+            created["cap"] = c
+            return c
+
+        CV2Stub2 = type(
+            "CV2Stub2",
+            (),
+            {
+                "CAP_PROP_FPS": 5,
+                "CAP_PROP_FRAME_COUNT": 7,
+                "CAP_PROP_POS_FRAMES": 1,
+                "VideoCapture": make_cap2,
+            },
+        )
+
+        monkeypatch.setattr(main_mod, "cv2", CV2Stub2)
+
+        calls = []
+
+        def fake_preprocess_frame(frame, frame_number, video_name, orig_path, norm_path):
+            calls.append((frame_number, video_name, frame, orig_path, norm_path))
+
+        monkeypatch.setattr(main_mod, "preprocess_frame", fake_preprocess_frame)
+
+        video_path = tmp_path / "abc.mp4"
+        fps = main_mod.preprocess_video(video_path, tmp_path / "orig.csv", tmp_path / "norm.csv")
+
+        assert fps == config["fps"]
+
+        called_frames = [fn for fn, *_ in calls]
+        assert called_frames == [0, 2, 3]
+
+        set_positions = [v for (prop, v) in created["cap"].set_calls if prop == CV2Stub2.CAP_PROP_POS_FRAMES]
+        assert set_positions == list(range(config["total"]))
+
+        assert created["cap"].release_called is True
