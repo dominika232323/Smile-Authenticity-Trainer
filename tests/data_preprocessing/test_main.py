@@ -122,7 +122,7 @@ class TestPreprocessFrame:
 
         main_mod.preprocess_frame(frame, frame_number, video_name, orig_lm, norm_lm)
 
-        expected_orig_path = (tmp_path / "orig" / video_name / f"{frame_number}.jpg")
+        expected_orig_path = tmp_path / "orig" / video_name / f"{frame_number}.jpg"
 
         assert any(p == expected_orig_path for _, p in calls["save"])
         assert len(calls["norm"]) == 1
@@ -135,7 +135,7 @@ class TestPreprocessFrame:
         assert n_eye_rel == main_mod.EYE_RELATIVE_SIZE
         assert n_desired == main_mod.DESIRED_FRAME_SIZE
 
-        expected_norm_path = (tmp_path / "preproc" / video_name / f"{frame_number}.jpg")
+        expected_norm_path = tmp_path / "preproc" / video_name / f"{frame_number}.jpg"
 
         assert any(p == expected_norm_path for _, p in calls["save"])  # second save
         assert len(calls["save"]) == 2
@@ -184,7 +184,7 @@ class TestPreprocessFrame:
 
         main_mod.preprocess_frame(frame, frame_number, video_name, orig_lm, norm_lm)
 
-        expected_orig_path = (tmp_path / "orig" / video_name / f"{frame_number}.jpg")
+        expected_orig_path = tmp_path / "orig" / video_name / f"{frame_number}.jpg"
 
         assert calls["save"] and calls["save"][0][1] == expected_orig_path
         assert len(calls["save"]) == 1
