@@ -1,16 +1,18 @@
 import datetime
+import json
 from pathlib import Path
 
 import torch
 import torch.nn as nn
 from loguru import logger
+from sklearn.model_selection import train_test_split
 from torch.utils.tensorboard import SummaryWriter
 
 from ai.data_preprocessing.file_utils import create_directories
-from ai.modeling.evaluate import evaluate_model
+from ai.modeling.evaluate import evaluate_model, evaluate_xgboost
 from ai.modeling.load_dataset import create_data_tensors, create_dataloaders, read_dataset, scale_features
 from ai.modeling.multi_layer_perceptron import MultiLayerPerceptron
-from ai.modeling.train import plot_training_curves, train_model
+from ai.modeling.train import plot_training_curves, train_model, train_xgboost
 
 
 def get_device() -> torch.device:
@@ -104,6 +106,22 @@ def pipeline_mlp(
 def pipeline_xgboost(dataset_path: Path, output_dir: Path) -> None:
     dataset_df = read_dataset(dataset_path)
     features, labels = scale_features(dataset_df, output_dir)
+
+    X_train, X_val, y_train, y_val = train_test_split(
+        features, labels, test_size=0.25, random_state=42, stratify=labels
+    )
+
+    model, params = train_xgboost(X_train, y_train, X_val, y_val)
+    metrics = evaluate_xgboost(model, X_val, y_val, output_dir)
+
+    model.save_model(str(output_dir / "xgboost_model.json"))
+
+    with open(output_dir / "params.json", "w") as f:
+        json.dump(params, f, indent=4)
+
+    with open(output_dir / "metrics.json", "w") as f:
+        json.dump(metrics, f, indent=4)
+
 
 def save_model_to_onnx(model: nn.Module, output_path: Path, input_shape: tuple) -> None:
     try:

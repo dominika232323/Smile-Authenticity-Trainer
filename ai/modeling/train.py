@@ -7,6 +7,7 @@ import torch.nn as nn
 from loguru import logger
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
+from xgboost import XGBClassifier
 
 M = TypeVar("M", bound=nn.Module)
 
@@ -155,6 +156,35 @@ def train_model(
     logger.info("Training complete!")
 
     return model, history
+
+
+def train_xgboost(X_train, y_train, X_val, y_val, params=None) -> tuple[XGBClassifier, dict]:
+    logger.info("Training XGBoost model...")
+
+    if params is None:
+        params = {
+            "n_estimators": 600,
+            "learning_rate": 0.03,
+            "max_depth": 5,
+            "subsample": 0.9,
+            "colsample_bytree": 0.8,
+            "gamma": 0,
+            "min_child_weight": 1,
+            "eval_metric": "logloss",
+            "tree_method": "hist",
+        }
+
+    model = XGBClassifier(**params)
+
+    model.fit(
+        X_train,
+        y_train,
+        eval_set=[(X_val, y_val)],
+        verbose=False,
+    )
+
+    logger.info("XGBoost training complete!")
+    return model, params
 
 
 def plot_training_curves(history: dict[str, Any], output_dir: Path) -> None:

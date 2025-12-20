@@ -7,16 +7,16 @@ import seaborn as sns
 import torch
 import torch.nn as nn
 from loguru import logger
-from numpy import ndarray, dtype
+from numpy import dtype, ndarray
 from sklearn.metrics import (
+    accuracy_score,
     auc,
     classification_report,
     confusion_matrix,
-    roc_curve,
-    accuracy_score,
     f1_score,
     precision_score,
     recall_score,
+    roc_curve,
 )
 from torch.utils.tensorboard import SummaryWriter
 
@@ -72,6 +72,38 @@ def evaluate_model(
 
     logger.info("Model evaluation complete")
     return probabilities, predictions
+
+
+def evaluate_xgboost(model, X_val, y_val, output_dir: Path):
+    logger.info("Evaluating XGBoost model...")
+
+    probs = model.predict_proba(X_val)[:, 1]
+    preds = (probs > 0.5).astype(int)
+
+    accuracy = accuracy_score(y_val, preds)
+    precision = precision_score(y_val, preds, zero_division=0)
+    recall = recall_score(y_val, preds, zero_division=0)
+    f1 = f1_score(y_val, preds)
+    fpr, tpr, _ = roc_curve(y_val, probs)
+    roc_auc = auc(fpr, tpr)
+
+    logger.info(f"Accuracy: {accuracy:.4f}")
+    logger.info(f"Precision: {precision:.4f}")
+    logger.info(f"Recall: {recall:.4f}")
+    logger.info(f"F1 Score: {f1:.4f}")
+    logger.info(f"AUC: {roc_auc:.4f}")
+
+    save_classification_report(y_val, preds, output_dir)
+    save_confusion_matrix(y_val, preds, output_dir)
+    save_roc_curve_plot(y_val, probs, output_dir)
+
+    return {
+        "accuracy": accuracy,
+        "precision": precision,
+        "recall": recall,
+        "f1": f1,
+        "auc": roc_auc,
+    }
 
 
 def save_classification_report(y_true: np.ndarray, predictions: np.ndarray, output_dir: Path) -> None:
