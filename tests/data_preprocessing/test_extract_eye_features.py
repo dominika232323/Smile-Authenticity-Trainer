@@ -2,14 +2,14 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from ai.data_preprocessing.extract_eye_features import (
+from data_preprocessing.extract_eye_features import (
     euclidean,
     kappa,
     tau,
     compute_eyelid_amplitude,
     extract_eye_features,
 )
-from ai.data_preprocessing.face_landmarks import FaceLandmarks
+from data_preprocessing.face_landmarks import FaceLandmarks
 
 
 class TestEuclidean:
@@ -452,7 +452,7 @@ class TestExtractEyeFeatures:
             captured["fps"] = fps
             return pd.DataFrame({"some_feature": [1, 2, 3]})
 
-        import ai.data_preprocessing.extract_eye_features as eye_mod
+        import data_preprocessing.extract_eye_features as eye_mod
 
         monkeypatch.setattr(eye_mod, "extract_features", fake_extract_features)
 

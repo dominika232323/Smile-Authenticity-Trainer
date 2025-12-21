@@ -7,7 +7,7 @@ import pandas as pd
 from loguru import logger
 from tqdm import tqdm
 
-from ai.config import (
+from config import (
     ALL_CHEEKS_FEATURES_CSV,
     ALL_EYES_FEATURES_CSV,
     ALL_LIP_FEATURES_CSV,
@@ -26,11 +26,11 @@ from ai.config import (
     UvA_NEMO_SMILE_DETAILS,
     UvA_NEMO_SMILE_VIDEOS_DIR,
 )
-from ai.data_preprocessing.assign_labels import assign_labels
-from ai.data_preprocessing.extract_cheek_features import extract_cheek_features
-from ai.data_preprocessing.extract_eye_features import extract_eye_features
-from ai.data_preprocessing.extract_lip_features import extract_lip_features
-from ai.data_preprocessing.file_utils import (
+from data_preprocessing.assign_labels import assign_labels
+from data_preprocessing.extract_cheek_features import extract_cheek_features
+from data_preprocessing.extract_eye_features import extract_eye_features
+from data_preprocessing.extract_lip_features import extract_lip_features
+from data_preprocessing.file_utils import (
     append_row_to_csv,
     concat_csvs,
     create_csv_with_header,
@@ -39,11 +39,11 @@ from ai.data_preprocessing.file_utils import (
     save_dataframe_to_csv,
     save_frame,
 )
-from ai.data_preprocessing.get_details import get_details
-from ai.data_preprocessing.get_face_landmarks import create_facelandmarks_header, get_face_landmarks
-from ai.data_preprocessing.label_smile_phases import label_smile_phases
-from ai.data_preprocessing.normalize_face import normalize_face
-from ai.logging_config import setup_logging
+from data_preprocessing.get_details import get_details
+from data_preprocessing.get_face_landmarks import create_facelandmarks_header, get_face_landmarks
+from data_preprocessing.label_smile_phases import label_smile_phases
+from data_preprocessing.normalize_face import normalize_face
+from logging_config import setup_logging
 
 
 @logger.catch

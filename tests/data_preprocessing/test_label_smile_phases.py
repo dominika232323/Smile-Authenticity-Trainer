@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from ai.data_preprocessing.label_smile_phases import (
+from data_preprocessing.label_smile_phases import (
     calculate_radius,
     smooth_radius,
     detect_longest_segment,
@@ -472,7 +472,7 @@ class TestLabelSmilePhases:
         assert len(result_df) == 1
         assert result_df["smile_phase"].iloc[0] == "neutral"
 
-    @patch("ai.data_preprocessing.label_smile_phases.save_dataframe_to_csv")
+    @patch("data_preprocessing.label_smile_phases.save_dataframe_to_csv")
     @patch("pandas.read_csv")
     def test_label_smile_phases_mocked_dependencies(self, mock_read_csv, mock_save_csv):
         mock_landmarks_df = pd.DataFrame(
@@ -607,12 +607,12 @@ class TestLabelSmilePhases:
 
         assert len(result_df) == len(sample_landmarks_data)
 
-    @patch("ai.data_preprocessing.label_smile_phases.calculate_radius")
-    @patch("ai.data_preprocessing.label_smile_phases.smooth_radius")
-    @patch("ai.data_preprocessing.label_smile_phases.detect_longest_segment")
-    @patch("ai.data_preprocessing.label_smile_phases.label_phases")
+    @patch("data_preprocessing.label_smile_phases.calculate_radius")
+    @patch("data_preprocessing.label_smile_phases.smooth_radius")
+    @patch("data_preprocessing.label_smile_phases.detect_longest_segment")
+    @patch("data_preprocessing.label_smile_phases.label_phases")
     @patch("pandas.read_csv")
-    @patch("ai.data_preprocessing.label_smile_phases.save_dataframe_to_csv")
+    @patch("data_preprocessing.label_smile_phases.save_dataframe_to_csv")
     def test_label_smile_phases_function_integration(
         self,
         mock_save_csv,

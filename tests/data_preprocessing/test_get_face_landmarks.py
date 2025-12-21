@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from ai.data_preprocessing.get_face_landmarks import (
+from data_preprocessing.get_face_landmarks import (
     create_facelandmarks_header,
     get_face_landmarks,
     get_face_landmark_coords,
@@ -59,7 +59,7 @@ def create_mock_face_landmarks(num_landmarks=468):
 
 
 class TestGetFaceLandmarks:
-    @patch("ai.data_preprocessing.get_face_landmarks.mp.solutions.face_mesh.FaceMesh")
+    @patch("data_preprocessing.get_face_landmarks.mp.solutions.face_mesh.FaceMesh")
     def test_get_face_landmarks_with_detected_face(self, mock_face_mesh_class):
         with tempfile.TemporaryDirectory() as temp_dir:
             landmarks_file = Path(temp_dir) / "landmarks.csv"
@@ -86,7 +86,7 @@ class TestGetFaceLandmarks:
             assert len(rows[0]) == 937
             assert rows[0][0] == str(frame_number)
 
-    @patch("ai.data_preprocessing.get_face_landmarks.mp.solutions.face_mesh.FaceMesh")
+    @patch("data_preprocessing.get_face_landmarks.mp.solutions.face_mesh.FaceMesh")
     def test_get_face_landmarks_no_face_detected(self, mock_face_mesh_class):
         with tempfile.TemporaryDirectory() as temp_dir:
             landmarks_file = Path(temp_dir) / "landmarks.csv"
@@ -104,7 +104,7 @@ class TestGetFaceLandmarks:
 
             assert not landmarks_file.exists()
 
-    @patch("ai.data_preprocessing.get_face_landmarks.mp.solutions.face_mesh.FaceMesh")
+    @patch("data_preprocessing.get_face_landmarks.mp.solutions.face_mesh.FaceMesh")
     def test_get_face_landmarks_multiple_calls(self, mock_face_mesh_class):
         with tempfile.TemporaryDirectory() as temp_dir:
             landmarks_file = Path(temp_dir) / "landmarks.csv"
@@ -131,7 +131,7 @@ class TestGetFaceLandmarks:
             assert rows[1][0] == "2"
             assert rows[2][0] == "3"
 
-    @patch("ai.data_preprocessing.get_face_landmarks.mp.solutions.face_mesh.FaceMesh")
+    @patch("data_preprocessing.get_face_landmarks.mp.solutions.face_mesh.FaceMesh")
     def test_get_face_landmarks_empty_landmarks(self, mock_face_mesh_class):
         with tempfile.TemporaryDirectory() as temp_dir:
             landmarks_file = Path(temp_dir) / "landmarks.csv"
@@ -149,7 +149,7 @@ class TestGetFaceLandmarks:
 
             assert not landmarks_file.exists()
 
-    @patch("ai.data_preprocessing.get_face_landmarks.mp.solutions.face_mesh.FaceMesh")
+    @patch("data_preprocessing.get_face_landmarks.mp.solutions.face_mesh.FaceMesh")
     @patch("builtins.print")
     def test_get_face_landmarks_handles_exceptions(self, mock_print, mock_face_mesh_class):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -170,7 +170,7 @@ class TestGetFaceLandmarks:
             with pytest.raises(Exception):
                 get_face_landmarks(frame, frame_number, landmarks_file)
 
-    @patch("ai.data_preprocessing.get_face_landmarks.mp.solutions.face_mesh.FaceMesh")
+    @patch("data_preprocessing.get_face_landmarks.mp.solutions.face_mesh.FaceMesh")
     def test_get_face_landmarks_truthy_empty_iterable(self, mock_face_mesh_class):
         with tempfile.TemporaryDirectory() as temp_dir:
             landmarks_file = Path(temp_dir) / "landmarks.csv"
@@ -195,7 +195,7 @@ class TestGetFaceLandmarks:
             assert result is False
             assert not landmarks_file.exists()
 
-    @patch("ai.data_preprocessing.get_face_landmarks.mp.solutions.face_mesh.FaceMesh")
+    @patch("data_preprocessing.get_face_landmarks.mp.solutions.face_mesh.FaceMesh")
     def test_get_face_landmarks_different_frame_types_and_sizes(self, mock_face_mesh_class):
         with tempfile.TemporaryDirectory() as temp_dir:
             landmarks_file = Path(temp_dir) / "landmarks.csv"
@@ -223,7 +223,7 @@ class TestGetFaceLandmarks:
 
             assert len(rows) == 3
 
-    @patch("ai.data_preprocessing.get_face_landmarks.mp.solutions.face_mesh.FaceMesh")
+    @patch("data_preprocessing.get_face_landmarks.mp.solutions.face_mesh.FaceMesh")
     def test_get_face_landmarks_mediapipe_configuration(self, mock_face_mesh_class):
         with tempfile.TemporaryDirectory() as temp_dir:
             landmarks_file = Path(temp_dir) / "landmarks.csv"

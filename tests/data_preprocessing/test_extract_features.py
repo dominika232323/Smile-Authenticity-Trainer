@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from ai.data_preprocessing.extract_features import (
+from data_preprocessing.extract_features import (
     safe_len,
     safe_sum,
     safe_mean,

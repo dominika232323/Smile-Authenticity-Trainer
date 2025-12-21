@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 import pytest
 
-from ai.data_preprocessing.normalize_face import (
+from data_preprocessing.normalize_face import (
     calculate_distance_between_points,
     calculate_center_of_landmarks,
     calculate_left_eye_center,
@@ -433,8 +433,8 @@ class TestCalculateLeftEyeCenter:
 
         return Path(temp_file.name)
 
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
     def test_calculate_left_eye_center_single_frame(self, mock_upper, mock_lower):
         mock_lower.return_value = [0, 1]
         mock_upper.return_value = [2, 3]
@@ -468,8 +468,8 @@ class TestCalculateLeftEyeCenter:
         finally:
             landmarks_file.unlink()
 
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
     def test_calculate_left_eye_center_duplicate_landmarks(self, mock_upper, mock_lower):
         mock_lower.return_value = [0, 1, 0]
         mock_upper.return_value = [2, 1]
@@ -500,8 +500,8 @@ class TestCalculateLeftEyeCenter:
         finally:
             landmarks_file.unlink()
 
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
     def test_calculate_right_eye_center_multiple_frames(self, mock_upper, mock_lower):
         mock_lower.return_value = [0, 1]
         mock_upper.return_value = [2]
@@ -549,8 +549,8 @@ class TestCalculateLeftEyeCenter:
         finally:
             landmarks_file.unlink()
 
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
     def test_calculate_right_eye_center_single_landmark(self, mock_upper, mock_lower):
         mock_lower.return_value = [0]
         mock_upper.return_value = []  # Empty upper landmarks
@@ -581,8 +581,8 @@ class TestCalculateLeftEyeCenter:
         finally:
             landmarks_file.unlink()
 
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
     def test_calculate_left_eye_center_negative_coordinates(self, mock_upper, mock_lower):
         mock_lower.return_value = [0, 1]
         mock_upper.return_value = [2, 3]
@@ -613,8 +613,8 @@ class TestCalculateLeftEyeCenter:
         finally:
             landmarks_file.unlink()
 
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
     def test_calculate_left_eye_center_floating_point_precision(self, mock_upper, mock_lower):
         mock_lower.return_value = [0, 1]
         mock_upper.return_value = [2]
@@ -661,8 +661,8 @@ class TestCalculateRightEyeCenter:
 
         return Path(temp_file.name)
 
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
     def test_calculate_right_eye_center_single_frame(self, mock_upper, mock_lower):
         mock_lower.return_value = [0, 1]
         mock_upper.return_value = [2, 3]
@@ -696,8 +696,8 @@ class TestCalculateRightEyeCenter:
         finally:
             landmarks_file.unlink()
 
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
     def test_calculate_right_eye_center_duplicate_landmarks(self, mock_upper, mock_lower):
         mock_lower.return_value = [0, 1, 0]
         mock_upper.return_value = [2, 1]
@@ -728,8 +728,8 @@ class TestCalculateRightEyeCenter:
         finally:
             landmarks_file.unlink()
 
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
     def test_calculate_right_eye_center_multiple_frames(self, mock_upper, mock_lower):
         mock_lower.return_value = [0, 1]
         mock_upper.return_value = [2]
@@ -777,8 +777,8 @@ class TestCalculateRightEyeCenter:
         finally:
             landmarks_file.unlink()
 
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
     def test_calculate_right_eye_center_single_landmark(self, mock_upper, mock_lower):
         mock_lower.return_value = [0]
         mock_upper.return_value = []  # Empty upper landmarks
@@ -809,8 +809,8 @@ class TestCalculateRightEyeCenter:
         finally:
             landmarks_file.unlink()
 
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
     def test_calculate_left_eye_center_negative_coordinates(self, mock_upper, mock_lower):
         mock_lower.return_value = [0, 1]
         mock_upper.return_value = [2, 3]
@@ -841,8 +841,8 @@ class TestCalculateRightEyeCenter:
         finally:
             landmarks_file.unlink()
 
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
     def test_calculate_left_eye_center_floating_point_precision(self, mock_upper, mock_lower):
         mock_lower.return_value = [0, 1]
         mock_upper.return_value = [2]
@@ -1283,10 +1283,10 @@ class TestNormalizeFace:
 
         return frame
 
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
     def test_normalize_face_basic_functionality(
         self, mock_right_upper, mock_right_lower, mock_left_upper, mock_left_lower
     ):
@@ -1336,10 +1336,10 @@ class TestNormalizeFace:
         finally:
             landmarks_file.unlink()
 
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
     def test_normalize_face_different_sizes(self, mock_right_upper, mock_right_lower, mock_left_upper, mock_left_lower):
         mock_left_lower.return_value = [0]
         mock_left_upper.return_value = [1]
@@ -1389,10 +1389,10 @@ class TestNormalizeFace:
         finally:
             landmarks_file.unlink()
 
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
     def test_normalize_face_different_eye_relatives(
         self, mock_right_upper, mock_right_lower, mock_left_upper, mock_left_lower
     ):
@@ -1444,10 +1444,10 @@ class TestNormalizeFace:
         finally:
             landmarks_file.unlink()
 
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
     def test_normalize_face_rotated_eyes(self, mock_right_upper, mock_right_lower, mock_left_upper, mock_left_lower):
         mock_left_lower.return_value = [0]
         mock_left_upper.return_value = [1]
@@ -1494,10 +1494,10 @@ class TestNormalizeFace:
         finally:
             landmarks_file.unlink()
 
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
     def test_normalize_face_multiple_frames(self, mock_right_upper, mock_right_lower, mock_left_upper, mock_left_lower):
         mock_left_lower.return_value = [0]
         mock_left_upper.return_value = [1]
@@ -1575,10 +1575,10 @@ class TestNormalizeFace:
         finally:
             landmarks_file.unlink()
 
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
     def test_normalize_face_grayscale_input(self, mock_right_upper, mock_right_lower, mock_left_upper, mock_left_lower):
         mock_left_lower.return_value = [0]
         mock_left_upper.return_value = [1]
@@ -1627,10 +1627,10 @@ class TestNormalizeFace:
         finally:
             landmarks_file.unlink()
 
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
     def test_normalize_face_edge_cases_small_eye_distance(
         self, mock_right_upper, mock_right_lower, mock_left_upper, mock_left_lower
     ):
@@ -1679,10 +1679,10 @@ class TestNormalizeFace:
         finally:
             landmarks_file.unlink()
 
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
     def test_normalize_face_identical_eye_positions_raises_error(
         self, mock_right_upper, mock_right_lower, mock_left_upper, mock_left_lower
     ):
@@ -1728,10 +1728,10 @@ class TestNormalizeFace:
         finally:
             landmarks_file.unlink()
 
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
-    @patch("ai.data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.left_eye_lower_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.left_eye_upper_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.right_eye_lower_0")
+    @patch("data_preprocessing.normalize_face.FaceLandmarks.right_eye_upper_0")
     def test_normalize_face_extreme_coordinates(
         self, mock_right_upper, mock_right_lower, mock_left_upper, mock_left_lower
     ):

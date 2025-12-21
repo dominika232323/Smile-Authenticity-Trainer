@@ -4,8 +4,8 @@ import numpy as np
 import pandas as pd
 from loguru import logger
 
-from ai.data_preprocessing.face_landmarks import FaceLandmarks
-from ai.data_preprocessing.file_utils import save_dataframe_to_csv
+from data_preprocessing.face_landmarks import FaceLandmarks
+from data_preprocessing.file_utils import save_dataframe_to_csv
 
 
 def label_smile_phases(landmarks_file_path: Path, output_csv: Path, smoothing_window: int = 5) -> None:

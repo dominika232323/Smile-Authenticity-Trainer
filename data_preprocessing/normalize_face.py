@@ -4,8 +4,8 @@ from typing import Any
 import cv2
 import numpy as np
 
-from ai.data_preprocessing.face_landmarks import FaceLandmarks
-from ai.data_preprocessing.get_face_landmarks import get_face_landmark_coords
+from data_preprocessing.face_landmarks import FaceLandmarks
+from data_preprocessing.get_face_landmarks import get_face_landmark_coords
 
 
 def normalize_face(

@@ -2,11 +2,11 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from ai.data_preprocessing.extract_cheek_features import (
+from data_preprocessing.extract_cheek_features import (
     extract_cheek_features,
     normalized_amplitude_signal_of_cheeks,
 )
-from ai.data_preprocessing.face_landmarks import FaceLandmarks
+from data_preprocessing.face_landmarks import FaceLandmarks
 
 
 @pytest.fixture
@@ -246,7 +246,7 @@ class TestExtractCheekFeatures:
             captured["fps"] = fps
             return pd.DataFrame({"some_feature": [1, 2, 3]})
 
-        import ai.data_preprocessing.extract_cheek_features as cheek_mod
+        import data_preprocessing.extract_cheek_features as cheek_mod
 
         monkeypatch.setattr(cheek_mod, "extract_features", fake_extract_features)
 

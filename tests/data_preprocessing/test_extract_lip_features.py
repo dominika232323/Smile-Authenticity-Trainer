@@ -2,11 +2,11 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from ai.data_preprocessing.extract_lip_features import (
+from data_preprocessing.extract_lip_features import (
     extract_lip_features,
     normalized_amplitude_signal_of_lip_corners,
 )
-from ai.data_preprocessing.face_landmarks import FaceLandmarks
+from data_preprocessing.face_landmarks import FaceLandmarks
 
 
 @pytest.fixture
@@ -250,7 +250,7 @@ class TestExtractLipFeatures:
             captured["fps"] = fps
             return pd.DataFrame({"some_feature": [1, 2, 3]})
 
-        import ai.data_preprocessing.extract_lip_features as lip_mod
+        import data_preprocessing.extract_lip_features as lip_mod
 
         monkeypatch.setattr(lip_mod, "extract_features", fake_extract_features)
 

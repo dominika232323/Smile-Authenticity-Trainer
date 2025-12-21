@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from ai.data_preprocessing.file_utils import (
+from data_preprocessing.file_utils import (
     add_header_to_csv,
     append_row_to_csv,
     save_frame,
@@ -890,7 +890,7 @@ class TestEnsureCheckpointFileExists:
     def test_creates_file_when_missing_and_returns_false(self, monkeypatch):
         with tempfile.TemporaryDirectory() as temp_dir:
             checkpoint_path = Path(temp_dir) / "processed_files.csv"
-            monkeypatch.setattr("ai.data_preprocessing.file_utils.CHECKPOINT_FILE_PATH", checkpoint_path, raising=False)
+            monkeypatch.setattr("data_preprocessing.file_utils.CHECKPOINT_FILE_PATH", checkpoint_path, raising=False)
 
             assert not checkpoint_path.exists()
 
@@ -916,7 +916,7 @@ class TestEnsureCheckpointFileExists:
 
             original_content = checkpoint_path.read_text(encoding="utf-8")
 
-            monkeypatch.setattr("ai.data_preprocessing.file_utils.CHECKPOINT_FILE_PATH", checkpoint_path, raising=False)
+            monkeypatch.setattr("data_preprocessing.file_utils.CHECKPOINT_FILE_PATH", checkpoint_path, raising=False)
 
             result = ensure_checkpoint_file_exists()
 
@@ -932,7 +932,7 @@ class TestEnsureCheckpointFileExists:
             try:
                 checkpoint_path = readonly_dir / "processed_files.csv"
                 monkeypatch.setattr(
-                    "ai.data_preprocessing.file_utils.CHECKPOINT_FILE_PATH", checkpoint_path, raising=False
+                    "data_preprocessing.file_utils.CHECKPOINT_FILE_PATH", checkpoint_path, raising=False
                 )
 
                 with pytest.raises(PermissionError):
@@ -946,7 +946,7 @@ class TestEnsureCheckpointFileExists:
             checkpoint_dir = Path(temp_dir) / "processed_files.csv"
             checkpoint_dir.mkdir()
 
-            monkeypatch.setattr("ai.data_preprocessing.file_utils.CHECKPOINT_FILE_PATH", checkpoint_dir, raising=False)
+            monkeypatch.setattr("data_preprocessing.file_utils.CHECKPOINT_FILE_PATH", checkpoint_dir, raising=False)
 
             result = ensure_checkpoint_file_exists()
 

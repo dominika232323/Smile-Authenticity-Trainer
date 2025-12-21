@@ -1,6 +1,6 @@
 import pytest
 
-from ai.data_preprocessing.face_landmarks import FaceLandmarks
+from data_preprocessing.face_landmarks import FaceLandmarks
 
 
 class TestFaceLandmarks:

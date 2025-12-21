@@ -1,9 +1,10 @@
 from pathlib import Path
 
-PROJ_ROOT = Path(__file__).resolve().parents[1]
+PROJ_ROOT = Path(__file__).resolve().parents[0]
 
 LOGS_DIR = PROJ_ROOT / "logs"
 DATA_DIR = PROJ_ROOT / "data"
+# DATA_DIR = PROJ_ROOT / "data_test"
 
 UvA_NEMO_SMILE_DATABASE_DIR = DATA_DIR / "UvA-NEMO_SMILE_DATABASE"
 UvA_NEMO_SMILE_DETAILS = UvA_NEMO_SMILE_DATABASE_DIR / "UvA-NEMO_Smile_Database_File_Details.txt"

@@ -5,8 +5,8 @@ import numpy as np
 import pandas as pd
 from loguru import logger
 
-from ai.data_preprocessing.extract_features import extract_features
-from ai.data_preprocessing.face_landmarks import FaceLandmarks
+from data_preprocessing.extract_features import extract_features
+from data_preprocessing.face_landmarks import FaceLandmarks
 
 
 def extract_cheek_features(landmarks_file_path: Path, smile_phases_file_path: Path, video_fps: float) -> pd.DataFrame:

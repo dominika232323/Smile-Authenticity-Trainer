@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from loguru import logger
 
-from ai.data_preprocessing.file_utils import append_row_to_csv
+from data_preprocessing.file_utils import append_row_to_csv
 
 
 def get_face_landmarks(

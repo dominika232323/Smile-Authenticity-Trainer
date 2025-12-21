@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 from loguru import logger
 
-from ai.config import CHECKPOINT_FILE_PATH
+from config import CHECKPOINT_FILE_PATH
 
 
 def append_row_to_csv(file_path: Path, row: list[Any]) -> None:

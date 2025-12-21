@@ -4,7 +4,7 @@ from pathlib import Path
 import tempfile
 import shutil
 
-from ai.data_preprocessing.get_details import get_details
+from data_preprocessing.get_details import get_details
 
 
 class TestGetDetails:

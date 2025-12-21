@@ -1,6 +1,6 @@
 import pandas as pd
 
-from ai.data_preprocessing.assign_labels import assign_labels
+from data_preprocessing.assign_labels import assign_labels
 
 
 class TestAssignLabels:

@@ -14,9 +14,9 @@ PYTHON_INTERPRETER = python
 ## Set up Python environment
 .PHONY: create_environment
 create_environment:
-	@rm -rf .venv
-	$(PYTHON_INTERPRETER)$(PYTHON_VERSION) -m venv .venv
-	@echo ">>> New python interpreter environment created. Activate it using 'source .venv/bin/activate'"
+	@rm -rf venv
+	$(PYTHON_INTERPRETER)$(PYTHON_VERSION) -m venv venv
+	@echo ">>> New python interpreter environment created. Activate it using 'source venv/bin/activate'"
 
 
 ## Install Python dependencies
@@ -50,7 +50,7 @@ remove_logs:
 ## Sort imports using isort
 .PHONY: isort
 isort:
-	isort ai/
+	isort data_preprocessing modeling
 
 
 ## Lint using ruff (use `make format` to do formatting)
@@ -70,7 +70,7 @@ format:
 ## Check type hints with mypy
 .PHONY: mypy
 mypy:
-	mypy ai
+	mypy data_preprocessing modeling
 
 
 #################################################################################
@@ -81,25 +81,25 @@ mypy:
 ## Run data preprocessing
 .PHONY: data_preprocessing
 data_preprocessing:
-	$(PYTHON_INTERPRETER) -m ai.data_preprocessing.main
+	$(PYTHON_INTERPRETER) -m data_preprocessing.main
 
 
 ## Train lips model
 .PHONY: train_lips
 train_lips:
-	$(PYTHON_INTERPRETER) -m ai.modeling.lips
+	$(PYTHON_INTERPRETER) -m modeling.lips
 
 
 ## Train eyes model
 .PHONY: train_eyes
 train_eyes:
-	$(PYTHON_INTERPRETER) -m ai.modeling.eyes
+	$(PYTHON_INTERPRETER) -m modeling.eyes
 
 
 ## Train cheeks model
 .PHONY: train_cheeks
 train_cheeks:
-	$(PYTHON_INTERPRETER) -m ai.modeling.cheeks
+	$(PYTHON_INTERPRETER) -m modeling.cheeks
 
 
 ## Run tests
@@ -111,7 +111,7 @@ test:
 ## Run tests with coverage
 .PHONY: coverage
 coverage:
-	$(PYTHON_INTERPRETER) -m pytest --cov=ai/data_preprocessing --cov-report=term-missing tests
+	$(PYTHON_INTERPRETER) -m pytest --cov=data_preprocessing --cov-report=term-missing tests
 
 
 ## Run tensorboard for lips runs

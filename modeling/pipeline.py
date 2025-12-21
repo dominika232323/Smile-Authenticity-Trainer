@@ -3,16 +3,15 @@ import json
 from pathlib import Path
 
 import torch
-import torch.nn as nn
 from loguru import logger
 from sklearn.model_selection import train_test_split
 from torch.utils.tensorboard import SummaryWriter
 
-from ai.data_preprocessing.file_utils import create_directories
-from ai.modeling.evaluate import evaluate_model, evaluate_xgboost
-from ai.modeling.load_dataset import create_data_tensors, create_dataloaders, read_dataset, scale_features
-from ai.modeling.multi_layer_perceptron import MultiLayerPerceptron
-from ai.modeling.train import plot_training_curves, train_model, train_xgboost
+from data_preprocessing.file_utils import create_directories
+from modeling.evaluate import evaluate_model, evaluate_xgboost
+from modeling.load_dataset import create_data_tensors, create_dataloaders, read_dataset, scale_features
+from modeling.multi_layer_perceptron import MultiLayerPerceptron
+from modeling.train import plot_training_curves, train_model, train_xgboost
 
 
 def get_device() -> torch.device:
@@ -111,7 +110,7 @@ def pipeline_xgboost(dataset_path: Path, output_dir: Path) -> None:
     model, params = train_xgboost(X_train, y_train, X_val, y_val)
     metrics = evaluate_xgboost(model, X_val, y_val, output_dir)
 
-    model.save_model(str(output_dir / "xgboost_model.json"))
+    # model.save_model(str(output_dir / "xgboost_model.json"))
 
     with open(output_dir / "params.json", "w") as f:
         json.dump(params, f, indent=4)

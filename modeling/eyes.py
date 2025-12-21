@@ -1,9 +1,9 @@
 from loguru import logger
 
-from ai.config import ALL_EYES_FEATURES_CSV, EYES_RUNS_DIR, RUNS_DIR
-from ai.data_preprocessing.file_utils import create_directories
-from ai.logging_config import setup_logging
-from ai.modeling.pipeline import get_timestamp, pipeline_xgboost
+from config import ALL_EYES_FEATURES_CSV, EYES_RUNS_DIR, RUNS_DIR
+from data_preprocessing.file_utils import create_directories
+from logging_config import setup_logging
+from modeling.pipeline import get_timestamp, pipeline_xgboost
 
 
 @logger.catch

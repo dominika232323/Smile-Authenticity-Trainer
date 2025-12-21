@@ -19,7 +19,7 @@ class TestGetVideosToProcess:
         return paths
 
     def test_returns_all_when_no_checkpoint(self, tmp_path, monkeypatch):
-        from ai.data_preprocessing import main as main_mod
+        from data_preprocessing import main as main_mod
 
         vids = self._make_mp4_files(tmp_path, ["a", "b", "c"])
 
@@ -32,7 +32,7 @@ class TestGetVideosToProcess:
         assert {Path(p) for p in result} == set(vids)
 
     def test_filters_processed_videos_when_checkpoint_exists(self, tmp_path, monkeypatch):
-        from ai.data_preprocessing import main as main_mod
+        from data_preprocessing import main as main_mod
 
         vids = self._make_mp4_files(tmp_path, ["v1", "v2", "v3"])  # three videos in dir
         monkeypatch.setattr(main_mod, "UvA_NEMO_SMILE_VIDEOS_DIR", tmp_path)
@@ -53,7 +53,7 @@ class TestGetVideosToProcess:
         assert {Path(p) for p in result} == expected
 
     def test_returns_empty_when_no_videos(self, tmp_path, monkeypatch):
-        from ai.data_preprocessing import main as main_mod
+        from data_preprocessing import main as main_mod
 
         monkeypatch.setattr(main_mod, "UvA_NEMO_SMILE_VIDEOS_DIR", tmp_path)
         monkeypatch.setattr(main_mod, "ensure_checkpoint_file_exists", lambda: False)
@@ -63,7 +63,7 @@ class TestGetVideosToProcess:
         assert result == []
 
     def test_ignores_processed_paths_from_other_directories(self, tmp_path, monkeypatch):
-        from ai.data_preprocessing import main as main_mod
+        from data_preprocessing import main as main_mod
 
         vids = self._make_mp4_files(tmp_path, ["k1", "k2"])
         monkeypatch.setattr(main_mod, "UvA_NEMO_SMILE_VIDEOS_DIR", tmp_path)
@@ -84,7 +84,7 @@ class TestGetVideosToProcess:
 
 class TestPreprocessFrame:
     def test_with_landmarks_saves_and_calls_expected(self, tmp_path, monkeypatch):
-        from ai.data_preprocessing import main as main_mod
+        from data_preprocessing import main as main_mod
 
         monkeypatch.setattr(main_mod, "ORIGINAL_FRAMES_DIR", tmp_path / "orig")
         monkeypatch.setattr(main_mod, "PREPROCESSED_FRAMES_DIR", tmp_path / "preproc")
@@ -154,7 +154,7 @@ class TestPreprocessFrame:
         assert isinstance(g_img2, np.ndarray) and g_img2.shape == (1, 1, 3)
 
     def test_without_landmarks_only_saves_original(self, tmp_path, monkeypatch):
-        from ai.data_preprocessing import main as main_mod
+        from data_preprocessing import main as main_mod
 
         monkeypatch.setattr(main_mod, "ORIGINAL_FRAMES_DIR", tmp_path / "orig")
         monkeypatch.setattr(main_mod, "PREPROCESSED_FRAMES_DIR", tmp_path / "preproc")
@@ -195,7 +195,7 @@ class TestPreprocessFrame:
 
 class TestPreprocessVideo:
     def test_returns_none_when_cannot_open_video(self, tmp_path, monkeypatch):
-        from ai.data_preprocessing import main as main_mod
+        from data_preprocessing import main as main_mod
 
         created = {}
 
@@ -250,7 +250,7 @@ class TestPreprocessVideo:
         assert created["cap"].release_called is False
 
     def test_processes_frames_and_returns_fps(self, tmp_path, monkeypatch):
-        from ai.data_preprocessing import main as main_mod
+        from data_preprocessing import main as main_mod
 
         config = {
             "opened": True,

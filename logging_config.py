@@ -2,7 +2,7 @@ import sys
 
 from loguru import logger
 
-from ai.config import LOGS_DIR
+from config import LOGS_DIR
 
 
 def setup_logging():
