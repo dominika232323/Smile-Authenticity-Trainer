@@ -94,9 +94,6 @@ def pipeline_mlp(
     writer.add_scalar("Final/train_accuracy", final_train_acc, 0)
     writer.add_scalar("Final/val_accuracy", final_val_acc, 0)
 
-    onnx_path = output_dir / "model.onnx"
-    save_model_to_onnx(model, onnx_path, input_shape=(1, X.shape[1]))
-
     writer.close()
 
     logger.info(f"TensorBoard logs saved to {tensorboard_logs_directory}")
@@ -121,32 +118,3 @@ def pipeline_xgboost(dataset_path: Path, output_dir: Path) -> None:
 
     with open(output_dir / "metrics.json", "w") as f:
         json.dump(metrics, f, indent=4)
-
-
-def save_model_to_onnx(model: nn.Module, output_path: Path, input_shape: tuple) -> None:
-    try:
-        device = next(model.parameters()).device
-
-        dummy_input = torch.randn(input_shape, device=device)
-
-        model.eval()
-
-        model_cpu = model.cpu()
-        dummy_input_cpu = dummy_input.cpu()
-
-        torch.onnx.export(
-            model_cpu,
-            (dummy_input_cpu,),
-            str(output_path),
-            export_params=True,
-            opset_version=17,
-            do_constant_folding=True,
-            input_names=["input"],
-            output_names=["output"],
-        )
-
-        logger.info(f"Model successfully exported to ONNX format: {output_path}")
-
-    except Exception as e:
-        logger.error(f"Failed to export model to ONNX: {e}")
-        raise
