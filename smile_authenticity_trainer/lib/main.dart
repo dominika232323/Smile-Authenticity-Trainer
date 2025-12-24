@@ -11,7 +11,7 @@ class SmileAuthenticityTrainerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(home: NavigationBarMain());
+    return const MaterialApp(home: NavigationBarMain(), );
   }
 }
 
