@@ -102,6 +102,18 @@ train_cheeks:
 	$(PYTHON_INTERPRETER) -m modeling.cheeks
 
 
+## Run api
+.PHONY: run_api
+run_api:
+	$(PYTHON_INTERPRETER) -m api.main
+
+
+## Test api
+.PHONY: test_api
+test_api:
+	curl -X POST http://127.0.0.1:5000/process-video -F "video=@data/UvA-NEMO_SMILE_DATABASE/videos/001_deliberate_smile_2.mp4"
+
+
 ## Run tests
 .PHONY: test
 test:
