@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'my_app_bar.dart';
+
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key, required this.theme});
 
@@ -8,7 +10,7 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: buildMyAppBar(context),
       body: Card(
         shadowColor: Colors.transparent,
         margin: const EdgeInsets.all(8.0),

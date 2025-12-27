@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'my_app_bar.dart';
+
 class UploadVideoPage extends StatelessWidget {
   const UploadVideoPage({super.key, required this.theme});
 
@@ -25,10 +27,7 @@ class UploadVideoPage extends StatelessWidget {
         create: (_) => UploadVideoCubit(),
         child: UploadVideoBody(),
       ),
-      appBar: AppBar(
-        title: Center(child: Text('Upload video')),
-        backgroundColor: Theme.of(context).colorScheme.primary,
-      ),
+      appBar: buildMyAppBar(context),
     );
   }
 }
