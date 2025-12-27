@@ -43,7 +43,7 @@ class _NavigationBarMainState extends State<NavigationBarMain> {
             currentPageIndex = index;
           });
         },
-        indicatorColor: theme.colorScheme.secondary,
+        indicatorColor: theme.colorScheme.tertiary,
         selectedIndex: currentPageIndex,
         destinations: const <Widget>[
           NavigationDestination(icon: Icon(Icons.auto_graph), label: 'History'),
