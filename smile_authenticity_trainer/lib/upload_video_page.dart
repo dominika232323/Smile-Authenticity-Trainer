@@ -53,6 +53,10 @@ class UploadVideoBody extends StatelessWidget {
                 context.read<UploadVideoCubit>().pickVideo(galleryFile);
               }
             },
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.tertiary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+            ),
             child: Text('Upload video'),
           ),
         ),
