@@ -11,7 +11,7 @@ class SmileAuthenticityTrainerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(home: NavigationBarMain(), );
+    return const MaterialApp(home: NavigationBarMain());
   }
 }
 
@@ -38,6 +38,7 @@ class _NavigationBarMainState extends State<NavigationBarMain> {
         indicatorColor: Colors.amber,
         selectedIndex: currentPageIndex,
         destinations: const <Widget>[
+          NavigationDestination(icon: Icon(Icons.auto_graph), label: 'History'),
           NavigationDestination(
             icon: Icon(Icons.upload_file),
             label: 'Upload video',
@@ -46,23 +47,15 @@ class _NavigationBarMainState extends State<NavigationBarMain> {
             icon: Icon(Icons.video_camera_front_outlined),
             label: 'Record video',
           ),
-          NavigationDestination(
-            icon: Icon(Icons.auto_graph),
-            label: 'History',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
+          NavigationDestination(icon: Icon(Icons.settings), label: 'Settings'),
         ],
       ),
       body: <Widget>[
+        HistoryPage(theme: theme),
         UploadVideoPage(theme: theme),
         RecordVideoPage(theme: theme),
-        HistoryPage(theme: theme),
-        SettingsPage(theme: theme)
+        SettingsPage(theme: theme),
       ][currentPageIndex],
     );
   }
 }
-
