@@ -25,7 +25,10 @@ class UploadVideoPage extends StatelessWidget {
         create: (_) => UploadVideoCubit(),
         child: UploadVideoBody(),
       ),
-      appBar: AppBar(title: Text('aaaa')),
+      appBar: AppBar(
+        title: Center(child: Text('Upload video')),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+      ),
     );
   }
 }
@@ -38,19 +41,21 @@ class UploadVideoBody extends StatelessWidget {
     return BlocBuilder<UploadVideoCubit, UploadVideoState>(
       builder: (context, state) => switch (state) {
         // TODO: Handle this case.
-        VideoNotPicked() => FilledButton(
-          onPressed: () async {
-            final picker = ImagePicker();
-            final pickedFile = await picker.pickImage(
-              source: ImageSource.gallery,
-            );
+        VideoNotPicked() => Center(
+          child: FilledButton(
+            onPressed: () async {
+              final picker = ImagePicker();
+              final pickedFile = await picker.pickImage(
+                source: ImageSource.gallery,
+              );
 
-            if (pickedFile != null) {
-              final galleryFile = File(pickedFile.path);
-              context.read<UploadVideoCubit>().pickVideo(galleryFile);
-            }
-          },
-          child: Text('aaaaaaaaaaaaaaaaa'),
+              if (pickedFile != null) {
+                final galleryFile = File(pickedFile.path);
+                context.read<UploadVideoCubit>().pickVideo(galleryFile);
+              }
+            },
+            child: Text('Upload video'),
+          ),
         ),
 
         // TODO: Handle this case.
