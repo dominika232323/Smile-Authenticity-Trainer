@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:smile_authenticity_trainer/history.dart';
 import 'package:smile_authenticity_trainer/record_video_page.dart';
 import 'package:smile_authenticity_trainer/settings_page.dart';
+import 'package:smile_authenticity_trainer/themes.dart';
 import 'package:smile_authenticity_trainer/upload_video_page.dart';
 
 void main() => runApp(const SmileAuthenticityTrainerApp());
@@ -11,7 +12,11 @@ class SmileAuthenticityTrainerApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(home: NavigationBarMain());
+    return MaterialApp(
+      home: NavigationBarMain(),
+      theme: lightMode,
+      darkTheme: darkMode,
+    );
   }
 }
 
@@ -28,14 +33,17 @@ class _NavigationBarMainState extends State<NavigationBarMain> {
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
+
     return Scaffold(
+      backgroundColor: theme.colorScheme.background,
       bottomNavigationBar: NavigationBar(
+        backgroundColor: theme.colorScheme.primary,
         onDestinationSelected: (int index) {
           setState(() {
             currentPageIndex = index;
           });
         },
-        indicatorColor: Colors.amber,
+        indicatorColor: theme.colorScheme.secondary,
         selectedIndex: currentPageIndex,
         destinations: const <Widget>[
           NavigationDestination(icon: Icon(Icons.auto_graph), label: 'History'),
