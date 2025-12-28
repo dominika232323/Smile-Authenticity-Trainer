@@ -56,8 +56,15 @@ class UploadVideoBody extends StatelessWidget {
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.tertiary,
               foregroundColor: Theme.of(context).colorScheme.onPrimary,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 100,
+                vertical: 20,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
             ),
-            child: Text('Upload video'),
+            child: Text('Upload video', style: TextStyle(fontSize: 20)),
           ),
         ),
 
