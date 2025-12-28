@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:smile_authenticity_trainer/history.dart';
 import 'package:smile_authenticity_trainer/record_video_page.dart';
 import 'package:smile_authenticity_trainer/settings_page.dart';
-import 'package:smile_authenticity_trainer/themes.dart';
+import 'package:smile_authenticity_trainer/theme_provider.dart';
 import 'package:smile_authenticity_trainer/upload_video_page.dart';
 
-void main() => runApp(const SmileAuthenticityTrainerApp());
+void main() => runApp(
+  ChangeNotifierProvider(
+    create: (context) => ThemeProvider(),
+    child: const SmileAuthenticityTrainerApp(),
+  ),
+);
 
 class SmileAuthenticityTrainerApp extends StatelessWidget {
   const SmileAuthenticityTrainerApp({super.key});
@@ -14,8 +20,7 @@ class SmileAuthenticityTrainerApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: NavigationBarMain(),
-      theme: lightMode,
-      darkTheme: darkMode,
+      theme: Provider.of<ThemeProvider>(context).themeData,
     );
   }
 }
