@@ -4,6 +4,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:smile_authenticity_trainer/rounded_progress_bar.dart';
 import 'package:video_player/video_player.dart';
 
 import 'my_app_bar.dart';
@@ -79,6 +80,7 @@ class PickingVideoBody extends StatefulWidget {
 
 class _PickingVideoBodyState extends State<PickingVideoBody> {
   VideoPlayerController? _controller;
+  double value = 40;
 
   @override
   void initState() {
@@ -93,6 +95,14 @@ class _PickingVideoBodyState extends State<PickingVideoBody> {
   Widget build(BuildContext context) {
     return Column(
       children: [
+        Center(child: Text('Smile authenticity score: $value%')),
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: RoundedProgressBar(
+            value: value,
+            color: Theme.of(context).colorScheme.tertiary,
+          ),
+        ),
         Padding(
           padding: const EdgeInsets.all(8.0),
           child: AspectRatio(
