@@ -332,6 +332,188 @@ class TestPreprocessVideo:
         assert created["cap"].release_called is True
 
 
+class TestMain:
+    def test_main_success(self, tmp_path, monkeypatch):
+        from data_preprocessing import main as main_mod
+
+        # 1. Setup mock directories and files
+        mock_dirs = {
+            "PREPROCESSED_DATA_DIR": tmp_path / "preprocessed_data",
+            "ORIGINAL_FRAMES_DIR": tmp_path / "original_frames",
+            "ORIGINAL_FACELANDMARKS_DIR": tmp_path / "original_landmarks",
+            "PREPROCESSED_FRAMES_DIR": tmp_path / "preprocessed_frames",
+            "PREPROCESSED_FACELANDMARKS_DIR": tmp_path / "preprocessed_landmarks",
+            "PREPROCESSED_SMILE_PHASES_DIR": tmp_path / "preprocessed_phases",
+            "LIP_FEATURES_DIR": tmp_path / "lip_features",
+            "EYES_FEATURES_DIR": tmp_path / "eyes_features",
+            "CHEEKS_FEATURES_DIR": tmp_path / "cheeks_features",
+        }
+        for attr, path in mock_dirs.items():
+            monkeypatch.setattr(main_mod, attr, path)
+            path.mkdir(parents=True, exist_ok=True)
+
+        mock_files = {
+            "UvA_NEMO_SMILE_DETAILS": tmp_path / "smile_details.csv",
+            "CHECKPOINT_FILE_PATH": tmp_path / "checkpoint.csv",
+            "ALL_LIP_FEATURES_CSV": tmp_path / "all_lips.csv",
+            "ALL_EYES_FEATURES_CSV": tmp_path / "all_eyes.csv",
+            "ALL_CHEEKS_FEATURES_CSV": tmp_path / "all_cheeks.csv",
+        }
+        for attr, path in mock_files.items():
+            monkeypatch.setattr(main_mod, attr, path)
+
+        # 2. Mock external functions
+        calls = []
+
+        def tracked_mock(name, return_value=None):
+            def wrapper(*args, **kwargs):
+                calls.append((name, args, kwargs))
+                return return_value
+
+            return wrapper
+
+        monkeypatch.setattr(main_mod, "setup_logging", tracked_mock("setup_logging"))
+        monkeypatch.setattr(main_mod, "create_directories", tracked_mock("create_directories"))
+
+        details_df = pd.DataFrame({"filename": ["v1.mp4"], "label": ["deliberate"]})
+        monkeypatch.setattr(main_mod, "get_details", tracked_mock("get_details", details_df))
+
+        video_path = tmp_path / "v1.mp4"
+        video_path.touch()
+        monkeypatch.setattr(main_mod, "get_videos_to_process", tracked_mock("get_videos_to_process", [video_path]))
+
+        monkeypatch.setattr(
+            main_mod, "create_facelandmarks_header", tracked_mock("create_facelandmarks_header", ["h1", "h2"])
+        )
+        monkeypatch.setattr(main_mod, "create_csv_with_header", tracked_mock("create_csv_with_header"))
+        monkeypatch.setattr(main_mod, "preprocess_video", tracked_mock("preprocess_video", 25.0))
+        monkeypatch.setattr(main_mod, "label_smile_phases", tracked_mock("label_smile_phases"))
+
+        lip_df = pd.DataFrame({"feat": [1]})
+        monkeypatch.setattr(main_mod, "extract_lip_features", tracked_mock("extract_lip_features", lip_df))
+        eye_df = pd.DataFrame({"feat": [2]})
+        monkeypatch.setattr(main_mod, "extract_eye_features", tracked_mock("extract_eye_features", eye_df))
+        cheek_df = pd.DataFrame({"feat": [3]})
+        monkeypatch.setattr(main_mod, "extract_cheek_features", tracked_mock("extract_cheek_features", cheek_df))
+
+        monkeypatch.setattr(main_mod, "save_dataframe_to_csv", tracked_mock("save_dataframe_to_csv"))
+        monkeypatch.setattr(main_mod, "append_row_to_csv", tracked_mock("append_row_to_csv"))
+
+        monkeypatch.setattr(main_mod, "concat_csvs", tracked_mock("concat_csvs", pd.DataFrame({"feat": [1]})))
+        monkeypatch.setattr(
+            main_mod, "assign_labels", tracked_mock("assign_labels", pd.DataFrame({"feat": [1], "label": [0]}))
+        )
+        monkeypatch.setattr(main_mod, "save_landmarks_in_apex", tracked_mock("save_landmarks_in_apex"))
+
+        # 3. Run main
+        main_mod.main()
+
+        # 4. Verify calls
+        call_names = [c[0] for c in calls]
+        assert "setup_logging" in call_names
+        assert "create_directories" in call_names
+        assert "get_details" in call_names
+        assert "get_videos_to_process" in call_names
+        assert "preprocess_video" in call_names
+        assert "label_smile_phases" in call_names
+        assert "extract_lip_features" in call_names
+        assert "extract_eye_features" in call_names
+        assert "extract_cheek_features" in call_names
+        assert "save_landmarks_in_apex" in call_names
+
+        # Verify details were saved
+        details_path = mock_dirs["PREPROCESSED_DATA_DIR"] / "details.csv"
+        assert details_path.exists()
+
+    def test_main_get_details_failure(self, tmp_path, monkeypatch):
+        from data_preprocessing import main as main_mod
+
+        # Setup mock directories
+        monkeypatch.setattr(main_mod, "PREPROCESSED_DATA_DIR", tmp_path / "preproc")
+        monkeypatch.setattr(main_mod, "UvA_NEMO_SMILE_DETAILS", tmp_path / "details.csv")
+
+        def fail_get_details(_path):
+            raise Exception("Failed to load")
+
+        monkeypatch.setattr(main_mod, "get_details", fail_get_details)
+        monkeypatch.setattr(main_mod, "create_directories", lambda x: None)
+
+        # This should return early without calling get_videos_to_process
+        mock_get_vids_called = []
+        monkeypatch.setattr(main_mod, "get_videos_to_process", lambda: mock_get_vids_called.append(1))
+
+        main_mod.main()
+
+        assert len(mock_get_vids_called) == 0
+
+    def test_main_skips_missing_video(self, tmp_path, monkeypatch):
+        from data_preprocessing import main as main_mod
+
+        # Setup mocks
+        monkeypatch.setattr(main_mod, "PREPROCESSED_DATA_DIR", tmp_path / "preproc")
+        monkeypatch.setattr(main_mod, "ORIGINAL_FRAMES_DIR", tmp_path / "orig_frames")
+        monkeypatch.setattr(main_mod, "PREPROCESSED_FRAMES_DIR", tmp_path / "pre_frames")
+        (tmp_path / "preproc").mkdir()
+
+        details_df = pd.DataFrame({"filename": ["v1.mp4"], "label": ["deliberate"]})
+        monkeypatch.setattr(main_mod, "get_details", lambda _: details_df)
+
+        video_path = tmp_path / "non_existent.mp4"
+        # NOT touching the file
+        monkeypatch.setattr(main_mod, "get_videos_to_process", lambda: [video_path])
+
+        preprocess_called = []
+        monkeypatch.setattr(main_mod, "preprocess_video", lambda *args: preprocess_called.append(args))
+        monkeypatch.setattr(main_mod, "create_directories", lambda *args: None)
+        monkeypatch.setattr(main_mod, "create_csv_with_header", lambda *args: None)
+        monkeypatch.setattr(main_mod, "save_landmarks_in_apex", lambda: None)
+        monkeypatch.setattr(main_mod, "assign_labels", lambda df, _: df)
+        monkeypatch.setattr(main_mod, "concat_csvs", lambda _: pd.DataFrame())
+        monkeypatch.setattr(main_mod, "save_dataframe_to_csv", lambda *args: None)
+
+        main_mod.main()
+
+        assert len(preprocess_called) == 0
+
+    def test_main_skips_if_preprocess_video_returns_none(self, tmp_path, monkeypatch):
+        from data_preprocessing import main as main_mod
+
+        monkeypatch.setattr(main_mod, "PREPROCESSED_DATA_DIR", tmp_path / "preproc")
+        monkeypatch.setattr(main_mod, "ORIGINAL_FRAMES_DIR", tmp_path / "orig_frames")
+        monkeypatch.setattr(main_mod, "PREPROCESSED_FRAMES_DIR", tmp_path / "pre_frames")
+        monkeypatch.setattr(main_mod, "ORIGINAL_FACELANDMARKS_DIR", tmp_path / "orig_landmarks")
+        monkeypatch.setattr(main_mod, "PREPROCESSED_FACELANDMARKS_DIR", tmp_path / "pre_landmarks")
+        monkeypatch.setattr(main_mod, "LIP_FEATURES_DIR", tmp_path / "lip_features")
+        monkeypatch.setattr(main_mod, "EYES_FEATURES_DIR", tmp_path / "eyes_features")
+        monkeypatch.setattr(main_mod, "CHEEKS_FEATURES_DIR", tmp_path / "cheeks_features")
+        (tmp_path / "preproc").mkdir()
+
+        details_df = pd.DataFrame({"filename": ["v1.mp4"], "label": ["deliberate"]})
+        monkeypatch.setattr(main_mod, "get_details", lambda _: details_df)
+
+        video_path = tmp_path / "v1.mp4"
+        video_path.touch()
+        monkeypatch.setattr(main_mod, "get_videos_to_process", lambda: [video_path])
+
+        # preprocess_video returns None
+        monkeypatch.setattr(main_mod, "preprocess_video", lambda *args: None)
+
+        label_smile_called = []
+        monkeypatch.setattr(main_mod, "label_smile_phases", lambda *args: label_smile_called.append(args))
+
+        monkeypatch.setattr(main_mod, "create_directories", lambda *args: None)
+        monkeypatch.setattr(main_mod, "create_csv_with_header", lambda *args: None)
+        monkeypatch.setattr(main_mod, "save_landmarks_in_apex", lambda: None)
+        monkeypatch.setattr(main_mod, "assign_labels", lambda df, _: df)
+        monkeypatch.setattr(main_mod, "concat_csvs", lambda _: pd.DataFrame())
+        monkeypatch.setattr(main_mod, "save_dataframe_to_csv", lambda *args: None)
+        monkeypatch.setattr(main_mod, "create_facelandmarks_header", lambda: [])
+
+        main_mod.main()
+
+        assert len(label_smile_called) == 0
+
+
 class TestSaveLandmarksInApex:
     def test_saves_landmarks_correctly(self, tmp_path, monkeypatch):
         from data_preprocessing import main as main_mod
