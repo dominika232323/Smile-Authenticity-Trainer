@@ -1,3 +1,4 @@
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:smile_authenticity_trainer/history.dart';
@@ -6,12 +7,20 @@ import 'package:smile_authenticity_trainer/settings_page.dart';
 import 'package:smile_authenticity_trainer/theme_provider.dart';
 import 'package:smile_authenticity_trainer/upload_video_page.dart';
 
-void main() => runApp(
-  ChangeNotifierProvider(
-    create: (context) => ThemeProvider(),
-    child: const SmileAuthenticityTrainerApp(),
-  ),
-);
+late List<CameraDescription> _cameras;
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  _cameras = await availableCameras();
+
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => ThemeProvider(),
+      child: const SmileAuthenticityTrainerApp(),
+    ),
+  );
+}
 
 class SmileAuthenticityTrainerApp extends StatelessWidget {
   const SmileAuthenticityTrainerApp({super.key});
@@ -66,7 +75,7 @@ class _NavigationBarMainState extends State<NavigationBarMain> {
       body: <Widget>[
         HistoryPage(theme: theme),
         UploadVideoPage(theme: theme),
-        RecordVideoPage(theme: theme),
+        RecordVideoPage(theme: theme, cameras: _cameras),
         SettingsPage(theme: theme),
       ][currentPageIndex],
     );
