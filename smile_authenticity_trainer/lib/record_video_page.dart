@@ -54,14 +54,21 @@ class RecordVideoBody extends StatelessWidget {
             Align(
               alignment: Alignment.bottomCenter,
               child: IconButton(
-                icon: Icon(
-                  Icons.fiber_manual_record,
-                  size: 48,
-                  color: Colors.red,
-                ),
                 onPressed: () {
                   // record logic
                 },
+                icon: Container(
+                  padding: EdgeInsets.all(0.1),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 5),
+                  ),
+                  child: Icon(
+                    Icons.fiber_manual_record,
+                    size: 65,
+                    color: Colors.red,
+                  ),
+                ),
               ),
             ),
           ],
