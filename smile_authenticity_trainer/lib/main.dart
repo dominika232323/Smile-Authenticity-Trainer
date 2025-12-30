@@ -40,7 +40,7 @@ class _NavigationBarMainState extends State<NavigationBarMain> {
     final ThemeData theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.background,
+      backgroundColor: theme.colorScheme.surface,
       bottomNavigationBar: NavigationBar(
         backgroundColor: theme.colorScheme.primary,
         onDestinationSelected: (int index) {

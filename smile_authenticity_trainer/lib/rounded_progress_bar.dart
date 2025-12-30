@@ -29,7 +29,7 @@ class RoundedProgressBar extends StatelessWidget {
               width: x,
               height: height + (padding * 2),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.4),
+                color: color.withValues(alpha: 0.4),
                 borderRadius: BorderRadius.circular(radius),
               ),
             ),
