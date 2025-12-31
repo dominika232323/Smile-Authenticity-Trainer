@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:smile_authenticity_trainer/rounded_progress_bar.dart';
 
 import 'my_app_bar.dart';
 
@@ -33,6 +34,7 @@ class RecordVideoBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    num value = 40;
     return BlocBuilder<RecordVideoCubit, RecordVideoState>(
       builder: (context, state) => switch (state) {
         PermissionsDenied() => Center(
@@ -54,7 +56,7 @@ class RecordVideoBody extends StatelessWidget {
               alignment: Alignment.bottomCenter,
               child: IconButton(
                 onPressed: () {
-                  // record logic
+                  context.read<RecordVideoCubit>().startRecording();
                 },
                 icon: Container(
                   padding: EdgeInsets.all(0.1),
@@ -74,11 +76,72 @@ class RecordVideoBody extends StatelessWidget {
         ),
 
         // TODO: Handle this case.
-        Recording() => throw UnimplementedError(),
+        Recording(:final controller) => recordingBody(
+          value,
+          context,
+          controller,
+        ),
 
         // TODO: Handle this case.
         VideoFinished() => throw UnimplementedError(),
       },
+    );
+  }
+
+  Column recordingBody(
+    num value,
+    BuildContext context,
+    CameraController controller,
+  ) {
+    return Column(
+      children: [
+        Center(child: Text('Smile authenticity score: $value%')),
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: RoundedProgressBar(
+            value: value,
+            color: Theme.of(context).colorScheme.tertiary,
+          ),
+        ),
+        Expanded(
+          child: ClipRect(
+            child: FittedBox(
+              fit: BoxFit.cover,
+              child: SizedBox(
+                width: controller.value.previewSize!.height,
+                height: controller.value.previewSize!.width,
+                child: Stack(
+                  children: [
+                    CameraPreview(controller),
+
+                    Align(
+                      alignment: Alignment.bottomCenter,
+                      child: IconButton(
+                        onPressed: () {
+                          // stop recording
+                        },
+                        icon: Container(
+                          padding: EdgeInsets.all(17),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 7),
+                          ),
+                          child: Icon(
+                            Icons.rectangle,
+                            size: 80,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        Center(child: Text('Your tips')),
+      ],
     );
   }
 }
@@ -117,6 +180,16 @@ class RecordVideoCubit extends Cubit<RecordVideoState> {
 
     await controller!.initialize();
     emit(RecordVideo(controller!));
+  }
+
+  Future<void> startRecording() async {
+    if (controller == null) {
+      return;
+    }
+
+    // TODO RECORDNING
+
+    emit(Recording(controller!));
   }
 }
 
