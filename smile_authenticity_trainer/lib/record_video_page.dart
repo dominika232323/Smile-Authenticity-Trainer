@@ -1,9 +1,12 @@
+import 'dart:io';
+
 import 'package:camera/camera.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:smile_authenticity_trainer/rounded_progress_bar.dart';
+import 'package:video_player/video_player.dart';
 
 import 'my_app_bar.dart';
 
@@ -83,7 +86,7 @@ class RecordVideoBody extends StatelessWidget {
         ),
 
         // TODO: Handle this case.
-        VideoFinished() => throw UnimplementedError(),
+        VideoFinished(:final file) => VideoFinishedBody(File(file.path)),
       },
     );
   }
@@ -118,7 +121,7 @@ class RecordVideoBody extends StatelessWidget {
                       alignment: Alignment.bottomCenter,
                       child: IconButton(
                         onPressed: () {
-                          // stop recording
+                          context.read<RecordVideoCubit>().stopRecording();
                         },
                         icon: Container(
                           padding: EdgeInsets.all(17),
@@ -143,6 +146,61 @@ class RecordVideoBody extends StatelessWidget {
         Center(child: Text('Your tips')),
       ],
     );
+  }
+}
+
+class VideoFinishedBody extends StatefulWidget {
+  final File file;
+
+  const VideoFinishedBody(this.file, {super.key});
+
+  @override
+  State<StatefulWidget> createState() => _VideoFinishedBody();
+}
+
+class _VideoFinishedBody extends State<VideoFinishedBody> {
+  VideoPlayerController? _videoPlayerController;
+  double value = 40;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _videoPlayerController = VideoPlayerController.file(widget.file);
+    _videoPlayerController!.initialize();
+    _videoPlayerController!.play();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Center(child: Text('Smile authenticity score: $value%')),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 23),
+          child: RoundedProgressBar(
+            value: value,
+            color: Theme.of(context).colorScheme.tertiary,
+          ),
+        ),
+        Expanded(
+          child: Center(
+            child: AspectRatio(
+              aspectRatio: _videoPlayerController!.value.aspectRatio,
+              child: VideoPlayer(_videoPlayerController!),
+            ),
+          ),
+        ),
+        Center(child: Text('Your tips')),
+      ],
+    );
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+
+    _videoPlayerController!.dispose();
   }
 }
 
@@ -183,13 +241,17 @@ class RecordVideoCubit extends Cubit<RecordVideoState> {
   }
 
   Future<void> startRecording() async {
-    if (controller == null) {
-      return;
+    if (controller != null) {
+      await controller!.startVideoRecording();
+      emit(Recording(controller!));
     }
+  }
 
-    // TODO RECORDNING
-
-    emit(Recording(controller!));
+  Future<void> stopRecording() async {
+    if (controller != null) {
+      final file = await controller!.stopVideoRecording();
+      emit(VideoFinished(controller!, file));
+    }
   }
 }
 
