@@ -79,23 +79,29 @@ class RecordVideoBody extends StatelessWidget {
         ),
 
         // TODO: Handle this case.
-        Recording(:final controller) => recordingBody(
-          value,
-          context,
-          controller,
-        ),
+        Recording(:final controller) => RecordingBody(controller),
 
         // TODO: Handle this case.
         VideoFinished(:final file) => VideoFinishedBody(File(file.path)),
       },
     );
   }
+}
 
-  Column recordingBody(
-    num value,
-    BuildContext context,
-    CameraController controller,
-  ) {
+class RecordingBody extends StatefulWidget {
+  final CameraController controller;
+
+  const RecordingBody(this.controller, {super.key});
+
+  @override
+  State<StatefulWidget> createState() => _RecordingBody();
+}
+
+class _RecordingBody extends State<RecordingBody> {
+  double value = 40;
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       children: [
         Center(child: Text('Smile authenticity score: $value%')),
@@ -111,11 +117,11 @@ class RecordVideoBody extends StatelessWidget {
             child: FittedBox(
               fit: BoxFit.cover,
               child: SizedBox(
-                width: controller.value.previewSize!.height,
-                height: controller.value.previewSize!.width,
+                width: widget.controller.value.previewSize!.height,
+                height: widget.controller.value.previewSize!.width,
                 child: Stack(
                   children: [
-                    CameraPreview(controller),
+                    CameraPreview(widget.controller),
 
                     Align(
                       alignment: Alignment.bottomCenter,
