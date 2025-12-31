@@ -100,7 +100,7 @@ class RecordVideoBody extends StatelessWidget {
       children: [
         Center(child: Text('Smile authenticity score: $value%')),
         Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 23),
           child: RoundedProgressBar(
             value: value,
             color: Theme.of(context).colorScheme.tertiary,
@@ -166,9 +166,11 @@ class _VideoFinishedBody extends State<VideoFinishedBody> {
   void initState() {
     super.initState();
 
-    _videoPlayerController = VideoPlayerController.file(widget.file);
-    _videoPlayerController!.initialize();
-    _videoPlayerController!.play();
+    _videoPlayerController = VideoPlayerController.file(widget.file)
+      ..initialize().then((_) {
+        setState(() {});
+        _videoPlayerController!.play();
+      });
   }
 
   @override
@@ -185,10 +187,12 @@ class _VideoFinishedBody extends State<VideoFinishedBody> {
         ),
         Expanded(
           child: Center(
-            child: AspectRatio(
-              aspectRatio: _videoPlayerController!.value.aspectRatio,
-              child: VideoPlayer(_videoPlayerController!),
-            ),
+            child: _videoPlayerController!.value.isInitialized
+                ? AspectRatio(
+                    aspectRatio: _videoPlayerController!.value.aspectRatio,
+                    child: VideoPlayer(_videoPlayerController!),
+                  )
+                : CircularProgressIndicator(),
           ),
         ),
         Center(child: Text('Your tips')),

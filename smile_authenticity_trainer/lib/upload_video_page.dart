@@ -86,9 +86,11 @@ class _PickingVideoBodyState extends State<PickingVideoBody> {
   void initState() {
     super.initState();
 
-    _controller = VideoPlayerController.file(widget.file);
-    _controller!.initialize();
-    _controller!.play();
+    _controller = VideoPlayerController.file(widget.file)
+      ..initialize().then((_) {
+        setState(() {});
+        _controller!.play();
+      });
   }
 
   @override
@@ -97,17 +99,20 @@ class _PickingVideoBodyState extends State<PickingVideoBody> {
       children: [
         Center(child: Text('Smile authenticity score: $value%')),
         Padding(
-          padding: const EdgeInsets.all(8.0),
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 23),
           child: RoundedProgressBar(
             value: value,
             color: Theme.of(context).colorScheme.tertiary,
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: AspectRatio(
-            aspectRatio: _controller!.value.aspectRatio,
-            child: VideoPlayer(_controller!),
+        Expanded(
+          child: Center(
+            child: _controller!.value.isInitialized
+                ? AspectRatio(
+                    aspectRatio: _controller!.value.aspectRatio,
+                    child: VideoPlayer(_controller!),
+                  )
+                : CircularProgressIndicator(),
           ),
         ),
         Center(child: Text('Your tips')),
