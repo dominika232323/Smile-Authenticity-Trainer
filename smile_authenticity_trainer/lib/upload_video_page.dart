@@ -67,8 +67,22 @@ class UploadVideoBody extends StatelessWidget {
         UploadingVideo(:final file) => PickingVideoBody(file, isLoading: true),
 
         // TODO: Handle this case.
-        UploadFinished(:final file, :final score, :final tip) =>
-          PickingVideoBody(file, score: score, tip: tip),
+        UploadFinished(
+          :final file,
+          :final score,
+          :final scoreLips,
+          :final scoreEyes,
+          :final scoreCheeks,
+          :final tip,
+        ) =>
+          PickingVideoBody(
+            file,
+            score: score,
+            scoreLips: scoreLips,
+            scoreEyes: scoreEyes,
+            scoreCheeks: scoreCheeks,
+            tip: tip,
+          ),
 
         UploadFailed(:final error) => Center(
           child: Column(
@@ -113,6 +127,9 @@ class UploadVideoBody extends StatelessWidget {
 class PickingVideoBody extends StatefulWidget {
   final File file;
   final double? score;
+  final double? scoreLips;
+  final double? scoreEyes;
+  final double? scoreCheeks;
   final String? tip;
   final bool isLoading;
 
@@ -120,6 +137,9 @@ class PickingVideoBody extends StatefulWidget {
     this.file, {
     super.key,
     this.score,
+    this.scoreLips,
+    this.scoreEyes,
+    this.scoreCheeks,
     this.tip,
     this.isLoading = false,
   });
@@ -148,6 +168,9 @@ class _PickingVideoBodyState extends State<PickingVideoBody> {
   @override
   Widget build(BuildContext context) {
     double displayedScore = widget.score ?? 0;
+    double displayedScoreLips = widget.scoreLips ?? 0;
+    double displayedScoreEyes = widget.scoreEyes ?? 0;
+    double displayedScoreCheeks = widget.scoreCheeks ?? 0;
     String displayedTip =
         widget.tip ?? (widget.isLoading ? "Processing..." : "Waiting…");
 
@@ -184,6 +207,18 @@ class _PickingVideoBodyState extends State<PickingVideoBody> {
             : Column(
                 children: [
                   Text(displayedTip, style: const TextStyle(fontSize: 16)),
+                  Text(
+                    'Lips score: ${displayedScoreLips.toStringAsFixed(0)}%',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  Text(
+                    'Eyes score: ${displayedScoreEyes.toStringAsFixed(0)}%',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  Text(
+                    'Cheeks score: ${displayedScoreCheeks.toStringAsFixed(0)}%',
+                    style: const TextStyle(fontSize: 16),
+                  ),
                   IconButton(
                     icon: Icon(Icons.restart_alt),
                     iconSize: 50,
@@ -215,9 +250,10 @@ class UploadVideoCubit extends Cubit<UploadVideoState> {
     emit(UploadingVideo(file));
 
     try {
-      final (score, tip) = await services.processVideo(file);
+      final (score, scoreLips, scoreEyes, scoreCheeks, tip) = await services
+          .processVideo(file);
 
-      emit(UploadFinished(file, score, tip));
+      emit(UploadFinished(file, score, scoreLips, scoreEyes, scoreCheeks, tip));
     } catch (e) {
       emit(UploadFailed(e.toString()));
     }
@@ -246,9 +282,19 @@ class UploadingVideo extends UploadVideoState {
 class UploadFinished extends UploadVideoState {
   final File file;
   final double score;
+  final double scoreLips;
+  final double scoreEyes;
+  final double scoreCheeks;
   final String tip;
 
-  UploadFinished(this.file, this.score, this.tip);
+  UploadFinished(
+    this.file,
+    this.score,
+    this.scoreLips,
+    this.scoreEyes,
+    this.scoreCheeks,
+    this.tip,
+  );
 
   @override
   List<Object> get props => [file, score, tip];
