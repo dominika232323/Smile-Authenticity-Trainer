@@ -1,8 +1,11 @@
+import random
 from pathlib import Path
 import tempfile
 import shutil
 import uuid
 from flask import Flask, request, jsonify
+from PIL import Image
+import io
 
 from data_preprocessing.main import preprocess_video
 from data_preprocessing.get_face_landmarks import create_facelandmarks_header
@@ -14,6 +17,32 @@ from data_preprocessing.extract_cheek_features import extract_cheek_features
 from config import ORIGINAL_FRAMES_DIR, PREPROCESSED_FRAMES_DIR
 
 app = Flask(__name__)
+
+
+@app.route("/process-frame", methods=["POST"])
+def process_frame():
+    # Check if the request has the file
+    if "frame" not in request.files:
+        return jsonify({"error": "No frame provided"}), 400
+
+    file = request.files["frame"]
+    img_bytes = file.read()
+
+    # Load image (JPEG) into PIL
+    try:
+        image = Image.open(io.BytesIO(img_bytes))
+    except Exception as e:
+        return jsonify({"error": f"Invalid image: {str(e)}"}), 400
+
+    # ======== Your processing here ===========
+    # Example: get width/height
+    width, height = image.size
+
+    # Example fake processing result
+    result = {"score": random.randrange(0, 100), "tip": "Frame processed successfully"}
+    # ==========================================
+
+    return jsonify(result)
 
 
 @app.route("/process-video", methods=["POST"])
@@ -86,4 +115,4 @@ def process_video():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0", port=5000)
