@@ -70,7 +70,7 @@ class UploadVideoBody extends StatelessWidget {
         UploadFinished(:final file, :final score, :final tip) =>
           PickingVideoBody(file, score: score, tip: tip),
 
-        UploadFailed() => Center(
+        UploadFailed(:final error) => Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -84,10 +84,23 @@ class UploadVideoBody extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 10),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Text(
+                  error,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 16, color: Colors.black54),
+                ),
+              ),
+
+              SizedBox(height: 20),
               IconButton(
                 onPressed: () => context.read<UploadVideoCubit>().unpickVideo(),
                 icon: Icon(Icons.restart_alt),
-                iconSize: 50,
+                iconSize: 70,
+                color: Theme.of(context).colorScheme.tertiary,
+                tooltip: 'Upload new video',
               ),
             ],
           ),
@@ -168,7 +181,19 @@ class _PickingVideoBodyState extends State<PickingVideoBody> {
         const SizedBox(height: 12),
         widget.isLoading
             ? const CircularProgressIndicator()
-            : Text(displayedTip, style: const TextStyle(fontSize: 16)),
+            : Column(
+                children: [
+                  Text(displayedTip, style: const TextStyle(fontSize: 16)),
+                  IconButton(
+                    icon: Icon(Icons.restart_alt),
+                    iconSize: 50,
+                    tooltip: 'Upload new video',
+                    onPressed: () =>
+                        context.read<UploadVideoCubit>().unpickVideo(),
+                    color: Theme.of(context).colorScheme.tertiary,
+                  ),
+                ],
+              ),
         const SizedBox(height: 20),
       ],
     );
@@ -194,7 +219,7 @@ class UploadVideoCubit extends Cubit<UploadVideoState> {
 
       emit(UploadFinished(file, score, tip));
     } catch (e) {
-      emit(UploadFailed());
+      emit(UploadFailed(e.toString()));
     }
   }
 
@@ -229,4 +254,11 @@ class UploadFinished extends UploadVideoState {
   List<Object> get props => [file, score, tip];
 }
 
-class UploadFailed extends UploadVideoState {}
+class UploadFailed extends UploadVideoState {
+  final String error;
+
+  UploadFailed(this.error);
+
+  @override
+  List<Object> get props => [error];
+}
