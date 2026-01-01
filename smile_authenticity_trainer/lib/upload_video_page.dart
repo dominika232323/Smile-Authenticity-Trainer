@@ -64,14 +64,34 @@ class UploadVideoBody extends StatelessWidget {
         ),
 
         // TODO: Handle this case.
-        // PickedVideo(:final file) => PickingVideoBody(file),
-
-        // TODO: Handle this case.
         UploadingVideo(:final file) => PickingVideoBody(file, isLoading: true),
 
         // TODO: Handle this case.
         UploadFinished(:final file, :final score, :final tip) =>
           PickingVideoBody(file, score: score, tip: tip),
+
+        UploadFailed() => Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Upload failed',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 30,
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 10),
+              IconButton(
+                onPressed: () => context.read<UploadVideoCubit>().unpickVideo(),
+                icon: Icon(Icons.restart_alt),
+                iconSize: 50,
+              ),
+            ],
+          ),
+        ),
       },
     );
   }
@@ -174,8 +194,12 @@ class UploadVideoCubit extends Cubit<UploadVideoState> {
 
       emit(UploadFinished(file, score, tip));
     } catch (e) {
-      emit(VideoNotPicked()); // you may want an Error state
+      emit(UploadFailed());
     }
+  }
+
+  void unpickVideo() {
+    emit(VideoNotPicked());
   }
 }
 
@@ -185,15 +209,6 @@ sealed class UploadVideoState with EquatableMixin {
 }
 
 class VideoNotPicked extends UploadVideoState {}
-
-// class PickedVideo extends UploadVideoState {
-//   final File file;
-
-//   PickedVideo(this.file);
-
-//   @override
-//   List<Object> get props => [file];
-// }
 
 class UploadingVideo extends UploadVideoState {
   final File file;
@@ -213,3 +228,5 @@ class UploadFinished extends UploadVideoState {
   @override
   List<Object> get props => [file, score, tip];
 }
+
+class UploadFailed extends UploadVideoState {}
