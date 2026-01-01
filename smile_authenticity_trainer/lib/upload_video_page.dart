@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:smile_authenticity_trainer/rounded_progress_bar.dart';
+import 'package:smile_authenticity_trainer/services.dart';
 import 'package:video_player/video_player.dart';
 
 import 'my_app_bar.dart';
@@ -63,7 +64,14 @@ class UploadVideoBody extends StatelessWidget {
         ),
 
         // TODO: Handle this case.
-        PickedVideo(:final file) => PickingVideoBody(file),
+        // PickedVideo(:final file) => PickingVideoBody(file),
+
+        // TODO: Handle this case.
+        UploadingVideo(:final file) => PickingVideoBody(file, isLoading: true),
+
+        // TODO: Handle this case.
+        UploadFinished(:final file, :final score, :final tip) =>
+          PickingVideoBody(file, score: score, tip: tip),
       },
     );
   }
@@ -71,8 +79,17 @@ class UploadVideoBody extends StatelessWidget {
 
 class PickingVideoBody extends StatefulWidget {
   final File file;
+  final double? score;
+  final String? tip;
+  final bool isLoading;
 
-  const PickingVideoBody(this.file, {super.key});
+  const PickingVideoBody(
+    this.file, {
+    super.key,
+    this.score,
+    this.tip,
+    this.isLoading = false,
+  });
 
   @override
   State<PickingVideoBody> createState() => _PickingVideoBodyState();
@@ -80,8 +97,8 @@ class PickingVideoBody extends StatefulWidget {
 
 class _PickingVideoBodyState extends State<PickingVideoBody> {
   VideoPlayerController? _controller;
-  double value = 0;
-  String tip = "Waiting for tips...";
+  double get value => widget.score ?? 0;
+  String get tip => widget.tip ?? "Processing video...";
 
   @override
   void initState() {
@@ -91,51 +108,74 @@ class _PickingVideoBodyState extends State<PickingVideoBody> {
       ..initialize().then((_) {
         setState(() {});
         _controller!.play();
+        _controller!.setLooping(true);
       });
-
-    _controller?.setLooping(true);
   }
 
   @override
   Widget build(BuildContext context) {
+    double displayedScore = widget.score ?? 0;
+    String displayedTip =
+        widget.tip ?? (widget.isLoading ? "Processing..." : "Waiting…");
+
     return Column(
       children: [
-        Center(child: Text('Smile authenticity score: $value%')),
+        const SizedBox(height: 16),
+        Text(
+          'Smile authenticity score: ${displayedScore.toStringAsFixed(0)}%',
+          style: const TextStyle(fontSize: 18),
+        ),
+
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 23),
           child: RoundedProgressBar(
-            value: value,
+            value: displayedScore,
             color: Theme.of(context).colorScheme.tertiary,
           ),
         ),
+
         Expanded(
           child: Center(
-            child: _controller!.value.isInitialized
+            child: _controller?.value.isInitialized ?? false
                 ? AspectRatio(
                     aspectRatio: _controller!.value.aspectRatio,
                     child: VideoPlayer(_controller!),
                   )
-                : CircularProgressIndicator(),
+                : const CircularProgressIndicator(),
           ),
         ),
-        Center(child: Text(tip)),
+
+        const SizedBox(height: 12),
+        widget.isLoading
+            ? const CircularProgressIndicator()
+            : Text(displayedTip, style: const TextStyle(fontSize: 16)),
+        const SizedBox(height: 20),
       ],
     );
   }
 
   @override
   void dispose() {
+    _controller?.dispose();
     super.dispose();
-
-    _controller!.dispose();
   }
 }
 
 class UploadVideoCubit extends Cubit<UploadVideoState> {
   UploadVideoCubit() : super(VideoNotPicked());
 
-  void pickVideo(File file) {
-    emit(PickedVideo(file));
+  final services = Services();
+
+  void pickVideo(File file) async {
+    emit(UploadingVideo(file));
+
+    try {
+      final (score, tip) = await services.processVideo(file);
+
+      emit(UploadFinished(file, score, tip));
+    } catch (e) {
+      emit(VideoNotPicked()); // you may want an Error state
+    }
   }
 }
 
@@ -146,11 +186,30 @@ sealed class UploadVideoState with EquatableMixin {
 
 class VideoNotPicked extends UploadVideoState {}
 
-class PickedVideo extends UploadVideoState {
-  final File file;
+// class PickedVideo extends UploadVideoState {
+//   final File file;
 
-  PickedVideo(this.file);
+//   PickedVideo(this.file);
+
+//   @override
+//   List<Object> get props => [file];
+// }
+
+class UploadingVideo extends UploadVideoState {
+  final File file;
+  UploadingVideo(this.file);
 
   @override
   List<Object> get props => [file];
+}
+
+class UploadFinished extends UploadVideoState {
+  final File file;
+  final double score;
+  final String tip;
+
+  UploadFinished(this.file, this.score, this.tip);
+
+  @override
+  List<Object> get props => [file, score, tip];
 }
