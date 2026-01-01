@@ -176,7 +176,7 @@ class _PickingVideoBodyState extends State<PickingVideoBody> {
 
     return Column(
       children: [
-        const SizedBox(height: 16),
+        const SizedBox(height: 5),
         Text(
           'Smile authenticity score: ${displayedScore.toStringAsFixed(0)}%',
           style: const TextStyle(fontSize: 18),
@@ -201,7 +201,7 @@ class _PickingVideoBodyState extends State<PickingVideoBody> {
           ),
         ),
 
-        const SizedBox(height: 12),
+        const SizedBox(height: 5),
         widget.isLoading
             ? const CircularProgressIndicator()
             : Column(
@@ -219,17 +219,31 @@ class _PickingVideoBodyState extends State<PickingVideoBody> {
                     'Cheeks score: ${displayedScoreCheeks.toStringAsFixed(0)}%',
                     style: const TextStyle(fontSize: 16),
                   ),
-                  IconButton(
-                    icon: Icon(Icons.restart_alt),
-                    iconSize: 50,
-                    tooltip: 'Upload new video',
-                    onPressed: () =>
-                        context.read<UploadVideoCubit>().unpickVideo(),
-                    color: Theme.of(context).colorScheme.tertiary,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.check),
+                        iconSize: 50,
+                        tooltip: 'Save results',
+                        onPressed: () => context
+                            .read<UploadVideoCubit>()
+                            .unpickVideo(), // TODO save results
+                        color: Theme.of(context).colorScheme.tertiary,
+                      ),
+                      SizedBox(width: 50),
+                      IconButton(
+                        icon: Icon(Icons.clear),
+                        iconSize: 50,
+                        tooltip: 'Upload new video',
+                        onPressed: () =>
+                            context.read<UploadVideoCubit>().unpickVideo(),
+                        color: Theme.of(context).colorScheme.tertiary,
+                      ),
+                    ],
                   ),
                 ],
               ),
-        const SizedBox(height: 20),
       ],
     );
   }
