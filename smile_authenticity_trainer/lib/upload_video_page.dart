@@ -80,7 +80,8 @@ class PickingVideoBody extends StatefulWidget {
 
 class _PickingVideoBodyState extends State<PickingVideoBody> {
   VideoPlayerController? _controller;
-  double value = 40;
+  double value = 0;
+  String tip = "Waiting for tips...";
 
   @override
   void initState() {
@@ -91,6 +92,8 @@ class _PickingVideoBodyState extends State<PickingVideoBody> {
         setState(() {});
         _controller!.play();
       });
+
+    _controller?.setLooping(true);
   }
 
   @override
@@ -115,7 +118,7 @@ class _PickingVideoBodyState extends State<PickingVideoBody> {
                 : CircularProgressIndicator(),
           ),
         ),
-        Center(child: Text('Your tips')),
+        Center(child: Text(tip)),
       ],
     );
   }
