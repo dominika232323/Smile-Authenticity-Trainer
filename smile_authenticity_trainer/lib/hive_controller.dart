@@ -70,8 +70,7 @@ class HiveController {
   }
 
   void afterAction(String keyword) {
-    toastInfo(msg: 'Item $keyword successfully', status: Status.success);
+    toastInfo(msg: 'Results $keyword successfully', status: Status.success);
     fetchDataFunction();
-    // Navigator.of(context).pop();
   }
 }
