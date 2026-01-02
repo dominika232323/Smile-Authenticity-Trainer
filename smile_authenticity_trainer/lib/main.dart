@@ -1,9 +1,11 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:smile_authenticity_trainer/history.dart';
 import 'package:smile_authenticity_trainer/record_video_page.dart';
 import 'package:smile_authenticity_trainer/settings_page.dart';
+import 'package:smile_authenticity_trainer/string_constants.dart';
 import 'package:smile_authenticity_trainer/theme_provider.dart';
 import 'package:smile_authenticity_trainer/upload_video_page.dart';
 
@@ -11,6 +13,9 @@ late List<CameraDescription> _cameras;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await Hive.initFlutter();
+  await Hive.openBox(StringConstants.hiveBox);
 
   _cameras = await availableCameras();
 

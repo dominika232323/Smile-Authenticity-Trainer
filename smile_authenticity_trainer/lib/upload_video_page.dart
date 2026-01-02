@@ -4,6 +4,8 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:smile_authenticity_trainer/hive_controller.dart';
+import 'package:smile_authenticity_trainer/item.dart';
 import 'package:smile_authenticity_trainer/rounded_progress_bar.dart';
 import 'package:smile_authenticity_trainer/services.dart';
 import 'package:video_player/video_player.dart';
@@ -19,7 +21,12 @@ class UploadVideoPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: BlocProvider(
-        create: (_) => UploadVideoCubit(),
+        create: (_) => UploadVideoCubit(
+          hiveController: HiveController(
+            context: context,
+            fetchDataFunction: () {}, // or your function
+          ),
+        ),
         child: UploadVideoBody(),
       ),
       appBar: buildMyAppBar(context),
@@ -226,9 +233,8 @@ class _PickingVideoBodyState extends State<PickingVideoBody> {
                         icon: Icon(Icons.check),
                         iconSize: 50,
                         tooltip: 'Save results',
-                        onPressed: () => context
-                            .read<UploadVideoCubit>()
-                            .unpickVideo(), // TODO save results
+                        onPressed: () =>
+                            context.read<UploadVideoCubit>().saveResults(),
                         color: Theme.of(context).colorScheme.tertiary,
                       ),
                       SizedBox(width: 50),
@@ -256,9 +262,10 @@ class _PickingVideoBodyState extends State<PickingVideoBody> {
 }
 
 class UploadVideoCubit extends Cubit<UploadVideoState> {
-  UploadVideoCubit() : super(VideoNotPicked());
+  UploadVideoCubit({required this.hiveController}) : super(VideoNotPicked());
 
-  final services = Services();
+  final Services services = Services();
+  final HiveController hiveController;
 
   void pickVideo(File file) async {
     emit(UploadingVideo(file));
@@ -274,6 +281,26 @@ class UploadVideoCubit extends Cubit<UploadVideoState> {
   }
 
   void unpickVideo() {
+    emit(VideoNotPicked());
+  }
+
+  void saveResults() {
+    if (state is! UploadFinished) return;
+
+    final s = state as UploadFinished;
+
+    final item = Item(
+      uploaded: true,
+      score: s.score,
+      scoreLips: s.scoreLips,
+      scoreEyes: s.scoreEyes,
+      scoreCheeks: s.scoreCheeks,
+      tip: s.tip,
+      createdAt: DateTime.now(),
+    );
+
+    hiveController.createItem(item: item);
+
     emit(VideoNotPicked());
   }
 }
