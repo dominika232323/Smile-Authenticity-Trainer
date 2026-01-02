@@ -73,7 +73,6 @@ class UploadVideoBody extends StatelessWidget {
         // TODO: Handle this case.
         UploadingVideo(:final file) => PickingVideoBody(file, isLoading: true),
 
-        // TODO: Handle this case.
         UploadFinished(
           :final file,
           :final score,
