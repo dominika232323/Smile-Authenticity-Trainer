@@ -5,7 +5,10 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:smile_authenticity_trainer/hive_controller.dart';
+import 'package:smile_authenticity_trainer/item.dart';
 import 'package:smile_authenticity_trainer/rounded_progress_bar.dart';
+import 'package:smile_authenticity_trainer/services.dart';
 import 'package:video_player/video_player.dart';
 
 import 'my_app_bar.dart';
@@ -24,7 +27,13 @@ class RecordVideoPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: BlocProvider(
-        create: (_) => RecordVideoCubit(cameras),
+        create: (_) => RecordVideoCubit(
+          cameras,
+          hiveController: HiveController(
+            context: context,
+            fetchDataFunction: () {},
+          ),
+        ),
         child: RecordVideoBody(),
       ),
       appBar: buildMyAppBar(context),
@@ -37,7 +46,6 @@ class RecordVideoBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    num value = 40;
     return BlocBuilder<RecordVideoCubit, RecordVideoState>(
       builder: (context, state) => switch (state) {
         PermissionsDenied() => Center(
@@ -82,7 +90,68 @@ class RecordVideoBody extends StatelessWidget {
         Recording(:final controller) => RecordingBody(controller),
 
         // TODO: Handle this case.
-        VideoFinished(:final file) => VideoFinishedBody(File(file.path)),
+        // VideoFinished(:final file) => VideoFinishedBody(File(file.path)),
+
+        // TODO: Handle this case.
+        UploadingVideo(:final file) => VideoFinishedBody(
+          File(file.path),
+          isLoading: true,
+        ),
+
+        // TODO: Handle this case.
+        UploadFinished(
+          :final file,
+          :final score,
+          :final scoreLips,
+          :final scoreEyes,
+          :final scoreCheeks,
+          :final tip,
+        ) =>
+          VideoFinishedBody(
+            File(file.path),
+            score: score,
+            scoreLips: scoreLips,
+            scoreEyes: scoreEyes,
+            scoreCheeks: scoreCheeks,
+            tip: tip,
+          ),
+
+        // TODO: Handle this case.
+        UploadFailed(:final error) => Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Upload failed',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 30,
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 10),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Text(
+                  error,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 16, color: Colors.black54),
+                ),
+              ),
+
+              SizedBox(height: 20),
+              IconButton(
+                onPressed: () => context.read<RecordVideoCubit>().unpickVideo(),
+                icon: Icon(Icons.restart_alt),
+                iconSize: 70,
+                color: Theme.of(context).colorScheme.tertiary,
+                tooltip: 'Upload new video',
+              ),
+            ],
+          ),
+        ),
       },
     );
   }
@@ -157,8 +226,23 @@ class _RecordingBody extends State<RecordingBody> {
 
 class VideoFinishedBody extends StatefulWidget {
   final File file;
+  final double? score;
+  final double? scoreLips;
+  final double? scoreEyes;
+  final double? scoreCheeks;
+  final String? tip;
+  final bool isLoading;
 
-  const VideoFinishedBody(this.file, {super.key});
+  const VideoFinishedBody(
+    this.file, {
+    super.key,
+    this.score,
+    this.scoreLips,
+    this.scoreEyes,
+    this.scoreCheeks,
+    this.tip,
+    this.isLoading = false,
+  });
 
   @override
   State<StatefulWidget> createState() => _VideoFinishedBody();
@@ -166,7 +250,8 @@ class VideoFinishedBody extends StatefulWidget {
 
 class _VideoFinishedBody extends State<VideoFinishedBody> {
   VideoPlayerController? _videoPlayerController;
-  double value = 40;
+  double get value => widget.score ?? 0;
+  String get tip => widget.tip ?? "Processing video...";
 
   @override
   void initState() {
@@ -176,32 +261,88 @@ class _VideoFinishedBody extends State<VideoFinishedBody> {
       ..initialize().then((_) {
         setState(() {});
         _videoPlayerController!.play();
+        _videoPlayerController!.setLooping(true);
       });
   }
 
   @override
   Widget build(BuildContext context) {
+    double displayedScore = widget.score ?? 0;
+    double displayedScoreLips = widget.scoreLips ?? 0;
+    double displayedScoreEyes = widget.scoreEyes ?? 0;
+    double displayedScoreCheeks = widget.scoreCheeks ?? 0;
+    String displayedTip =
+        widget.tip ?? (widget.isLoading ? "Processing..." : "Waiting…");
+
     return Column(
       children: [
-        Center(child: Text('Smile authenticity score: $value%')),
+        const SizedBox(height: 5),
+        Text(
+          'Smile authenticity score: ${displayedScore.toStringAsFixed(0)}%',
+          style: const TextStyle(fontSize: 18),
+        ),
+
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 23),
           child: RoundedProgressBar(
-            value: value,
+            value: displayedScore,
             color: Theme.of(context).colorScheme.tertiary,
           ),
         ),
+
         Expanded(
           child: Center(
-            child: _videoPlayerController!.value.isInitialized
+            child: _videoPlayerController?.value.isInitialized ?? false
                 ? AspectRatio(
                     aspectRatio: _videoPlayerController!.value.aspectRatio,
                     child: VideoPlayer(_videoPlayerController!),
                   )
-                : CircularProgressIndicator(),
+                : const CircularProgressIndicator(),
           ),
         ),
-        Center(child: Text('Your tips')),
+
+        const SizedBox(height: 5),
+        widget.isLoading
+            ? const CircularProgressIndicator()
+            : Column(
+                children: [
+                  Text(displayedTip, style: const TextStyle(fontSize: 16)),
+                  Text(
+                    'Lips score: ${displayedScoreLips.toStringAsFixed(0)}%',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  Text(
+                    'Eyes score: ${displayedScoreEyes.toStringAsFixed(0)}%',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  Text(
+                    'Cheeks score: ${displayedScoreCheeks.toStringAsFixed(0)}%',
+                    style: const TextStyle(fontSize: 16),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.check),
+                        iconSize: 50,
+                        tooltip: 'Save results',
+                        onPressed: () =>
+                            context.read<RecordVideoCubit>().saveResults(),
+                        color: Theme.of(context).colorScheme.tertiary,
+                      ),
+                      SizedBox(width: 50),
+                      IconButton(
+                        icon: Icon(Icons.clear),
+                        iconSize: 50,
+                        tooltip: 'Record new video',
+                        onPressed: () =>
+                            context.read<RecordVideoCubit>().unpickVideo(),
+                        color: Theme.of(context).colorScheme.tertiary,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
       ],
     );
   }
@@ -215,12 +356,16 @@ class _VideoFinishedBody extends State<VideoFinishedBody> {
 }
 
 class RecordVideoCubit extends Cubit<RecordVideoState> {
-  RecordVideoCubit(this.cameras) : super(PermissionsDenied()) {
+  RecordVideoCubit(this.cameras, {required this.hiveController})
+    : super(PermissionsDenied()) {
     _checkPermissions();
   }
 
   final List<CameraDescription> cameras;
   CameraController? controller;
+
+  final Services services = Services();
+  final HiveController hiveController;
 
   Future<void> _checkPermissions() async {
     final status = await Permission.camera.status;
@@ -260,7 +405,61 @@ class RecordVideoCubit extends Cubit<RecordVideoState> {
   Future<void> stopRecording() async {
     if (controller != null) {
       final file = await controller!.stopVideoRecording();
-      emit(VideoFinished(controller!, file));
+
+      await controller!.dispose();
+      controller = null;
+
+      emit(UploadingVideo(null, file)); // <-- controller removed
+      _uploadVideo(file);
+    }
+  }
+
+  void unpickVideo() async {
+    if (controller != null && controller!.value.isInitialized) {
+      await controller!.dispose();
+    }
+    controller = null;
+    _checkPermissions();
+  }
+
+  void saveResults() {
+    if (state is! UploadFinished) return;
+
+    final s = state as UploadFinished;
+
+    final item = Item(
+      uploaded: true,
+      score: s.score,
+      scoreLips: s.scoreLips,
+      scoreEyes: s.scoreEyes,
+      scoreCheeks: s.scoreCheeks,
+      tip: s.tip,
+      createdAt: DateTime.now(),
+    );
+
+    hiveController.createItem(item: item);
+
+    _checkPermissions();
+  }
+
+  Future<void> _uploadVideo(XFile file) async {
+    try {
+      final (score, scoreLips, scoreEyes, scoreCheeks, tip) = await services
+          .processVideo(File(file.path));
+
+      emit(
+        UploadFinished(
+          null,
+          file,
+          score,
+          scoreLips,
+          scoreEyes,
+          scoreCheeks,
+          tip,
+        ),
+      );
+    } catch (e) {
+      emit(UploadFailed(e.toString()));
     }
   }
 }
@@ -282,8 +481,44 @@ class Recording extends RecordVideoState {
   Recording(this.controller);
 }
 
-class VideoFinished extends RecordVideoState {
-  final CameraController controller;
+// class VideoFinished extends RecordVideoState {
+//   final CameraController controller;
+//   final XFile file;
+//   VideoFinished(this.controller, this.file);
+// }
+
+class UploadingVideo extends RecordVideoState {
+  final CameraController? controller; // allow null
   final XFile file;
-  VideoFinished(this.controller, this.file);
+
+  UploadingVideo(this.controller, this.file);
+}
+
+class UploadFinished extends RecordVideoState {
+  final CameraController? controller;
+  final XFile file;
+  final double score;
+  final double scoreLips;
+  final double scoreEyes;
+  final double scoreCheeks;
+  final String tip;
+
+  UploadFinished(
+    this.controller,
+    this.file,
+    this.score,
+    this.scoreLips,
+    this.scoreEyes,
+    this.scoreCheeks,
+    this.tip,
+  );
+}
+
+class UploadFailed extends RecordVideoState {
+  final String error;
+
+  UploadFailed(this.error);
+
+  @override
+  List<Object> get props => [error];
 }

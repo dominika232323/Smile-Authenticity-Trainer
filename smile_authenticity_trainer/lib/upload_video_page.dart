@@ -24,7 +24,7 @@ class UploadVideoPage extends StatelessWidget {
         create: (_) => UploadVideoCubit(
           hiveController: HiveController(
             context: context,
-            fetchDataFunction: () {}, // or your function
+            fetchDataFunction: () {},
           ),
         ),
         child: UploadVideoBody(),
@@ -41,7 +41,6 @@ class UploadVideoBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<UploadVideoCubit, UploadVideoState>(
       builder: (context, state) => switch (state) {
-        // TODO: Handle this case.
         VideoNotPicked() => Center(
           child: FilledButton(
             onPressed: () async {
@@ -337,7 +336,14 @@ class UploadFinished extends UploadVideoState {
   );
 
   @override
-  List<Object> get props => [file, score, tip];
+  List<Object> get props => [
+    file,
+    score,
+    scoreLips,
+    scoreEyes,
+    scoreCheeks,
+    tip,
+  ];
 }
 
 class UploadFailed extends UploadVideoState {
