@@ -4,6 +4,7 @@ import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:smile_authenticity_trainer/hive_controller.dart';
 import 'package:smile_authenticity_trainer/item.dart';
 import 'package:smile_authenticity_trainer/rounded_progress_bar.dart';
@@ -41,6 +42,19 @@ class UploadVideoBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<UploadVideoCubit, UploadVideoState>(
       builder: (context, state) => switch (state) {
+        // TODO: Handle this case.
+        PermissionsDenied() => Center(
+          child: Text(
+            'Gallery permission is required.\nPlease enable it in system settings.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 18,
+              color: Colors.red,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+
         VideoNotPicked() => Center(
           child: FilledButton(
             onPressed: () async {
@@ -260,10 +274,39 @@ class _PickingVideoBodyState extends State<PickingVideoBody> {
 }
 
 class UploadVideoCubit extends Cubit<UploadVideoState> {
-  UploadVideoCubit({required this.hiveController}) : super(VideoNotPicked());
+  UploadVideoCubit({required this.hiveController}) : super(VideoNotPicked()) {
+    _checkGalleryPermissions();
+  }
 
   final Services services = Services();
   final HiveController hiveController;
+
+  Future<void> _checkGalleryPermissions() async {
+    Permission permission;
+
+    if (Platform.isAndroid) {
+      // Android 13+ has separate media permissions
+      permission = Permission.videos;
+    } else {
+      // iOS still uses PHOTOS
+      permission = Permission.photos;
+    }
+
+    final status = await permission.status;
+
+    if (status.isGranted) {
+      emit(VideoNotPicked());
+      return;
+    }
+
+    final newStatus = await permission.request();
+
+    if (newStatus.isGranted) {
+      emit(VideoNotPicked());
+    } else {
+      emit(PermissionsDenied());
+    }
+  }
 
   void pickVideo(File file) async {
     emit(UploadingVideo(file));
@@ -309,6 +352,8 @@ sealed class UploadVideoState with EquatableMixin {
 }
 
 class VideoNotPicked extends UploadVideoState {}
+
+class PermissionsDenied extends UploadVideoState {}
 
 class UploadingVideo extends UploadVideoState {
   final File file;

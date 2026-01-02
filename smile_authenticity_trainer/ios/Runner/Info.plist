@@ -3,9 +3,11 @@
 <plist version="1.0">
 <dict>
 	<key>NSCameraUsageDescription</key>
-	<string>your usage description here</string>
+	<string>We will need access to your camera for recording videos</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>your usage description here</string>
+	<string>We will need access to your microphone for recording voice</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>We will need access to photo library for accessing the videos</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
