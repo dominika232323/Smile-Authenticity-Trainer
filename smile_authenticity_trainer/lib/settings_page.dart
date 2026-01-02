@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:smile_authenticity_trainer/theme_provider.dart';
-import 'package:smile_authenticity_trainer/themes.dart';
 
 import 'my_app_bar.dart';
 
@@ -43,16 +42,20 @@ class SettingsPage extends StatelessWidget {
             SimpleDialogOption(
               child: const Text("Light"),
               onPressed: () {
-                Provider.of<ThemeProvider>(context, listen: false).themeData =
-                    lightMode;
+                Provider.of<ThemeProvider>(
+                  context,
+                  listen: false,
+                ).setDarkMode(false);
                 Navigator.pop(context, "light");
               },
             ),
             SimpleDialogOption(
               child: const Text("Dark"),
               onPressed: () {
-                Provider.of<ThemeProvider>(context, listen: false).themeData =
-                    darkMode;
+                Provider.of<ThemeProvider>(
+                  context,
+                  listen: false,
+                ).setDarkMode(true);
                 Navigator.pop(context, "dark");
               },
             ),
