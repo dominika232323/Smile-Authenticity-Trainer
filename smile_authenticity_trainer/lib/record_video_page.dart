@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gal/gal.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smile_authenticity_trainer/hive_controller.dart';
 import 'package:smile_authenticity_trainer/item.dart';
 import 'package:smile_authenticity_trainer/rounded_progress_bar.dart';
@@ -477,6 +478,13 @@ class RecordVideoCubit extends Cubit<RecordVideoState> {
   }
 
   Future<void> saveVideo(File file) async {
+    final prefs = await SharedPreferences.getInstance();
+    bool saveRecordedVideos = prefs.getBool('saveRecordedVideos') ?? true;
+
+    if (!saveRecordedVideos) {
+      return;
+    }
+
     Permission permission;
 
     if (Platform.isAndroid) {

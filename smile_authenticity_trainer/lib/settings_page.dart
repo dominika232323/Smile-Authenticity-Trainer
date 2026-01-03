@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:smile_authenticity_trainer/theme_provider.dart';
 
 import 'my_app_bar.dart';
@@ -23,6 +24,13 @@ class SettingsPage extends StatelessWidget {
               trailing: const Icon(Icons.arrow_forward_ios, size: 16),
               onTap: () {
                 _showThemeSelector(context);
+              },
+            ),
+            ListTile(
+              title: const Text("Save recorded videos"),
+              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+              onTap: () {
+                _showSaveRecordedVideosSelector(context);
               },
             ),
             // Add more ListTile items here in the future
@@ -57,6 +65,37 @@ class SettingsPage extends StatelessWidget {
                   listen: false,
                 ).setDarkMode(true);
                 Navigator.pop(context, "dark");
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showSaveRecordedVideosSelector(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return SimpleDialog(
+          title: const Text("Do you want to save recorded videos to gallery?"),
+          children: [
+            SimpleDialogOption(
+              child: const Text("Yes"),
+              onPressed: () async {
+                final SharedPreferences prefs =
+                    await SharedPreferences.getInstance();
+                await prefs.setBool('saveRecordedVideos', true);
+                Navigator.pop(context);
+              },
+            ),
+            SimpleDialogOption(
+              child: const Text("No"),
+              onPressed: () async {
+                final SharedPreferences prefs =
+                    await SharedPreferences.getInstance();
+                await prefs.setBool('saveRecordedVideos', false);
+                Navigator.pop(context);
               },
             ),
           ],
