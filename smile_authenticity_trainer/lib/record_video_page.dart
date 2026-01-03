@@ -5,6 +5,7 @@ import 'package:camera/camera.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:gal/gal.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:smile_authenticity_trainer/hive_controller.dart';
 import 'package:smile_authenticity_trainer/item.dart';
@@ -337,8 +338,12 @@ class _VideoFinishedBody extends State<VideoFinishedBody> {
                         icon: Icon(Icons.check),
                         iconSize: 50,
                         tooltip: 'Save results',
-                        onPressed: () =>
-                            context.read<RecordVideoCubit>().saveResults(),
+                        onPressed: () {
+                          context.read<RecordVideoCubit>().saveResults();
+                          context.read<RecordVideoCubit>().saveVideo(
+                            widget.file,
+                          );
+                        },
                         color: Theme.of(context).colorScheme.tertiary,
                       ),
                       SizedBox(width: 50),
@@ -469,6 +474,10 @@ class RecordVideoCubit extends Cubit<RecordVideoState> {
     hiveController.createItem(item: item);
 
     _checkPermissions();
+  }
+
+  void saveVideo(File file) {
+    Gal.putVideo(file.path);
   }
 
   Future<void> _uploadVideo(XFile file) async {
