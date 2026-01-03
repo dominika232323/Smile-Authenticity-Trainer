@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:smile_authenticity_trainer/history.dart';
+import 'package:smile_authenticity_trainer/hive_controller.dart';
 import 'package:smile_authenticity_trainer/record_video_page.dart';
 import 'package:smile_authenticity_trainer/settings_page.dart';
 import 'package:smile_authenticity_trainer/string_constants.dart';
@@ -53,6 +54,11 @@ class _NavigationBarMainState extends State<NavigationBarMain> {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
 
+    final hiveController = HiveController(
+      context: context,
+      fetchDataFunction: () {},
+    );
+
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       bottomNavigationBar: NavigationBar(
@@ -78,7 +84,7 @@ class _NavigationBarMainState extends State<NavigationBarMain> {
         ],
       ),
       body: <Widget>[
-        HistoryPage(theme: theme),
+        HistoryPage(theme: theme, hiveController: hiveController),
         UploadVideoPage(theme: theme),
         RecordVideoPage(theme: theme, cameras: _cameras),
         SettingsPage(theme: theme),

@@ -25,7 +25,7 @@ class HiveController {
             'scoreEyes': item['scoreEyes'],
             'scoreCheeks': item['scoreCheeks'],
             'tip': item['tip'],
-            'createdAt': item['createdAt'],
+            'createdAt': DateTime.parse(item['createdAt']),
           };
         })
         .toList()
@@ -72,5 +72,94 @@ class HiveController {
   void afterAction(String keyword) {
     toastInfo(msg: 'Results $keyword successfully', status: Status.success);
     fetchDataFunction();
+  }
+
+  List getAllCreatedAt() {
+    final items = fetchData();
+
+    if (items.isEmpty) return [];
+
+    final dates = items
+        .map((item) {
+          final createdAt = item['createdAt'];
+          return DateTime(createdAt.year, createdAt.month, createdAt.day);
+        })
+        .toSet()
+        .toList();
+
+    dates.sort();
+
+    return dates;
+  }
+
+  int getLongestStreak() {
+    final dates = getAllCreatedAt();
+
+    if (dates.isEmpty) {
+      return 0;
+    }
+
+    int longestStreak = 1;
+    int currentStreak = 1;
+
+    for (int i = 1; i < dates.length; i++) {
+      final previousDay = dates[i - 1];
+      final currentDay = dates[i];
+
+      if (currentDay.difference(previousDay).inDays == 1) {
+        currentStreak++;
+      } else {
+        currentStreak = 1;
+      }
+
+      if (currentStreak > longestStreak) {
+        longestStreak = currentStreak;
+      }
+    }
+
+    return longestStreak;
+  }
+
+  int getCurrentStreak() {
+    final dates = getAllCreatedAt();
+
+    if (dates.isEmpty) {
+      return 0;
+    }
+
+    final today = DateTime.now();
+    final normalizedToday = DateTime(today.year, today.month, today.day);
+
+    if (!dates.contains(normalizedToday)) {
+      final yesterday = normalizedToday.subtract(const Duration(days: 1));
+
+      if (!dates.contains(yesterday)) {
+        return 0;
+      }
+    }
+
+    int currentStreak = 1;
+    DateTime streakDay = normalizedToday;
+
+    if (!dates.contains(streakDay)) {
+      streakDay = streakDay.subtract(const Duration(days: 1));
+
+      if (!dates.contains(streakDay)) {
+        return 0;
+      }
+    }
+
+    while (true) {
+      final previousDay = streakDay.subtract(const Duration(days: 1));
+
+      if (dates.contains(previousDay)) {
+        currentStreak++;
+        streakDay = previousDay;
+      } else {
+        break;
+      }
+    }
+
+    return currentStreak;
   }
 }
