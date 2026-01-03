@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:camera/camera.dart';
@@ -90,9 +91,6 @@ class RecordVideoBody extends StatelessWidget {
         Recording(:final controller) => RecordingBody(controller),
 
         // TODO: Handle this case.
-        // VideoFinished(:final file) => VideoFinishedBody(File(file.path)),
-
-        // TODO: Handle this case.
         UploadingVideo(:final file) => VideoFinishedBody(
           File(file.path),
           isLoading: true,
@@ -169,6 +167,10 @@ class RecordingBody extends StatefulWidget {
 class _RecordingBody extends State<RecordingBody> {
   double value = 40;
 
+  int get seconds => context.watch<RecordVideoCubit>().state is Recording
+      ? (context.watch<RecordVideoCubit>().state as Recording).seconds
+      : 0;
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -191,7 +193,16 @@ class _RecordingBody extends State<RecordingBody> {
                 child: Stack(
                   children: [
                     CameraPreview(widget.controller),
-
+                    Align(
+                      alignment: Alignment.topLeft,
+                      child: Text(
+                        'Recording: ${seconds}s',
+                        style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                     Align(
                       alignment: Alignment.bottomCenter,
                       child: IconButton(
@@ -367,6 +378,10 @@ class RecordVideoCubit extends Cubit<RecordVideoState> {
   final Services services = Services();
   final HiveController hiveController;
 
+  Timer? _timer;
+  int _seconds = 0;
+  int recordingLimit = 9;
+
   Future<void> _checkPermissions() async {
     final status = await Permission.camera.status;
 
@@ -398,24 +413,32 @@ class RecordVideoCubit extends Cubit<RecordVideoState> {
   Future<void> startRecording() async {
     if (controller != null) {
       await controller!.startVideoRecording();
-      emit(Recording(controller!));
 
-      Future.delayed(const Duration(seconds: 9), () async {
-        if (state is Recording) {
+      _seconds = 0;
+      emit(Recording(controller!, _seconds));
+
+      _timer = Timer.periodic(Duration(seconds: 1), (timer) async {
+        _seconds++;
+
+        if (_seconds >= recordingLimit) {
           await stopRecording();
+          return;
         }
+
+        emit(Recording(controller!, _seconds));
       });
     }
   }
 
   Future<void> stopRecording() async {
+    _timer?.cancel();
+    _timer = null;
+    _seconds = 0;
+
     if (controller != null) {
       final file = await controller!.stopVideoRecording();
 
-      await controller!.dispose();
-      controller = null;
-
-      emit(UploadingVideo(null, file)); // <-- controller removed
+      emit(UploadingVideo(file));
       _uploadVideo(file);
     }
   }
@@ -484,20 +507,18 @@ class RecordVideo extends RecordVideoState {
 
 class Recording extends RecordVideoState {
   final CameraController controller;
-  Recording(this.controller);
+  final int seconds;
+
+  Recording(this.controller, this.seconds);
+
+  @override
+  List<Object> get props => [controller, seconds];
 }
 
-// class VideoFinished extends RecordVideoState {
-//   final CameraController controller;
-//   final XFile file;
-//   VideoFinished(this.controller, this.file);
-// }
-
 class UploadingVideo extends RecordVideoState {
-  final CameraController? controller; // allow null
   final XFile file;
 
-  UploadingVideo(this.controller, this.file);
+  UploadingVideo(this.file);
 }
 
 class UploadFinished extends RecordVideoState {
