@@ -339,10 +339,10 @@ class _VideoFinishedBody extends State<VideoFinishedBody> {
                         iconSize: 50,
                         tooltip: 'Save results',
                         onPressed: () {
-                          context.read<RecordVideoCubit>().saveResults();
                           context.read<RecordVideoCubit>().saveVideo(
                             widget.file,
                           );
+                          context.read<RecordVideoCubit>().saveResults();
                         },
                         color: Theme.of(context).colorScheme.tertiary,
                       ),
@@ -476,8 +476,29 @@ class RecordVideoCubit extends Cubit<RecordVideoState> {
     _checkPermissions();
   }
 
-  void saveVideo(File file) {
-    Gal.putVideo(file.path);
+  Future<void> saveVideo(File file) async {
+    Permission permission;
+
+    if (Platform.isAndroid) {
+      permission = Permission.videos;
+    } else {
+      permission = Permission.photos;
+    }
+
+    final status = await permission.status;
+
+    if (status.isGranted) {
+      Gal.putVideo(file.path);
+      return;
+    }
+
+    final newStatus = await permission.request();
+
+    if (newStatus.isGranted) {
+      Gal.putVideo(file.path);
+    } else {
+      return;
+    }
   }
 
   Future<void> _uploadVideo(XFile file) async {
