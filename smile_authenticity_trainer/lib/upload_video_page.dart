@@ -285,10 +285,8 @@ class UploadVideoCubit extends Cubit<UploadVideoState> {
     Permission permission;
 
     if (Platform.isAndroid) {
-      // Android 13+ has separate media permissions
       permission = Permission.videos;
     } else {
-      // iOS still uses PHOTOS
       permission = Permission.photos;
     }
 
@@ -312,6 +310,21 @@ class UploadVideoCubit extends Cubit<UploadVideoState> {
     emit(UploadingVideo(file));
 
     try {
+      final controller = VideoPlayerController.file(file);
+      await controller.initialize();
+
+      final duration = controller.value.duration;
+      controller.dispose();
+
+      if (duration.inSeconds > 9) {
+        emit(
+          UploadFailed(
+            "Video is too long.\nMaximum allowed length is 9 seconds.",
+          ),
+        );
+        return;
+      }
+
       final (score, scoreLips, scoreEyes, scoreCheeks, tip) = await services
           .processVideo(file);
 
