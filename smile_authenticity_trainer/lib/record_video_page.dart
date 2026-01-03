@@ -399,6 +399,12 @@ class RecordVideoCubit extends Cubit<RecordVideoState> {
     if (controller != null) {
       await controller!.startVideoRecording();
       emit(Recording(controller!));
+
+      Future.delayed(const Duration(seconds: 9), () async {
+        if (state is Recording) {
+          await stopRecording();
+        }
+      });
     }
   }
 
