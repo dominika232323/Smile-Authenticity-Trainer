@@ -162,4 +162,46 @@ class HiveController {
 
     return currentStreak;
   }
+
+  Map<DateTime, double> getAvgScoresForLastNDays([int numberOfDays = 30]) {
+    final items = fetchData();
+    final now = DateTime.now();
+    final lastN = List.generate(
+      numberOfDays,
+      (i) => DateTime(now.year, now.month, now.day).subtract(Duration(days: i)),
+    );
+
+    final Map<DateTime, List<double>> scoreBuckets = {};
+
+    for (final day in lastN) {
+      scoreBuckets[day] = [];
+    }
+
+    for (final item in items) {
+      final created = item['created_at'] ?? item['createdAt'];
+      final score = item['score'];
+
+      if (created == null || score == null) continue;
+
+      final normalized = DateTime(created.year, created.month, created.day);
+
+      if (scoreBuckets.containsKey(normalized)) {
+        scoreBuckets[normalized]!.add(score);
+      }
+    }
+
+    final Map<DateTime, double> avgScores = {};
+
+    scoreBuckets.forEach((day, scores) {
+      if (scores.isNotEmpty) {
+        avgScores[day] = scores.reduce((a, b) => a + b) / scores.length;
+      } else {
+        avgScores[day] = 0;
+      }
+    });
+
+    final keys = avgScores.keys.toList()..sort();
+
+    return {for (var k in keys) k: avgScores[k]!};
+  }
 }
