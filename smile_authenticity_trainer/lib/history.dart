@@ -94,7 +94,7 @@ Widget myCalendar(BuildContext context, List<DateTime> markedDates) {
             child: Text(
               '${day.day}',
               style: TextStyle(
-                color: Colors.grey.shade700,
+                color: Theme.of(context).colorScheme.onTertiary.withAlpha(50),
                 fontWeight: FontWeight.bold,
               ),
             ),
