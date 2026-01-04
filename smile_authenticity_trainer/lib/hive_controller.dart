@@ -74,7 +74,7 @@ class HiveController {
     fetchDataFunction();
   }
 
-  List getAllCreatedAt() {
+  List<DateTime> getAllCreatedAt() {
     final items = fetchData();
 
     if (items.isEmpty) return [];

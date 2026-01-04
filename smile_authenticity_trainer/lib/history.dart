@@ -18,6 +18,7 @@ class HistoryPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final currentStreak = hiveController.getCurrentStreak();
     final longestStreak = hiveController.getLongestStreak();
+    final markedDates = hiveController.getAllCreatedAt();
 
     return Scaffold(
       body: Padding(
@@ -25,7 +26,7 @@ class HistoryPage extends StatelessWidget {
         child: Column(
           spacing: 10.0,
           children: [
-            myCalendar(context),
+            myCalendar(context, markedDates),
             myFramedStreakText(context, "Current streak:", currentStreak),
             myFramedStreakText(context, "Longest streak:", longestStreak),
           ],
@@ -36,20 +37,92 @@ class HistoryPage extends StatelessWidget {
   }
 }
 
-Widget myCalendar(BuildContext context) {
+Widget myCalendar(BuildContext context, List<DateTime> markedDates) {
   return myFramedBox(
     context,
     TableCalendar(
-      headerStyle: HeaderStyle(formatButtonVisible: false, titleCentered: true),
+      headerStyle: const HeaderStyle(
+        formatButtonVisible: false,
+        titleCentered: true,
+      ),
       firstDay: DateTime.utc(2010, 10, 16),
       lastDay: DateTime.utc(2030, 3, 14),
       focusedDay: DateTime.now(),
       startingDayOfWeek: StartingDayOfWeek.monday,
       calendarStyle: CalendarStyle(
         todayDecoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.tertiary,
-          shape: BoxShape.circle,
+          color: Theme.of(context).colorScheme.tertiary.withAlpha(50),
+          shape: BoxShape.rectangle,
+          borderRadius: BorderRadius.circular(50),
         ),
+        todayTextStyle: TextStyle(
+          color: Colors.grey.shade700,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      calendarBuilders: CalendarBuilders(
+        todayBuilder: (context, day, focusedDay) {
+          final normalizedDay = DateTime(day.year, day.month, day.day);
+
+          final isMarked = markedDates.contains(normalizedDay);
+
+          if (isMarked) {
+            return Container(
+              margin: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.tertiary,
+                borderRadius: BorderRadius.circular(50),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                '${day.day}',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onTertiary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            );
+          }
+
+          return Container(
+            margin: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.tertiary.withAlpha(50),
+              borderRadius: BorderRadius.circular(50),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              '${day.day}',
+              style: TextStyle(
+                color: Colors.grey.shade700,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          );
+        },
+
+        defaultBuilder: (context, day, focusedDay) {
+          final normalizedDay = DateTime(day.year, day.month, day.day);
+
+          if (markedDates.contains(normalizedDay)) {
+            return Container(
+              margin: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.tertiary,
+                borderRadius: BorderRadius.circular(50),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                '${day.day}',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onTertiary,
+                ),
+              ),
+            );
+          }
+
+          return null;
+        },
       ),
     ),
   );
