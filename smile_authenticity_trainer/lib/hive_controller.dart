@@ -204,4 +204,47 @@ class HiveController {
 
     return {for (var k in keys) k: avgScores[k]!};
   }
+
+  Map<DateTime, double> getAvgScoresForRange(DateTime start, DateTime end) {
+    final items = fetchData();
+
+    DateTime normalize(DateTime d) => DateTime(d.year, d.month, d.day);
+    start = normalize(start);
+    end = normalize(end);
+
+    final days = <DateTime>[];
+    for (var d = start; !d.isAfter(end); d = d.add(const Duration(days: 1))) {
+      days.add(d);
+    }
+
+    final Map<DateTime, List<double>> scoreBuckets = {
+      for (final d in days) d: [],
+    };
+
+    for (final item in items) {
+      final created = item['createdAt'];
+      final score = item['score'];
+
+      if (created == null || score == null) {
+        continue;
+      }
+
+      final normalized = normalize(created);
+
+      if (normalized.isBefore(start) || normalized.isAfter(end)) {
+        continue;
+      }
+
+      scoreBuckets[normalized]!.add(score.toDouble());
+    }
+
+    final Map<DateTime, double> avgScores = {};
+    scoreBuckets.forEach((day, scores) {
+      avgScores[day] = scores.isEmpty
+          ? 0
+          : scores.reduce((a, b) => a + b) / scores.length;
+    });
+
+    return avgScores;
+  }
 }

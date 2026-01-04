@@ -5,7 +5,7 @@ import 'package:table_calendar/table_calendar.dart';
 
 import 'my_app_bar.dart';
 
-class HistoryPage extends StatelessWidget {
+class HistoryPage extends StatefulWidget {
   const HistoryPage({
     super.key,
     required this.theme,
@@ -16,12 +16,30 @@ class HistoryPage extends StatelessWidget {
   final HiveController hiveController;
 
   @override
+  State<HistoryPage> createState() => _HistoryPageState();
+}
+
+class _HistoryPageState extends State<HistoryPage> {
+  DateTime? startDate;
+  DateTime? endDate;
+
+  @override
   Widget build(BuildContext context) {
-    final currentStreak = hiveController.getCurrentStreak();
-    final longestStreak = hiveController.getLongestStreak();
-    final markedDates = hiveController.getAllCreatedAt();
-    int numberOfDays = 14;
-    final avgScores = hiveController.getAvgScoresForLastNDays(numberOfDays);
+    final markedDates = widget.hiveController.getAllCreatedAt();
+
+    final currentStreak = widget.hiveController.getCurrentStreak();
+    final longestStreak = widget.hiveController.getLongestStreak();
+
+    final DateTime now = DateTime.now();
+    final DateTime defaultStart = now.subtract(const Duration(days: 13));
+
+    final DateTime rangeStart = startDate ?? defaultStart;
+    final DateTime rangeEnd = endDate ?? now;
+
+    final avgScores = widget.hiveController.getAvgScoresForRange(
+      rangeStart,
+      rangeEnd,
+    );
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -33,12 +51,90 @@ class HistoryPage extends StatelessWidget {
               myCalendar(context, markedDates),
               myFramedStreakText(context, "Current streak:", currentStreak),
               myFramedStreakText(context, "Longest streak:", longestStreak),
-              myLineChart(context, avgScores, numberOfDays),
+              myDateRangePicker(context),
+              myLineChart(context, avgScores, rangeStart, rangeEnd),
             ],
           ),
         ),
       ),
       appBar: buildMyAppBar(context),
+    );
+  }
+
+  Widget myDateRangePicker(BuildContext context) {
+    return myFramedBox(
+      context,
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Text(
+              "Select date range for plots",
+              style: TextStyle(fontSize: 16), //fontWeight: FontWeight.bold),
+            ),
+          ),
+          const SizedBox(height: 10),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              ElevatedButton(
+                style: ButtonStyle(
+                  backgroundColor: WidgetStatePropertyAll<Color>(
+                    Theme.of(context).colorScheme.tertiary,
+                  ),
+                ),
+                onPressed: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: startDate ?? DateTime.now(),
+                    firstDate: DateTime(2010),
+                    lastDate: DateTime.now(),
+                  );
+                  if (picked != null) {
+                    setState(() => startDate = picked);
+                  }
+                },
+                child: Text(
+                  startDate == null
+                      ? "Pick start"
+                      : "Start: ${startDate!.day}/${startDate!.month}/${startDate!.year}",
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onTertiary,
+                  ),
+                ),
+              ),
+
+              ElevatedButton(
+                style: ButtonStyle(
+                  backgroundColor: WidgetStatePropertyAll<Color>(
+                    Theme.of(context).colorScheme.tertiary,
+                  ),
+                ),
+                onPressed: () async {
+                  final picked = await showDatePicker(
+                    context: context,
+                    initialDate: endDate ?? DateTime.now(),
+                    firstDate: DateTime(2010),
+                    lastDate: DateTime.now(),
+                  );
+                  if (picked != null) {
+                    setState(() => endDate = picked);
+                  }
+                },
+                child: Text(
+                  endDate == null
+                      ? "Pick end"
+                      : "End: ${endDate!.day}/${endDate!.month}/${endDate!.year}",
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onTertiary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
@@ -165,7 +261,8 @@ Widget myFramedBox(BuildContext context, Widget child) {
 Widget myLineChart(
   BuildContext context,
   Map<DateTime, double> avgScores,
-  int numberOfDays,
+  DateTime start,
+  DateTime end,
 ) {
   final dates = avgScores.keys.toList();
   final values = avgScores.values.toList();
@@ -179,19 +276,21 @@ Widget myLineChart(
     Column(
       children: [
         Text(
-          "Average Score (last $numberOfDays days)",
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.onSurface,
-          ),
+          "Average Score (${start.day}/${start.month} → ${end.day}/${end.month})",
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
+
         SizedBox(
           height: 300,
           child: LineChart(
             LineChartData(
               minY: 0,
+              maxY:
+                  (values.isNotEmpty
+                      ? values.reduce((a, b) => a > b ? a : b)
+                      : 10) +
+                  5,
               lineBarsData: [
                 LineChartBarData(
                   spots: spots,
@@ -205,28 +304,21 @@ Widget myLineChart(
                 bottomTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
-                    interval: 3,
+                    interval: (dates.length / 5)
+                        .floor()
+                        .clamp(1, double.infinity)
+                        .toDouble(),
                     getTitlesWidget: (value, meta) {
                       final index = value.toInt();
                       if (index < 0 || index >= dates.length) {
                         return const SizedBox.shrink();
                       }
-                      final day = dates[index];
+                      final d = dates[index];
                       return Text(
-                        "${day.day}/${day.month}",
+                        "${d.day}/${d.month}",
                         style: TextStyle(fontSize: 10),
                       );
                     },
-                  ),
-                ),
-                leftTitles: AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    interval: 20,
-                    getTitlesWidget: (value, meta) => Text(
-                      value.toInt().toString(),
-                      style: TextStyle(fontSize: 10),
-                    ),
                   ),
                 ),
                 topTitles: AxisTitles(
@@ -236,8 +328,6 @@ Widget myLineChart(
                   sideTitles: SideTitles(showTitles: false),
                 ),
               ),
-              gridData: FlGridData(show: true),
-              borderData: FlBorderData(show: true),
             ),
           ),
         ),
