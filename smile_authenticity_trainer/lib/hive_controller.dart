@@ -266,4 +266,34 @@ class HiveController {
   ) {
     return getAvgScoresForRange(start, end, 'scoreCheeks');
   }
+
+  Map<DateTime, int> getTrainingCountForRange(DateTime start, DateTime end) {
+    final items = fetchData();
+
+    DateTime normalize(DateTime d) => DateTime(d.year, d.month, d.day);
+    start = normalize(start);
+    end = normalize(end);
+
+    // Build full list of days in range
+    final days = <DateTime>[];
+    for (var d = start; !d.isAfter(end); d = d.add(const Duration(days: 1))) {
+      days.add(d);
+    }
+
+    // Map day → training count
+    final Map<DateTime, int> countMap = {for (final d in days) d: 0};
+
+    for (final item in items) {
+      final created = item['createdAt'];
+      if (created == null) continue;
+
+      final normalized = normalize(created);
+
+      if (!normalized.isBefore(start) && !normalized.isAfter(end)) {
+        countMap[normalized] = countMap[normalized]! + 1;
+      }
+    }
+
+    return countMap;
+  }
 }

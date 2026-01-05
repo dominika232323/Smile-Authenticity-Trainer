@@ -52,6 +52,10 @@ class _HistoryPageState extends State<HistoryPage> {
       rangeStart,
       rangeEnd,
     );
+    final trainingCount = widget.hiveController.getTrainingCountForRange(
+      rangeStart,
+      rangeEnd,
+    );
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -86,6 +90,7 @@ class _HistoryPageState extends State<HistoryPage> {
                 rangeEnd,
                 ' Cheeks',
               ),
+              myCountChart(context, trainingCount, rangeStart, rangeEnd),
             ],
           ),
         ),
@@ -359,6 +364,90 @@ Widget myLineChart(
                   sideTitles: SideTitles(showTitles: false),
                 ),
                 rightTitles: AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+Widget myCountChart(
+  BuildContext context,
+  Map<DateTime, int> countMap,
+  DateTime start,
+  DateTime end,
+) {
+  final dates = countMap.keys.toList();
+  final values = countMap.values.toList();
+
+  final barSpots = List.generate(dates.length, (i) {
+    return BarChartRodData(
+      toY: values[i].toDouble(),
+      color: Theme.of(context).colorScheme.tertiary,
+      width: 14,
+      borderRadius: BorderRadius.circular(6),
+    );
+  });
+
+  return myFramedBox(
+    context,
+    Column(
+      children: [
+        Text(
+          "Training Count (${start.day}/${start.month} → ${end.day}/${end.month})",
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 12),
+
+        SizedBox(
+          height: 300,
+          child: BarChart(
+            BarChartData(
+              gridData: FlGridData(show: true),
+              borderData: FlBorderData(show: false),
+              barGroups: List.generate(
+                dates.length,
+                (i) => BarChartGroupData(x: i, barRods: [barSpots[i]]),
+              ),
+              titlesData: FlTitlesData(
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    getTitlesWidget: (value, meta) {
+                      final index = value.toInt();
+
+                      if (index % 2 != 0) return const SizedBox.shrink();
+
+                      if (index < 0 || index >= dates.length) {
+                        return const SizedBox.shrink();
+                      }
+
+                      final d = dates[index];
+                      return Text(
+                        "${d.day}/${d.month}",
+                        style: const TextStyle(fontSize: 10),
+                      );
+                    },
+                  ),
+                ),
+                leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 30,
+                    getTitlesWidget: (value, meta) => Text(
+                      value.toInt().toString(),
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ),
+                rightTitles: AxisTitles(
+                  sideTitles: SideTitles(showTitles: false),
+                ),
+                topTitles: AxisTitles(
                   sideTitles: SideTitles(showTitles: false),
                 ),
               ),
