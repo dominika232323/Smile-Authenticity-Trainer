@@ -64,7 +64,7 @@ class _HistoryPageState extends State<HistoryPage> {
           child: Column(
             spacing: 10.0,
             children: [
-              myCalendar(context, markedDates),
+              myCalendar(context, markedDates, widget.hiveController),
               myFramedStreakText(context, "Current streak:", currentStreak),
               myFramedStreakText(context, "Longest streak:", longestStreak),
               myDateRangePicker(context),
@@ -177,10 +177,18 @@ class _HistoryPageState extends State<HistoryPage> {
   }
 }
 
-Widget myCalendar(BuildContext context, List<DateTime> markedDates) {
+Widget myCalendar(
+  BuildContext context,
+  List<DateTime> markedDates,
+  HiveController hiveController,
+) {
   return myFramedBox(
     context,
     TableCalendar(
+      onDaySelected: (selectedDay, focusedDay) {
+        final stats = hiveController.getStatsForDay(selectedDay);
+        showStatsPopup(context, selectedDay, stats);
+      },
       headerStyle: const HeaderStyle(
         formatButtonVisible: false,
         titleCentered: true,
@@ -264,6 +272,48 @@ Widget myCalendar(BuildContext context, List<DateTime> markedDates) {
           return null;
         },
       ),
+    ),
+  );
+}
+
+void showStatsPopup(
+  BuildContext context,
+  DateTime day,
+  Map<String, dynamic> stats,
+) {
+  showDialog(
+    context: context,
+    builder: (_) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Text("Stats for ${day.day}/${day.month}/${day.year}"),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: 6,
+        children: [
+          Text("Training Sessions: ${stats['count']}"),
+          Text("Average Score: ${stats['avgScore'].toStringAsFixed(2)}"),
+          Text("Average Score Lips: ${stats['avgLips'].toStringAsFixed(2)}"),
+          Text("Average Score Eyes: ${stats['avgEyes'].toStringAsFixed(2)}"),
+          Text(
+            "Average Score Cheeks: ${stats['avgCheeks'].toStringAsFixed(2)}",
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          style: ButtonStyle(
+            backgroundColor: WidgetStatePropertyAll<Color>(
+              Theme.of(context).colorScheme.tertiary,
+            ),
+          ),
+          child: Text(
+            "OK",
+            style: TextStyle(color: Theme.of(context).colorScheme.onTertiary),
+          ),
+        ),
+      ],
     ),
   );
 }

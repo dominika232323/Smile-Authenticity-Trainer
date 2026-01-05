@@ -274,13 +274,11 @@ class HiveController {
     start = normalize(start);
     end = normalize(end);
 
-    // Build full list of days in range
     final days = <DateTime>[];
     for (var d = start; !d.isAfter(end); d = d.add(const Duration(days: 1))) {
       days.add(d);
     }
 
-    // Map day → training count
     final Map<DateTime, int> countMap = {for (final d in days) d: 0};
 
     for (final item in items) {
@@ -295,5 +293,41 @@ class HiveController {
     }
 
     return countMap;
+  }
+
+  Map<String, dynamic> getStatsForDay(DateTime day) {
+    final normalized = DateTime(day.year, day.month, day.day);
+
+    final items = fetchData().where((item) {
+      final created = item['createdAt'];
+      final normalizedCreated = DateTime(
+        created.year,
+        created.month,
+        created.day,
+      );
+      return normalizedCreated == normalized;
+    }).toList();
+
+    if (items.isEmpty) {
+      return {
+        "count": 0,
+        "avgScore": 0.0,
+        "avgLips": 0.0,
+        "avgEyes": 0.0,
+        "avgCheeks": 0.0,
+      };
+    }
+
+    double avg(String key) {
+      return items.fold(0.0, (a, b) => a + b[key]) / items.length;
+    }
+
+    return {
+      "count": items.length,
+      "avgScore": avg("score"),
+      "avgLips": avg("scoreLips"),
+      "avgEyes": avg("scoreEyes"),
+      "avgCheeks": avg("scoreCheeks"),
+    };
   }
 }
