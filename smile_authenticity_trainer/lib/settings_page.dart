@@ -73,32 +73,55 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  void _showSaveRecordedVideosSelector(BuildContext context) {
+  void _showSaveRecordedVideosSelector(BuildContext context) async {
+    final prefs = await SharedPreferences.getInstance();
+    bool saveToGallery = prefs.getBool('saveRecordedVideos') ?? false;
+
     showDialog(
       context: context,
       builder: (context) {
-        return SimpleDialog(
-          title: const Text("Do you want to save recorded videos to gallery?"),
-          children: [
-            SimpleDialogOption(
-              child: const Text("Yes"),
-              onPressed: () async {
-                final SharedPreferences prefs =
-                    await SharedPreferences.getInstance();
-                await prefs.setBool('saveRecordedVideos', true);
-                Navigator.pop(context);
-              },
-            ),
-            SimpleDialogOption(
-              child: const Text("No"),
-              onPressed: () async {
-                final SharedPreferences prefs =
-                    await SharedPreferences.getInstance();
-                await prefs.setBool('saveRecordedVideos', false);
-                Navigator.pop(context);
-              },
-            ),
-          ],
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text("Save recorded videos to gallery?"),
+              content: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    saveToGallery ? "Enabled" : "Disabled",
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface,
+                      fontSize: 20,
+                    ),
+                  ),
+                  Switch(
+                    value: saveToGallery,
+                    activeThumbColor: Theme.of(context).colorScheme.tertiary,
+                    onChanged: (value) async {
+                      setState(() => saveToGallery = value);
+                      await prefs.setBool('saveRecordedVideos', value);
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  style: ButtonStyle(
+                    backgroundColor: WidgetStatePropertyAll<Color>(
+                      Theme.of(context).colorScheme.tertiary,
+                    ),
+                  ),
+                  onPressed: () => Navigator.pop(context),
+                  child: Text(
+                    "OK",
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onTertiary,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
         );
       },
     );

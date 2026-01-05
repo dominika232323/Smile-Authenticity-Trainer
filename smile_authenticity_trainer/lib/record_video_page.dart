@@ -137,7 +137,7 @@ class RecordVideoBody extends StatelessWidget {
                 child: Text(
                   error,
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16, color: Colors.black54),
+                  style: TextStyle(fontSize: 16),
                 ),
               ),
 
