@@ -116,7 +116,6 @@ class RecordVideoBody extends StatelessWidget {
             tip: tip,
           ),
 
-        // TODO: Handle this case.
         UploadFailed(:final error) => Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -197,14 +196,27 @@ class _RecordingBody extends State<RecordingBody> {
                     CameraPreview(widget.controller),
                     Align(
                       alignment: Alignment.topLeft,
-                      child: Text(
-                        'Recording: ${seconds}s',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
+                      child: Container(
+                        margin: const EdgeInsets.all(12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withAlpha(250),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          'Recording: ${seconds}s',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),
+
                     Align(
                       alignment: Alignment.bottomCenter,
                       child: IconButton(
