@@ -205,7 +205,11 @@ class HiveController {
     return {for (var k in keys) k: avgScores[k]!};
   }
 
-  Map<DateTime, double> getAvgScoresForRange(DateTime start, DateTime end) {
+  Map<DateTime, double> getAvgScoresForRange(
+    DateTime start,
+    DateTime end, [
+    String whichScore = 'score',
+  ]) {
     final items = fetchData();
 
     DateTime normalize(DateTime d) => DateTime(d.year, d.month, d.day);
@@ -223,7 +227,7 @@ class HiveController {
 
     for (final item in items) {
       final created = item['createdAt'];
-      final score = item['score'];
+      final score = item[whichScore];
 
       if (created == null || score == null) {
         continue;
@@ -246,5 +250,20 @@ class HiveController {
     });
 
     return avgScores;
+  }
+
+  Map<DateTime, double> getAvgScoresLipsForRange(DateTime start, DateTime end) {
+    return getAvgScoresForRange(start, end, 'scoreLips');
+  }
+
+  Map<DateTime, double> getAvgScoresEyesForRange(DateTime start, DateTime end) {
+    return getAvgScoresForRange(start, end, 'scoreEyes');
+  }
+
+  Map<DateTime, double> getAvgScoresCheeksForRange(
+    DateTime start,
+    DateTime end,
+  ) {
+    return getAvgScoresForRange(start, end, 'scoreCheeks');
   }
 }

@@ -40,6 +40,18 @@ class _HistoryPageState extends State<HistoryPage> {
       rangeStart,
       rangeEnd,
     );
+    final avgScoresLips = widget.hiveController.getAvgScoresLipsForRange(
+      rangeStart,
+      rangeEnd,
+    );
+    final avgScoresEyes = widget.hiveController.getAvgScoresEyesForRange(
+      rangeStart,
+      rangeEnd,
+    );
+    final avgScoresCheeks = widget.hiveController.getAvgScoresCheeksForRange(
+      rangeStart,
+      rangeEnd,
+    );
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -53,6 +65,27 @@ class _HistoryPageState extends State<HistoryPage> {
               myFramedStreakText(context, "Longest streak:", longestStreak),
               myDateRangePicker(context),
               myLineChart(context, avgScores, rangeStart, rangeEnd),
+              myLineChart(
+                context,
+                avgScoresLips,
+                rangeStart,
+                rangeEnd,
+                ' Lips',
+              ),
+              myLineChart(
+                context,
+                avgScoresEyes,
+                rangeStart,
+                rangeEnd,
+                ' Eyes',
+              ),
+              myLineChart(
+                context,
+                avgScoresCheeks,
+                rangeStart,
+                rangeEnd,
+                ' Cheeks',
+              ),
             ],
           ),
         ),
@@ -262,8 +295,9 @@ Widget myLineChart(
   BuildContext context,
   Map<DateTime, double> avgScores,
   DateTime start,
-  DateTime end,
-) {
+  DateTime end, [
+  String whichScore = "",
+]) {
   final dates = avgScores.keys.toList();
   final values = avgScores.values.toList();
 
@@ -276,7 +310,7 @@ Widget myLineChart(
     Column(
       children: [
         Text(
-          "Average Score (${start.day}/${start.month} → ${end.day}/${end.month})",
+          "Average Score$whichScore (${start.day}/${start.month} → ${end.day}/${end.month})",
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
