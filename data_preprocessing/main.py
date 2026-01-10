@@ -24,7 +24,7 @@ from config import (
     PREPROCESSED_FRAMES_DIR,
     PREPROCESSED_SMILE_PHASES_DIR,
     UvA_NEMO_SMILE_DETAILS,
-    UvA_NEMO_SMILE_VIDEOS_DIR,
+    UvA_NEMO_SMILE_VIDEOS_DIR, LIPS_LANDMARKS_IN_APEX_CSV, EYES_LANDMARKS_IN_APEX_CSV, CHEEKS_LANDMARKS_IN_APEX_CSV,
 )
 from data_preprocessing.assign_labels import assign_labels
 from data_preprocessing.extract_cheek_features import extract_cheek_features
@@ -225,9 +225,9 @@ def save_landmarks_in_apex() -> None:
         eyes_landmarks_df = pd.concat([eyes_landmarks_df, result_eyes], ignore_index=True)
         cheeks_landmarks_df = pd.concat([cheeks_landmarks_df, result_cheeks], ignore_index=True)
 
-    lips_landmarks_df.to_csv(PREPROCESSED_DATA_DIR / "lips_landmarks.csv", index=False)
-    eyes_landmarks_df.to_csv(PREPROCESSED_DATA_DIR / "eyes_landmarks.csv", index=False)
-    cheeks_landmarks_df.to_csv(PREPROCESSED_DATA_DIR / "cheeks_landmarks.csv", index=False)
+    lips_landmarks_df.to_csv(LIPS_LANDMARKS_IN_APEX_CSV, index=False)
+    eyes_landmarks_df.to_csv(EYES_LANDMARKS_IN_APEX_CSV, index=False)
+    cheeks_landmarks_df.to_csv(CHEEKS_LANDMARKS_IN_APEX_CSV, index=False)
 
 
 @logger.catch
