@@ -147,7 +147,7 @@ test:
 ## Run tests with coverage
 .PHONY: coverage
 coverage:
-	$(PYTHON_INTERPRETER) -m pytest --cov=data_preprocessing --cov-report=term-missing tests
+	$(PYTHON_INTERPRETER) -m pytest --cov=data_preprocessing --cov=modeling --cov-report=term-missing tests
 
 
 ## Run tensorboard for lips features runs
