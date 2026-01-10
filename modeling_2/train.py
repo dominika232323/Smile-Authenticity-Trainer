@@ -30,7 +30,7 @@ def train(
 
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.5, patience=3)
 
-    history = {
+    history: dict[str, list[float]] = {
         "train_loss": [],
         "val_loss": [],
         "train_acc": [],

@@ -60,6 +60,8 @@ def pipeline(
         "epochs": epochs,
         "patience": patience,
         "lr": lr,
+        "how_many_features": how_many_features,
+        "threshold": threshold,
         "input_dim": X.shape[1],
     }
     writer.add_hparams(hparams, {})

@@ -2,7 +2,6 @@ import datetime
 import json
 from pathlib import Path
 
-import torch
 from loguru import logger
 from sklearn.model_selection import ParameterGrid
 

@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from typing import Any
 
@@ -41,6 +42,7 @@ def evaluate(
     writer: SummaryWriter | None = None,
 ) -> dict[str, Any]:
     logger.info("Evaluating model...")
+
     all_logits = []
     all_labels = []
 
@@ -48,25 +50,26 @@ def evaluate(
         for X_batch, y_batch in test_loader:
             X_batch = X_batch.to(device)
             logits = model(X_batch)
+
             all_logits.append(logits.cpu())
             all_labels.append(y_batch)
 
-    all_logits = torch.cat(all_logits)
-    all_labels = torch.cat(all_labels)
+    all_logits_tensor = torch.cat(all_logits)
+    all_labels_tensor = torch.cat(all_labels)
 
-    probs = torch.sigmoid(all_logits)
+    probs = torch.sigmoid(all_logits_tensor)
     preds = (probs > threshold).int()
 
-    accuracy = accuracy_score(all_labels.numpy(), preds.numpy())
-    balanced_accuracy = balanced_accuracy_score(all_labels.numpy(), preds.numpy())
-    precision = precision_score(all_labels.numpy(), preds.numpy())
-    recall = recall_score(all_labels.numpy(), preds.numpy(), zero_division=0)
-    f1 = f1_score(all_labels.numpy(), preds.numpy())
+    accuracy = accuracy_score(all_labels_tensor.numpy(), preds.numpy())
+    balanced_accuracy = balanced_accuracy_score(all_labels_tensor.numpy(), preds.numpy())
+    precision = precision_score(all_labels_tensor.numpy(), preds.numpy())
+    recall = recall_score(all_labels_tensor.numpy(), preds.numpy(), zero_division=0)
+    f1 = f1_score(all_labels_tensor.numpy(), preds.numpy())
 
-    report = classification_report(all_labels, preds, target_names=["No smile (0)", "Smile (1)"], digits=4)
+    report = classification_report(all_labels_tensor, preds, target_names=["No smile (0)", "Smile (1)"], digits=4)
     save_classification_report(report, output_dir)
 
-    cm = confusion_matrix(all_labels, preds)
+    cm = confusion_matrix(all_labels_tensor, preds)
     save_confusion_matrix(cm, output_dir)
 
     if writer is not None:
@@ -102,8 +105,13 @@ def save_classification_report(report: str | dict, output_dir: Path) -> None:
 
     report_path = output_dir / "classification_report.txt"
 
+    if isinstance(report, dict):
+        report_str = json.dumps(report, indent=2)
+    else:
+        report_str = report
+
     with open(report_path, "w") as f:
-        f.write(report)
+        f.write(report_str)
 
     logger.info(f"Saved classification report to {report_path}")
 
