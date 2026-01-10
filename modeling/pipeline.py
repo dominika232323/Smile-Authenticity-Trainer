@@ -49,9 +49,9 @@ def pipeline_mlp(
     X, y = create_data_tensors(features, labels)
     train_loader, val_loader, X_val, y_val = create_dataloaders(X, y, batch_size, test_size)
 
-    model = MultiLayerPerceptron(input_dim=X.shape[1], dropout_p=dropout)
+    model = MultiLayerPerceptron(input_dim=X.shape[1], dropout_p=dropout).to(device)
 
-    sample_input = torch.randn(1, X.shape[1])
+    sample_input = torch.randn(1, X.shape[1]).to(device)
     writer.add_graph(model, sample_input)
 
     hparams = {

@@ -32,8 +32,11 @@ CHECKPOINT_FILE_PATH = PREPROCESSED_DATA_DIR / "processed_files.csv"
 
 RUNS_DIR = PROJ_ROOT / "runs"
 LIPS_RUNS_DIR = RUNS_DIR / "lips_runs"
+LIPS_LANDMARKS_RUNS_DIR = RUNS_DIR / "lips_landmarks_runs"
 EYES_RUNS_DIR = RUNS_DIR / "eyes_runs"
+EYES_LANDMARKS_RUNS_DIR = RUNS_DIR / "eyes_landmarks_runs"
 CHEEKS_RUNS_DIR = RUNS_DIR / "cheek_runs"
+CHEEKS_LANDMARKS_RUNS_DIR = RUNS_DIR / "cheek_landmarks_runs"
 
 EYE_RELATIVE_LEFT = 0.35
 EYE_RELATIVE_TOP = 0.35

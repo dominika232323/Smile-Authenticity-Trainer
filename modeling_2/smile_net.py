@@ -11,7 +11,7 @@ class SmileNet(nn.Module):
             nn.Linear(128, 64),
             nn.ReLU(),
             nn.Dropout(dropout_p),
-            nn.Linear(64, 1)
+            nn.Linear(64, 1),
         )
 
     def forward(self, x):
