@@ -5,7 +5,7 @@ import pandas as pd
 from pathlib import Path
 import tempfile
 import shutil
-from modeling.load_dataset import load_dataset, feature_selection
+from modeling.load_dataset import load_dataset, feature_selection, scale_data
 
 
 class TestLoadDataset:
@@ -111,3 +111,54 @@ class TestFeatureSelection:
         # Should raise FileNotFoundError when trying to save joblib
         with pytest.raises(FileNotFoundError):
             feature_selection(X, y, how_many_features, invalid_dir)
+
+
+class TestScaleData:
+    @pytest.fixture
+    def temp_dir(self):
+        temp_dir_path = tempfile.mkdtemp()
+        yield Path(temp_dir_path)
+        shutil.rmtree(temp_dir_path)
+
+    @pytest.fixture
+    def sample_data(self):
+        np.random.seed(42)
+        X = pd.DataFrame(
+            {
+                "feat1": np.random.randn(100) * 10 + 5,
+                "feat2": np.random.randn(100) * 0.1 - 2,
+                "feat3": np.random.randn(100) + 100,
+            }
+        )
+        return X
+
+    def test_scale_data_success(self, temp_dir, sample_data):
+        X_scaled = scale_data(sample_data, temp_dir)
+
+        # Check return type and shape
+        assert isinstance(X_scaled, np.ndarray)
+        assert X_scaled.shape == sample_data.shape
+
+        # Check if data is scaled (StandardScaler: mean ~0, std ~1)
+        assert np.allclose(X_scaled.mean(axis=0), 0, atol=1e-7)
+        assert np.allclose(X_scaled.std(axis=0), 1, atol=1e-7)
+
+        # Check if scaler was saved
+        scaler_path = temp_dir / "scaler.joblib"
+        assert scaler_path.exists()
+
+        # Check if we can load it back and it's a scaler
+        scaler = joblib.load(scaler_path)
+        assert hasattr(scaler, "transform")
+
+    def test_scale_data_consistency(self, temp_dir, sample_data):
+        X_scaled_1 = scale_data(sample_data, temp_dir)
+        X_scaled_2 = scale_data(sample_data, temp_dir)
+
+        assert np.array_equal(X_scaled_1, X_scaled_2)
+
+    def test_scale_data_invalid_dir(self, sample_data):
+        invalid_dir = Path("/non_existent_directory_98765")
+
+        with pytest.raises(FileNotFoundError):
+            scale_data(sample_data, invalid_dir)
