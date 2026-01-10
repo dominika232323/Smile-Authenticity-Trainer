@@ -7,6 +7,7 @@ import torch
 from loguru import logger
 from sklearn.model_selection import ParameterGrid
 from torch.utils.tensorboard import SummaryWriter
+from tqdm import tqdm
 
 from data_preprocessing.file_utils import create_directories
 from modeling.evaluate import evaluate, load_best_model
@@ -111,7 +112,9 @@ def hyperparameter_grid_search(
 ):
     grid = ParameterGrid(param_grid)
 
-    for params in grid:
+    logger.info(f"Running grid search with {len(grid)} parameter combinations.")
+
+    for params in tqdm(grid):
         logger.info(f"Running with params: {params}")
 
         output_dir = runs_dir / get_timestamp()
@@ -138,6 +141,8 @@ def hyperparameter_grid_search(
             json.dump(params, f, indent=4)
 
         logger.info(f"Completed run. Saved results to {output_dir}. Config: {params}")
+
+    logger.info("Grid search complete.")
 
 
 def get_device() -> str:
