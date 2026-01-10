@@ -2,7 +2,7 @@ from loguru import logger
 
 from config import CHEEKS_LANDMARKS_IN_APEX_CSV, CHEEKS_LANDMARKS_RUNS_DIR
 from logging_config import setup_logging
-from modeling_2.pipeline import pipeline_landmarks
+from modeling_2.pipeline import hyperparameter_grid_search
 
 
 @logger.catch
@@ -11,6 +11,7 @@ def main():
     logger.info("Starting training on cheeks landmarks pipeline")
 
     dataset_path = CHEEKS_LANDMARKS_IN_APEX_CSV
+    non_feature_cols = ["filename", "smile_phase", "frame_number"]
 
     param_grid = {
         "batch_size": [32],
@@ -22,7 +23,7 @@ def main():
         "how_many_features": [8],
         "threshold": [0.5],
     }
-    pipeline_landmarks(dataset_path, CHEEKS_LANDMARKS_RUNS_DIR, param_grid)
+    hyperparameter_grid_search(dataset_path, CHEEKS_LANDMARKS_RUNS_DIR, param_grid, non_feature_cols)
 
 
 if __name__ == "__main__":

@@ -93,19 +93,19 @@ data_preprocessing:
 ## Train lips model on features
 .PHONY: train_lips_features
 train_lips_features:
-	$(PYTHON_INTERPRETER) -m modeling.lips
+	$(PYTHON_INTERPRETER) -m modeling_2.lips_features
 
 
 ## Train eyes model on features
 .PHONY: train_eyes_features
 train_eyes_features:
-	$(PYTHON_INTERPRETER) -m modeling.eyes
+	$(PYTHON_INTERPRETER) -m modeling_2.eyes_features
 
 
 ## Train cheeks model on features
 .PHONY: train_cheeks_features
 train_cheeks_features:
-	$(PYTHON_INTERPRETER) -m modeling.cheeks
+	$(PYTHON_INTERPRETER) -m modeling_2.cheeks_features
 
 
 ## Train lips model on landmarks

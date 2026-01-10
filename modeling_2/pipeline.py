@@ -8,7 +8,6 @@ from loguru import logger
 from sklearn.model_selection import ParameterGrid
 from torch.utils.tensorboard import SummaryWriter
 
-from config import LIPS_LANDMARKS_RUNS_DIR
 from data_preprocessing.file_utils import create_directories
 from modeling_2.evaluate import evaluate, load_best_model
 from modeling_2.load_dataset import load_dataset, feature_selection, scale_data, split_data, get_dataloaders
@@ -105,9 +104,9 @@ def pipeline(
     logger.info("To view TensorBoard, run: tensorboard --logdir=" + str(tensorboard_logs_directory))
 
 
-def pipeline_landmarks(dataset_path: Path, runs_dir: Path, param_grid: dict[str, list[int] | list[float]]):
-    non_feature_cols = ["filename", "smile_phase", "frame_number"]
-
+def hyperparameter_grid_search(
+    dataset_path: Path, runs_dir: Path, param_grid: dict[str, list[int] | list[float]], non_feature_cols: list[str]
+):
     grid = ParameterGrid(param_grid)
 
     for params in grid:
