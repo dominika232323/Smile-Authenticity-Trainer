@@ -1,11 +1,10 @@
 import datetime
 import json
-from pathlib import Path
 
 from loguru import logger
 from sklearn.model_selection import ParameterGrid
 
-from config import LIPS_LANDMARKS_RUNS_DIR
+from config import LIPS_LANDMARKS_RUNS_DIR, LIPS_LANDMARKS_IN_APEX_CSV
 from data_preprocessing.file_utils import create_directories
 from logging_config import setup_logging
 from modeling_2.pipeline import pipeline
@@ -21,9 +20,7 @@ def main():
     setup_logging()
     logger.info("Starting training on lips features pipeline")
 
-    dataset_path = Path(
-        "/home/dominika/Desktop/Smile-Authenticity-Trainer/data_test/preprocessed_UvA-NEMO_SMILE_DATABASE/lips_landmarks.csv"
-    )
+    dataset_path = LIPS_LANDMARKS_IN_APEX_CSV
     non_feature_cols = ["filename", "smile_phase", "frame_number"]
 
     param_grid = {
