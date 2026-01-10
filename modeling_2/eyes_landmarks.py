@@ -1,6 +1,6 @@
 from loguru import logger
 
-from config import LIPS_LANDMARKS_IN_APEX_CSV
+from config import EYES_LANDMARKS_IN_APEX_CSV
 from logging_config import setup_logging
 from modeling_2.pipeline import pipeline_landmarks
 
@@ -8,9 +8,9 @@ from modeling_2.pipeline import pipeline_landmarks
 @logger.catch
 def main():
     setup_logging()
-    logger.info("Starting training on lips landmarks pipeline")
+    logger.info("Starting training on eyes landmarks pipeline")
 
-    dataset_path = LIPS_LANDMARKS_IN_APEX_CSV
+    dataset_path = EYES_LANDMARKS_IN_APEX_CSV
 
     param_grid = {
         "batch_size": [32],
