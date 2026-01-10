@@ -5,7 +5,7 @@ import pandas as pd
 from pathlib import Path
 import tempfile
 import shutil
-from modeling.load_dataset import load_dataset, feature_selection, scale_data
+from modeling.load_dataset import load_dataset, feature_selection, scale_data, split_data
 
 
 class TestLoadDataset:
@@ -162,3 +162,48 @@ class TestScaleData:
 
         with pytest.raises(FileNotFoundError):
             scale_data(sample_data, invalid_dir)
+
+
+class TestSplitData:
+    def test_split_data_shapes(self):
+        # Prepare dummy data
+        n_samples = 100
+        n_features = 5
+        X = pd.DataFrame(np.random.rand(n_samples, n_features))
+        y = np.array([0] * 50 + [1] * 50)  # Balanced classes
+        test_size = 0.2
+
+        # Execute
+        X_train, X_test, y_train, y_test = split_data(X, y, test_size)
+
+        # Assert shapes
+        assert len(X_train) == 80
+        assert len(X_test) == 20
+        assert len(y_train) == 80
+        assert len(y_test) == 20
+        assert X_train.shape[1] == n_features
+
+    def test_split_data_stratification(self):
+        # Ensure that the class distribution is preserved
+        n_samples = 100
+        X = pd.DataFrame(np.random.rand(n_samples, 2))
+        # 80% class 0, 20% class 1
+        y = np.array([0] * 80 + [1] * 20)
+        test_size = 0.2
+
+        _, _, _, y_test = split_data(X, y, test_size)
+
+        # In a 20-sample test set, we expect 4 samples of class 1 (20% of 20)
+        assert np.sum(y_test == 1) == 4
+
+    def test_split_data_reproducibility(self):
+        # The function uses random_state=42, so results should be identical
+        X = pd.DataFrame(np.random.rand(10, 2))
+        y = np.array([0, 1, 0, 1, 0, 1, 0, 1, 0, 1])
+        test_size = 0.5
+
+        X_train1, X_test1, _, _ = split_data(X, y, test_size)
+        X_train2, X_test2, _, _ = split_data(X, y, test_size)
+
+        pd.testing.assert_frame_equal(X_train1, X_train2)
+        pd.testing.assert_frame_equal(X_test1, X_test2)
