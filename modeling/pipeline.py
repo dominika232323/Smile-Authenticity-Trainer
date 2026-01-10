@@ -79,7 +79,7 @@ def pipeline(
     draw_history(history, training_curves_directory)
 
     evaluate(
-        load_best_model(best_model_path, X_train, device),
+        load_best_model(best_model_path, X_train, device, dropout, hidden_dims),
         val_loader,
         threshold,
         device,

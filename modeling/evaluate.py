@@ -23,10 +23,10 @@ from torch.utils.tensorboard import SummaryWriter
 from modeling.smile_net import SmileNet
 
 
-def load_best_model(model_path: Path, X_train: pd.DataFrame, device: str) -> nn.Module:
+def load_best_model(model_path: Path, X_train: pd.DataFrame, device: str, dropout: float, hidden_dims: list[int]) -> nn.Module:
     logger.info(f"Loading best model from {model_path}")
 
-    model = SmileNet(input_dim=X_train.shape[1]).to(device)
+    model = SmileNet(input_dim=X_train.shape[1], dropout_p=dropout, hidden_dims=hidden_dims).to(device)
     model.load_state_dict(torch.load(model_path))
     model.eval()
 
