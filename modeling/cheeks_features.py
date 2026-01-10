@@ -1,6 +1,6 @@
 from loguru import logger
 
-from config import CHEEKS_RUNS_DIR, ALL_CHEEKS_FEATURES_CSV
+from config import ALL_CHEEKS_FEATURES_CSV, CHEEKS_RUNS_DIR
 from logging_config import setup_logging
 from modeling.pipeline import hyperparameter_grid_search
 

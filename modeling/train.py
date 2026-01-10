@@ -1,12 +1,14 @@
 import copy
 from pathlib import Path
 from typing import Any
-from loguru import logger
+
 import numpy as np
 import torch
+from loguru import logger
 from matplotlib import pyplot as plt
 from sklearn.metrics import accuracy_score, balanced_accuracy_score
-from torch import nn as nn, Tensor
+from torch import Tensor
+from torch import nn as nn
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 

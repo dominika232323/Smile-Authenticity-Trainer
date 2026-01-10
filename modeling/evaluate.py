@@ -2,19 +2,19 @@ import json
 from pathlib import Path
 from typing import Any
 
+import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
-import matplotlib.pyplot as plt
-from loguru import logger
 import torch
+from loguru import logger
 from sklearn.metrics import (
     accuracy_score,
     balanced_accuracy_score,
     classification_report,
     confusion_matrix,
+    f1_score,
     precision_score,
     recall_score,
-    f1_score,
 )
 from torch import nn as nn
 from torch.utils.data import DataLoader

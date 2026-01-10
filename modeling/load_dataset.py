@@ -3,7 +3,6 @@ from typing import Any
 
 import joblib
 import numpy as np
-
 import pandas as pd
 from loguru import logger
 from sklearn.feature_selection import SelectKBest, f_classif
@@ -56,7 +55,6 @@ def scale_data(X: pd.DataFrame, scaler_output_dir: Path) -> pd.DataFrame:
 def split_data(
     X: pd.DataFrame, y: np.ndarray, test_size: float
 ) -> tuple[pd.DataFrame, pd.DataFrame, np.ndarray, np.ndarray]:
-
     logger.info(f"Splitting data into train and test sets with test size: {test_size}")
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42, stratify=y)
 

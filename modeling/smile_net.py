@@ -1,3 +1,5 @@
+from typing import List, Optional
+
 import torch.nn as nn
 
 
@@ -5,12 +7,12 @@ class SmileNet(nn.Module):
     def __init__(
         self,
         input_dim: int,
-        hidden_dims: list[int] | None = None,
+        hidden_dims: Optional[List[int]] = None,
         dropout_p: float = 0.3,
     ):
         super().__init__()
 
-        layers = []
+        layers: List[nn.Module] = []
         prev_dim = input_dim
 
         if hidden_dims is None:
