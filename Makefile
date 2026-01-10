@@ -47,6 +47,12 @@ remove_logs:
 	rm logs/errors.log
 
 
+## Delete runs
+.PHONY: remove_runs
+remove_runs:
+	rm -r runs/
+
+
 ## Sort imports using isort
 .PHONY: isort
 isort:
@@ -84,22 +90,40 @@ data_preprocessing:
 	$(PYTHON_INTERPRETER) -m data_preprocessing.main
 
 
-## Train lips model
-.PHONY: train_lips
-train_lips:
+## Train lips model on features
+.PHONY: train_lips_features
+train_lips_features:
 	$(PYTHON_INTERPRETER) -m modeling.lips
 
 
-## Train eyes model
-.PHONY: train_eyes
-train_eyes:
+## Train eyes model on features
+.PHONY: train_eyes_features
+train_eyes_features:
 	$(PYTHON_INTERPRETER) -m modeling.eyes
 
 
-## Train cheeks model
-.PHONY: train_cheeks
-train_cheeks:
+## Train cheeks model on features
+.PHONY: train_cheeks_features
+train_cheeks_features:
 	$(PYTHON_INTERPRETER) -m modeling.cheeks
+
+
+## Train lips model on landmarks
+.PHONY: train_lips_landmarks
+train_lips_landmarks:
+	$(PYTHON_INTERPRETER) -m modeling_2.lips_landmarks
+
+
+## Train eyes model on landmarks
+.PHONY: train_eyes_landmarks
+train_eyes_landmarks:
+	$(PYTHON_INTERPRETER) -m modeling_2.eyes_landmarks
+
+
+## Train cheeks model on landmarks
+.PHONY: train_cheeks_landmarks
+train_cheeks_landmarks:
+	$(PYTHON_INTERPRETER) -m modeling_2.cheeks_landmarks
 
 
 ## Run api
@@ -126,22 +150,40 @@ coverage:
 	$(PYTHON_INTERPRETER) -m pytest --cov=data_preprocessing --cov-report=term-missing tests
 
 
-## Run tensorboard for lips runs
-.PHONY: tensorboard_lips
-tensorboard_lips:
+## Run tensorboard for lips features runs
+.PHONY: tensorboard_lips_features
+tensorboard_lips_features:
 	tensorboard --logdir=runs/lips_runs/
 
 
-## Run tensorboard for eyes runs
-.PHONY: tensorboard_eyes
-tensorboard_eyes:
+## Run tensorboard for eyes features runs
+.PHONY: tensorboard_eyes_features
+tensorboard_eyes_features:
 	tensorboard --logdir=runs/eyes_runs/
 
 
-## Run tensorboard for cheeks runs
-.PHONY: tensorboard_cheeks
-tensorboard_cheeks:
+## Run tensorboard for cheeks features runs
+.PHONY: tensorboard_cheeks_features
+tensorboard_cheeks_features:
 	tensorboard --logdir=runs/cheek_runs/
+
+
+## Run tensorboard for lips landmarks runs
+.PHONY: tensorboard_lips_landmarks
+tensorboard_lips_landmarks:
+	tensorboard --logdir=runs/lips_landmarks_runs/
+
+
+## Run tensorboard for eyes landmarks runs
+.PHONY: tensorboard_eyes_landmarks
+tensorboard_eyes_landmarks:
+	tensorboard --logdir=runs/eyes_landmarks_runs/
+
+
+## Run tensorboard for cheeks landmarks runs
+.PHONY: tensorboard_cheeks_landmarks
+tensorboard_cheeks_landmarks:
+	tensorboard --logdir=runs/cheek_landmarks_runs/
 
 
 
