@@ -1,9 +1,12 @@
+import joblib
+import numpy as np
 import pytest
 import pandas as pd
 from pathlib import Path
 import tempfile
 import shutil
-from modeling.load_dataset import load_dataset
+from modeling.load_dataset import load_dataset, feature_selection
+
 
 class TestLoadDataset:
     @pytest.fixture
@@ -50,3 +53,62 @@ class TestLoadDataset:
         non_feature_columns = ['missing_column']
         with pytest.raises(KeyError):
             load_dataset(csv_file, non_feature_columns)
+
+
+class TestFeatureSelection:
+    @pytest.fixture
+    def temp_dir(self):
+        temp_dir_path = tempfile.mkdtemp()
+        yield Path(temp_dir_path)
+        shutil.rmtree(temp_dir_path)
+
+    @pytest.fixture
+    def sample_data(self):
+        # Create a simple dataset where some features are clearly better than others
+        np.random.seed(42)
+        X = pd.DataFrame({
+            'feat1': np.random.randn(100),
+            'feat2': np.random.randn(100),
+            'feat3': np.random.randn(100),
+            'feat4': np.random.randn(100)
+        })
+        # y depends on feat1 and feat2
+        y = (X['feat1'] + X['feat2'] > 0).astype(int)
+        return X, y
+
+    def test_feature_selection_success(self, temp_dir, sample_data):
+        X, y = sample_data
+        how_many_features = 2
+
+        X_selected = feature_selection(X, y, how_many_features, temp_dir)
+
+        # Check return type and shape
+        # Based on sklearn, fit_transform returns a numpy array if input is X
+        assert isinstance(X_selected, np.ndarray)
+        assert X_selected.shape == (100, 2)
+
+        # Check if selector was saved
+        selector_path = temp_dir / "feature_selector.joblib"
+        assert selector_path.exists()
+
+        # Check if we can load it back
+        selector = joblib.load(selector_path)
+        assert hasattr(selector, 'get_support')
+
+    def test_feature_selection_all_features(self, temp_dir, sample_data):
+        X, y = sample_data
+        how_many_features = 4
+
+        X_selected = feature_selection(X, y, how_many_features, temp_dir)
+
+        assert X_selected.shape == (100, 4)
+        assert (X_selected == X.values).all()
+
+    def test_feature_selection_invalid_dir(self, sample_data):
+        X, y = sample_data
+        how_many_features = 2
+        invalid_dir = Path("/non_existent_directory_12345")
+
+        # Should raise FileNotFoundError when trying to save joblib
+        with pytest.raises(FileNotFoundError):
+            feature_selection(X, y, how_many_features, invalid_dir)
