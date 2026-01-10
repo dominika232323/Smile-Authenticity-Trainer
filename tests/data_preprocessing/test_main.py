@@ -531,6 +531,10 @@ class TestSaveLandmarksInApex:
         monkeypatch.setattr(main_mod, "PREPROCESSED_SMILE_PHASES_DIR", phases_dir)
         monkeypatch.setattr(main_mod, "PREPROCESSED_FACELANDMARKS_DIR", landmarks_dir)
 
+        monkeypatch.setattr(main_mod, "LIPS_LANDMARKS_IN_APEX_CSV", preproc_dir / "lips_landmarks.csv")
+        monkeypatch.setattr(main_mod, "EYES_LANDMARKS_IN_APEX_CSV", preproc_dir / "eyes_landmarks.csv")
+        monkeypatch.setattr(main_mod, "CHEEKS_LANDMARKS_IN_APEX_CSV", preproc_dir / "cheeks_landmarks.csv")
+
         # Create details.csv
         details_df = pd.DataFrame({"filename": ["vid1.mp4", "vid2.mp4"], "label": ["deliberate", "spontaneous"]})
         details_df.to_csv(preproc_dir / "details.csv", index=False)
