@@ -70,7 +70,7 @@ format:
 ## Check type hints with mypy
 .PHONY: mypy
 mypy:
-	mypy data_preprocessing modeling
+	mypy data_preprocessing modeling modeling_2
 
 
 #################################################################################
