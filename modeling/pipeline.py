@@ -28,6 +28,7 @@ def pipeline(
     test_size: float = 0.2,
     how_many_features: int = 50,
     threshold: float = 0.5,
+    hidden_dims: list[int] | None = None,
 ):
     training_curves_directory = output_dir / "training_curves"
     evaluation_metrics_directory = output_dir / "evaluation_metrics"
@@ -51,7 +52,7 @@ def pipeline(
 
     train_loader, val_loader = get_dataloaders(X_train, X_test, y_train, y_test, batch_size)
 
-    model = SmileNet(input_dim=X_train.shape[1], dropout_p=dropout).to(device)
+    model = SmileNet(input_dim=X_train.shape[1], dropout_p=dropout, hidden_dims=hidden_dims).to(device)
 
     sample_input = torch.randn(1, X_train.shape[1]).to(device)
     writer.add_graph(model, sample_input)
@@ -65,6 +66,7 @@ def pipeline(
         "lr": lr,
         "how_many_features": how_many_features,
         "threshold": threshold,
+        "hidden_dims": torch.tensor(hidden_dims if hidden_dims else [128, 64]),
         "input_dim": X.shape[1],
     }
     writer.add_hparams(hparams, {})
@@ -121,14 +123,15 @@ def hyperparameter_grid_search(
             best_model_path,
             non_feature_cols,
             output_dir,
-            params["batch_size"],
-            params["dropout"],
-            params["epochs"],
-            params["patience"],
-            params["lr"],
-            params["test_size"],
-            params["how_many_features"],
-            params["threshold"],
+            params.get("batch_size", 32),
+            params.get("dropout", 0.3),
+            params.get("epochs", 50),
+            params.get("patience", 7),
+            params.get("lr", 1e-3),
+            params.get("test_size", 0.2),
+            params.get("how_many_features", 50),
+            params.get("threshold", 0.5),
+            params.get("hidden_dims", [128, 64]),
         )
 
         with open(output_dir / "config.json", "w") as f:
