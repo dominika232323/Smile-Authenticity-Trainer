@@ -1,6 +1,6 @@
 from loguru import logger
 
-from config import LIPS_LANDMARKS_IN_APEX_CSV, LIPS_LANDMARKS_RUNS_DIR
+from config import CHEEKS_LANDMARKS_IN_APEX_CSV, CHEEKS_LANDMARKS_RUNS_DIR
 from logging_config import setup_logging
 from modeling_2.pipeline import pipeline_landmarks
 
@@ -8,9 +8,9 @@ from modeling_2.pipeline import pipeline_landmarks
 @logger.catch
 def main():
     setup_logging()
-    logger.info("Starting training on lips landmarks pipeline")
+    logger.info("Starting training on cheeks landmarks pipeline")
 
-    dataset_path = LIPS_LANDMARKS_IN_APEX_CSV
+    dataset_path = CHEEKS_LANDMARKS_IN_APEX_CSV
 
     param_grid = {
         "batch_size": [32],
@@ -19,10 +19,10 @@ def main():
         "patience": [7],
         "lr": [1e-3],
         "test_size": [0.2],
-        "how_many_features": [50],
+        "how_many_features": [8],
         "threshold": [0.5],
     }
-    pipeline_landmarks(dataset_path, LIPS_LANDMARKS_RUNS_DIR, param_grid)
+    pipeline_landmarks(dataset_path, CHEEKS_LANDMARKS_RUNS_DIR, param_grid)
 
 
 if __name__ == "__main__":

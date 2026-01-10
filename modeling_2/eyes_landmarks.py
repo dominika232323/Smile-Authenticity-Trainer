@@ -1,6 +1,6 @@
 from loguru import logger
 
-from config import EYES_LANDMARKS_IN_APEX_CSV
+from config import EYES_LANDMARKS_IN_APEX_CSV, EYES_LANDMARKS_RUNS_DIR
 from logging_config import setup_logging
 from modeling_2.pipeline import pipeline_landmarks
 
@@ -22,7 +22,7 @@ def main():
         "how_many_features": [50],
         "threshold": [0.5],
     }
-    pipeline_landmarks(dataset_path, param_grid)
+    pipeline_landmarks(dataset_path, EYES_LANDMARKS_RUNS_DIR, param_grid)
 
 
 if __name__ == "__main__":

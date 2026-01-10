@@ -105,7 +105,7 @@ def pipeline(
     logger.info("To view TensorBoard, run: tensorboard --logdir=" + str(tensorboard_logs_directory))
 
 
-def pipeline_landmarks(dataset_path: Path, param_grid: dict[str, list[int] | list[float]]):
+def pipeline_landmarks(dataset_path: Path, runs_dir: Path, param_grid: dict[str, list[int] | list[float]]):
     non_feature_cols = ["filename", "smile_phase", "frame_number"]
 
     grid = ParameterGrid(param_grid)
@@ -113,7 +113,7 @@ def pipeline_landmarks(dataset_path: Path, param_grid: dict[str, list[int] | lis
     for params in grid:
         logger.info(f"Running with params: {params}")
 
-        output_dir = LIPS_LANDMARKS_RUNS_DIR / get_timestamp()
+        output_dir = runs_dir / get_timestamp()
         best_model_path = output_dir / "best_model.pth"
         create_directories([output_dir])
 
