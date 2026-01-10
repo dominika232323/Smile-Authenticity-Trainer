@@ -90,13 +90,16 @@ def evaluate(
 
     logger.info("Model evaluation complete")
 
-    return {
+    metrics = {
         "accuracy": accuracy,
         "balanced_accuracy": balanced_accuracy,
         "precision": precision,
         "recall": recall,
         "f1": f1,
     }
+    save_metrics(metrics, output_dir)
+
+    return metrics
 
 
 def save_classification_report(report: str | dict, output_dir: Path) -> None:
@@ -128,3 +131,12 @@ def save_confusion_matrix(cm: Any, output_dir: Path) -> None:
     plt.close()
 
     logger.info(f"Saved confusion matrix plot to {cm_path}")
+
+
+def save_metrics(metrics: dict[str, float], output_dir: Path) -> None:
+    metrics_path = output_dir / "metrics.json"
+
+    with open(metrics_path, "w") as f:
+        json.dump(metrics, f, indent=2)
+
+    logger.info(f"Saved metrics to {metrics_path}")
