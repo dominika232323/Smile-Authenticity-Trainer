@@ -2,7 +2,7 @@ from loguru import logger
 
 from config import ALL_EYES_FEATURES_CSV, EYES_RUNS_DIR
 from logging_config import setup_logging
-from modeling_2.pipeline import hyperparameter_grid_search
+from modeling.pipeline import hyperparameter_grid_search
 
 
 @logger.catch

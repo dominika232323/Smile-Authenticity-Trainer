@@ -1,81 +1,82 @@
-import json
 from pathlib import Path
 from typing import Any
 
+import joblib
+import numpy as np
+
 import pandas as pd
-import torch
 from loguru import logger
-from numpy import ndarray
-from pandas.core.arrays import ExtensionArray
+from sklearn.feature_selection import SelectKBest, f_classif
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import DataLoader
+
+from modeling.smile_dataset import SmileDataset
 
 
-def read_dataset(path: Path) -> pd.DataFrame:
+def load_dataset(path: Path, non_feature_columns: list[str]) -> pd.DataFrame:
     logger.info(f"Reading dataset from file: {path}")
     df = pd.read_csv(path)
 
-    if "filename" in df.columns:
-        logger.info("Removing filename column from dataset")
-        df = df.drop(columns=["filename"])
+    logger.info(f"Dropping non-feature columns: {non_feature_columns}")
+    df = df.drop(non_feature_columns, axis=1)
 
     logger.info(f"Dataset shape: {df.shape}")
     return df
 
 
-def scale_features(df: pd.DataFrame, output_dir: Path) -> tuple[Any, ExtensionArray | ndarray]:
-    logger.info(f"Scaling dataset with shape: {df.shape}")
+def feature_selection(
+    X: pd.DataFrame, y: np.ndarray, how_many_features: int, selector_output_dir: Path
+) -> pd.DataFrame:
+    logger.info(f"Selecting {how_many_features} best features")
+    selector = SelectKBest(score_func=f_classif, k=how_many_features)
+    X_selected = selector.fit_transform(X, y)
 
-    features = df.drop(columns=["label"]).values
-    labels = df["label"].values
+    selector_path = selector_output_dir / "feature_selector.joblib"
+    logger.info(f"Saving feature selector to {selector_path}")
+    joblib.dump(selector, selector_path)
 
+    logger.info(f"Selected features shape: {X_selected.shape}")
+    return X_selected
+
+
+def scale_data(X: pd.DataFrame, scaler_output_dir: Path) -> pd.DataFrame:
+    logger.info("Scaling data")
     scaler = StandardScaler()
-    features = scaler.fit_transform(features)
+    X_scaled = scaler.fit_transform(X)
 
-    save_scaler(scaler, output_dir)
+    scaler_path = scaler_output_dir / "scaler.joblib"
+    logger.info(f"Saving scaler to {scaler_path}")
+    joblib.dump(scaler, scaler_path)
 
-    return features, labels
-
-
-def save_scaler(scaler: StandardScaler, output_dir: Path) -> None:
-    logger.info(f"Saving scaler to {output_dir}")
-
-    torch.save(scaler, output_dir / "scaler.pt")
-    logger.info("Scaler saved as scaler.pt")
-
-    scaler_data = {"mean": scaler.mean_.tolist(), "std": scaler.scale_.tolist()}
-
-    with open(output_dir / "scaler.json", "w") as f:
-        json.dump(scaler_data, f, indent=4)
-
-    logger.info("Scaler saved as scaler.json")
+    logger.info(f"Scaled data shape: {X_scaled.shape}")
+    return X_scaled
 
 
-def create_data_tensors(features: ndarray, labels: ExtensionArray | ndarray) -> tuple[torch.Tensor, torch.Tensor]:
-    logger.info("Creating tensors from dataset")
+def split_data(
+    X: pd.DataFrame, y: np.ndarray, test_size: float
+) -> tuple[pd.DataFrame, pd.DataFrame, np.ndarray, np.ndarray]:
 
-    X = torch.tensor(features, dtype=torch.float32)
-    y = torch.tensor(labels, dtype=torch.float32).unsqueeze(1)
+    logger.info(f"Splitting data into train and test sets with test size: {test_size}")
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42, stratify=y)
 
-    logger.info(f"Dataset tensors shape: {X.shape}, {y.shape}")
-    return X, y
+    logger.info(f"Train set shape: {X_train.shape}, {y_train.shape}")
+    logger.info(f"Test set shape: {X_test.shape}, {y_test.shape}")
+
+    return X_train, X_test, y_train, y_test
 
 
-def create_dataloaders(
-    X: torch.Tensor, y: torch.Tensor, batch_size: int = 32, test_size: float = 0.2
-) -> tuple[DataLoader, DataLoader, torch.Tensor, torch.Tensor]:
+def get_dataloaders(
+    X_train: pd.DataFrame, X_val: pd.DataFrame, y_train: np.ndarray, y_val: np.ndarray, batch_size: int
+) -> tuple[DataLoader[Any], DataLoader[Any]]:
     logger.info(f"Creating dataloaders with batch size: {batch_size}")
-
-    X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=test_size, random_state=42, stratify=y)
-
-    train_ds = TensorDataset(X_train, y_train)
-    val_ds = TensorDataset(X_val, y_val)
+    train_ds = SmileDataset(X_train, y_train)
+    val_ds = SmileDataset(X_val, y_val)
 
     train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_ds, batch_size=batch_size)
+    val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False)
 
     logger.info(f"Number of training batches: {len(train_loader)}")
     logger.info(f"Number of validation batches: {len(val_loader)}")
-    logger.info(f"Validation dataset shape: {X_val.shape}, {y_val.shape}")
-    return train_loader, val_loader, X_val, y_val
+
+    return train_loader, val_loader

@@ -1,16 +1,16 @@
 from loguru import logger
 
-from config import CHEEKS_RUNS_DIR, ALL_CHEEKS_FEATURES_CSV
+from config import ALL_LIP_FEATURES_CSV, LIPS_RUNS_DIR
 from logging_config import setup_logging
-from modeling_2.pipeline import hyperparameter_grid_search
+from modeling.pipeline import hyperparameter_grid_search
 
 
 @logger.catch
 def main():
     setup_logging()
-    logger.info("Starting training on cheeks features pipeline")
+    logger.info("Starting training on lips features pipeline")
 
-    dataset_path = ALL_CHEEKS_FEATURES_CSV
+    dataset_path = ALL_LIP_FEATURES_CSV
     non_feature_cols = ["filename"]
 
     param_grid = {
@@ -23,7 +23,7 @@ def main():
         "how_many_features": [50],
         "threshold": [0.5],
     }
-    hyperparameter_grid_search(dataset_path, CHEEKS_RUNS_DIR, param_grid, non_feature_cols)
+    hyperparameter_grid_search(dataset_path, LIPS_RUNS_DIR, param_grid, non_feature_cols)
 
 
 if __name__ == "__main__":

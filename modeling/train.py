@@ -1,114 +1,121 @@
+import copy
 from pathlib import Path
-from typing import Any, TypeVar
-
-import matplotlib.pyplot as plt
-import torch
-import torch.nn as nn
+from typing import Any
 from loguru import logger
+import numpy as np
+import torch
+from matplotlib import pyplot as plt
+from sklearn.metrics import accuracy_score, balanced_accuracy_score
+from torch import nn as nn, Tensor
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
-from xgboost import XGBClassifier
-
-M = TypeVar("M", bound=nn.Module)
 
 
-def train_model(
-    model: M,
-    train_loader: DataLoader,
-    val_loader: DataLoader,
-    device: torch.device,
-    epochs: int = 50,
-    patience: int = 5,
-    lr: float = 1e-3,
-    save_path: Path | None = None,
+def train(
+    model: nn.Module,
+    train_loader: DataLoader[Any],
+    val_loader: DataLoader[Any],
+    pos_weight: Tensor,
+    learning_rate: float,
+    epochs: int,
+    patience: int,
+    threshold: float,
+    device: str,
+    model_path: Path,
     writer: SummaryWriter | None = None,
-) -> tuple[M, dict]:
+) -> dict[str, list[Any]]:
     logger.info("Training model...")
+    criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
-    # criterion = nn.BCELoss()
-    criterion = nn.BCEWithLogitsLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
-
-    best_loss = float("inf")
-    best_state = model.state_dict()
-    early_stop_counter = 0
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.5, patience=3)
 
     history: dict[str, list[float]] = {
         "train_loss": [],
         "val_loss": [],
-        "train_accuracy": [],
-        "val_accuracy": [],
+        "train_acc": [],
+        "train_balanced_acc": [],
+        "val_acc": [],
+        "val_balanced_acc": [],
         "lr": [],
     }
 
-    model.to(device)
+    best_val_loss = float("inf")
+    patience_counter = 0
+    best_model_state = None
 
     for epoch in range(epochs):
         model.train()
-        train_loss = 0.0
-        correct_train = 0
-        total_train = 0
+        train_losses = []
+        train_preds = []
+        train_targets = []
 
         for batch_idx, (X_batch, y_batch) in enumerate(train_loader):
-            X_batch, y_batch = X_batch.to(device), y_batch.to(device)
+            X_batch = X_batch.to(device)
+            y_batch = y_batch.to(device)
 
             optimizer.zero_grad()
-            outputs = model(X_batch)
-            loss = criterion(outputs, y_batch)
-
+            logits = model(X_batch)
+            loss = criterion(logits, y_batch)
             loss.backward()
             optimizer.step()
 
-            train_loss += loss.item()
-
-            probs = torch.sigmoid(outputs)
-            preds = (probs > 0.5).float()
-            correct_train += (preds == y_batch).sum().item()
-            total_train += y_batch.size(0)
+            train_losses.append(loss.item())
+            train_preds.append(torch.sigmoid(logits).detach().cpu().numpy())
+            train_targets.append(y_batch.cpu().numpy())
 
             if writer is not None:
                 global_step = epoch * len(train_loader) + batch_idx
                 writer.add_scalar("Batch/train_loss", loss.item(), global_step)
 
-        train_loss /= len(train_loader)
-        train_accuracy = correct_train / total_train
+        train_preds = np.concatenate(train_preds) > threshold
+        train_targets = np.concatenate(train_targets)
+        train_acc = accuracy_score(train_targets, train_preds)
+        train_balanced_acc = balanced_accuracy_score(train_targets, train_preds)
+        train_loss = np.mean(train_losses)
 
         model.eval()
-        val_loss = 0.0
-        correct_val = 0
-        total_val = 0
+        val_losses = []
+        val_preds = []
+        val_targets = []
 
         with torch.no_grad():
-            for X_val, y_val in val_loader:
-                X_val, y_val = X_val.to(device), y_val.to(device)
+            for X_batch, y_batch in val_loader:
+                X_batch = X_batch.to(device)
+                y_batch = y_batch.to(device)
 
-                outputs = model(X_val)
-                loss = criterion(outputs, y_val)
-                val_loss += loss.item()
+                logits = model(X_batch)
+                loss = criterion(logits, y_batch)
 
-                probs = torch.sigmoid(outputs)
-                preds = (probs > 0.5).float()
-                correct_val += (preds == y_val).sum().item()
-                total_val += y_val.size(0)
+                val_losses.append(loss.item())
+                val_preds.append(torch.sigmoid(logits).cpu().numpy())
+                val_targets.append(y_batch.cpu().numpy())
 
-        val_loss /= len(val_loader)
-        val_accuracy = correct_val / total_val
+        val_preds = np.concatenate(val_preds) > threshold
+        val_targets = np.concatenate(val_targets)
+        val_acc = accuracy_score(val_targets, val_preds)
+        val_balanced_acc = balanced_accuracy_score(val_targets, val_preds)
+        val_loss = np.mean(val_losses)
+
+        scheduler.step(val_loss)
 
         current_lr = optimizer.param_groups[0]["lr"]
 
         history["train_loss"].append(train_loss)
         history["val_loss"].append(val_loss)
-        history["train_accuracy"].append(train_accuracy)
-        history["val_accuracy"].append(val_accuracy)
+        history["train_acc"].append(train_acc)
+        history["train_balanced_acc"].append(train_balanced_acc)
+        history["val_acc"].append(val_acc)
+        history["val_balanced_acc"].append(val_balanced_acc)
         history["lr"].append(current_lr)
 
         if writer is not None:
             writer.add_scalar("Epoch/train_loss", train_loss, epoch)
             writer.add_scalar("Epoch/val_loss", val_loss, epoch)
-            writer.add_scalar("Epoch/train_accuracy", train_accuracy, epoch)
-            writer.add_scalar("Epoch/val_accuracy", val_accuracy, epoch)
+            writer.add_scalar("Epoch/train_accuracy", train_acc, epoch)
+            writer.add_scalar("Epoch/train_balanced_accuracy", train_balanced_acc, epoch)
+            writer.add_scalar("Epoch/val_accuracy", val_acc, epoch)
+            writer.add_scalar("Epoch/val_balanced_accuracy", val_balanced_acc, epoch)
             writer.add_scalar("Epoch/learning_rate", current_lr, epoch)
 
             for name, param in model.named_parameters():
@@ -118,29 +125,29 @@ def train_model(
                     writer.add_histogram(f"Gradients/{name}", param.grad, epoch)
 
         print(
-            f"Epoch {epoch + 1}/{epochs} | "
-            f"LR: {current_lr:.6f} | "
-            f"Train Loss: {train_loss:.4f} | Val Loss: {val_loss:.4f} | "
-            f"Train Acc: {train_accuracy:.4f} | Val Acc: {val_accuracy:.4f}"
+            f"Epoch {epoch + 1:03d} | "
+            f"Train Loss: {train_loss:.4f} Acc: {train_acc:.4f} Balanced Acc: {train_balanced_acc:.4f} | "
+            f"Val Loss: {val_loss:.4f} Acc: {val_acc:.4f} Balanced Acc: {val_balanced_acc:.4f} | "
+            f"LR: {current_lr:.6f}"
         )
 
-        if val_loss < best_loss:
-            best_loss = val_loss
-            early_stop_counter = 0
-            best_state = model.state_dict()
+        if val_loss < best_val_loss:
+            best_val_loss = val_loss
 
-            if save_path is not None:
-                logger.info(f"Saving model checkpoint to {save_path}")
-                torch.save(best_state, save_path)
+            logger.info(f"Saving model checkpoint to {model_path}")
+            best_model_state = copy.deepcopy(model.state_dict())
+            torch.save(best_model_state, model_path)
 
             if writer is not None:
-                writer.add_scalar("Best/val_loss", best_loss, epoch)
+                writer.add_scalar("Best/val_loss", best_val_loss, epoch)
                 writer.add_scalar("Best/train_loss", train_loss, epoch)
-        else:
-            early_stop_counter += 1
 
-            if early_stop_counter >= patience:
-                logger.info("\nEarly stopping activated!")
+            patience_counter = 0
+        else:
+            patience_counter += 1
+
+            if patience_counter >= patience:
+                logger.info("Early stopping triggered")
                 logger.info(f"Finished at epoch {epoch + 1}.")
 
                 if writer is not None:
@@ -148,46 +155,13 @@ def train_model(
 
                 break
 
-        scheduler.step()
-
-    model.load_state_dict(best_state)
-
-    logger.info(f"Best validation loss: {best_loss:.4f}")
+    logger.info(f"Best validation loss: {best_val_loss:.4f}")
     logger.info("Training complete!")
 
-    return model, history
+    return history
 
 
-def train_xgboost(X_train, y_train, X_val, y_val, params=None) -> tuple[XGBClassifier, dict]:
-    logger.info("Training XGBoost model...")
-
-    if params is None:
-        params = {
-            "n_estimators": 600,
-            "learning_rate": 0.03,
-            "max_depth": 5,
-            "subsample": 0.9,
-            "colsample_bytree": 0.8,
-            "gamma": 0,
-            "min_child_weight": 1,
-            "eval_metric": "logloss",
-            "tree_method": "hist",
-        }
-
-    model = XGBClassifier(**params)
-
-    model.fit(
-        X_train,
-        y_train,
-        eval_set=[(X_val, y_val)],
-        verbose=False,
-    )
-
-    logger.info("XGBoost training complete!")
-    return model, params
-
-
-def plot_training_curves(history: dict[str, Any], output_dir: Path) -> None:
+def draw_history(history: dict[str, list[Any]], output_dir: Path) -> None:
     plt.figure(figsize=(8, 5))
     plt.plot(history["train_loss"], label="Train Loss")
     plt.plot(history["val_loss"], label="Validation Loss")
@@ -196,24 +170,44 @@ def plot_training_curves(history: dict[str, Any], output_dir: Path) -> None:
     plt.title("Training vs Validation Loss")
     plt.legend()
     plt.grid(True)
-
-    loss_path = output_dir / "loss_plot.png"
-    plt.savefig(loss_path, dpi=300)
+    plt.savefig(output_dir / "loss_plot.png", dpi=300)
     plt.close()
 
-    logger.info(f"Saved loss plot to {loss_path}")
+    logger.info(f"Saved loss plot to {output_dir / 'loss_plot.png'}")
 
     plt.figure(figsize=(8, 5))
-    plt.plot(history["train_accuracy"], label="Train Accuracy")
-    plt.plot(history["val_accuracy"], label="Validation Accuracy")
+    plt.plot(history["train_acc"], label="Train Accuracy")
+    plt.plot(history["val_acc"], label="Validation Accuracy")
     plt.xlabel("Epoch")
     plt.ylabel("Accuracy")
     plt.title("Training vs Validation Accuracy")
     plt.legend()
     plt.grid(True)
-
-    acc_path = output_dir / "accuracy_plot.png"
-    plt.savefig(acc_path, dpi=300)
+    plt.savefig(output_dir / "accuracy_plot.png", dpi=300)
     plt.close()
 
-    logger.info(f"Saved accuracy plot to {acc_path}")
+    logger.info(f"Saved accuracy plot to {output_dir / 'accuracy_plot.png'}")
+
+    plt.figure(figsize=(8, 5))
+    plt.plot(history["train_balanced_acc"], label="Train Accuracy")
+    plt.plot(history["val_balanced_acc"], label="Validation Accuracy")
+    plt.xlabel("Epoch")
+    plt.ylabel("Accuracy")
+    plt.title("Training vs Validation Balanced Accuracy")
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(output_dir / "balanced_accuracy_plot.png", dpi=300)
+    plt.close()
+
+    logger.info(f"Saved balanced accuracy plot to {output_dir / 'balanced_accuracy_plot.png'}")
+
+
+def calculate_pos_weight(y_train: np.ndarray, device: str) -> Tensor:
+    logger.info("Calculating positive weight...")
+    num_pos = (y_train == 1).sum()
+    num_neg = (y_train == 0).sum()
+
+    pos_weight = torch.tensor([num_neg / num_pos], dtype=torch.float32).to(device)
+    logger.info(f"Positive weight: {pos_weight.item():.4f}")
+
+    return pos_weight

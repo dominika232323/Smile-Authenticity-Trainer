@@ -76,7 +76,7 @@ format:
 ## Check type hints with mypy
 .PHONY: mypy
 mypy:
-	mypy data_preprocessing modeling modeling_2
+	mypy data_preprocessing modeling
 
 
 #################################################################################
@@ -93,37 +93,37 @@ data_preprocessing:
 ## Train lips model on features
 .PHONY: train_lips_features
 train_lips_features:
-	$(PYTHON_INTERPRETER) -m modeling_2.lips_features
+	$(PYTHON_INTERPRETER) -m modeling.lips_features
 
 
 ## Train eyes model on features
 .PHONY: train_eyes_features
 train_eyes_features:
-	$(PYTHON_INTERPRETER) -m modeling_2.eyes_features
+	$(PYTHON_INTERPRETER) -m modeling.eyes_features
 
 
 ## Train cheeks model on features
 .PHONY: train_cheeks_features
 train_cheeks_features:
-	$(PYTHON_INTERPRETER) -m modeling_2.cheeks_features
+	$(PYTHON_INTERPRETER) -m modeling.cheeks_features
 
 
 ## Train lips model on landmarks
 .PHONY: train_lips_landmarks
 train_lips_landmarks:
-	$(PYTHON_INTERPRETER) -m modeling_2.lips_landmarks
+	$(PYTHON_INTERPRETER) -m modeling.lips_landmarks
 
 
 ## Train eyes model on landmarks
 .PHONY: train_eyes_landmarks
 train_eyes_landmarks:
-	$(PYTHON_INTERPRETER) -m modeling_2.eyes_landmarks
+	$(PYTHON_INTERPRETER) -m modeling.eyes_landmarks
 
 
 ## Train cheeks model on landmarks
 .PHONY: train_cheeks_landmarks
 train_cheeks_landmarks:
-	$(PYTHON_INTERPRETER) -m modeling_2.cheeks_landmarks
+	$(PYTHON_INTERPRETER) -m modeling.cheeks_landmarks
 
 
 ## Run api

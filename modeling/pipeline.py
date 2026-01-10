@@ -2,37 +2,33 @@ import datetime
 import json
 from pathlib import Path
 
+import numpy as np
 import torch
 from loguru import logger
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import ParameterGrid
 from torch.utils.tensorboard import SummaryWriter
 
 from data_preprocessing.file_utils import create_directories
-from modeling.evaluate import evaluate_model, evaluate_xgboost
-from modeling.load_dataset import create_data_tensors, create_dataloaders, read_dataset, scale_features
-from modeling.multi_layer_perceptron import MultiLayerPerceptron
-from modeling.train import plot_training_curves, train_model, train_xgboost
+from modeling.evaluate import evaluate, load_best_model
+from modeling.load_dataset import load_dataset, feature_selection, scale_data, split_data, get_dataloaders
+from modeling.smile_net import SmileNet
+from modeling.train import calculate_pos_weight, train, draw_history
 
 
-def get_device() -> torch.device:
-    return torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-
-def get_timestamp() -> str:
-    ct = datetime.datetime.now()
-    return ct.strftime("%Y-%m-%d_%H-%M-%S")
-
-
-def pipeline_mlp(
+def pipeline(
     dataset_path: Path,
+    best_model_path: Path,
+    non_feature_cols: list[str],
     output_dir: Path,
     batch_size: int = 32,
     dropout: float = 0.3,
     epochs: int = 50,
-    patience: int = 5,
+    patience: int = 7,
     lr: float = 1e-3,
     test_size: float = 0.2,
-) -> None:
+    how_many_features: int = 50,
+    threshold: float = 0.5,
+):
     training_curves_directory = output_dir / "training_curves"
     evaluation_metrics_directory = output_dir / "evaluation_metrics"
     tensorboard_logs_directory = output_dir / "tensorboard_logs"
@@ -44,14 +40,20 @@ def pipeline_mlp(
     device = get_device()
     logger.info(f"Using device: {device}")
 
-    dataset_df = read_dataset(dataset_path)
-    features, labels = scale_features(dataset_df, output_dir)
-    X, y = create_data_tensors(features, labels)
-    train_loader, val_loader, X_val, y_val = create_dataloaders(X, y, batch_size, test_size)
+    dataset = load_dataset(dataset_path, non_feature_cols)
+    X = dataset.drop("label", axis=1)
+    y = dataset["label"].values.astype(np.float32)
 
-    model = MultiLayerPerceptron(input_dim=X.shape[1], dropout_p=dropout).to(device)
+    X_selected = feature_selection(X, y, how_many_features, output_dir)
+    X_scaled = scale_data(X_selected, output_dir)
 
-    sample_input = torch.randn(1, X.shape[1]).to(device)
+    X_train, X_test, y_train, y_test = split_data(X_scaled, y, test_size)
+
+    train_loader, val_loader = get_dataloaders(X_train, X_test, y_train, y_test, batch_size)
+
+    model = SmileNet(input_dim=X_train.shape[1], dropout_p=dropout).to(device)
+
+    sample_input = torch.randn(1, X_train.shape[1]).to(device)
     writer.add_graph(model, sample_input)
 
     hparams = {
@@ -61,37 +63,40 @@ def pipeline_mlp(
         "epochs": epochs,
         "patience": patience,
         "lr": lr,
+        "how_many_features": how_many_features,
+        "threshold": threshold,
         "input_dim": X.shape[1],
     }
     writer.add_hparams(hparams, {})
 
-    model, history = train_model(
-        model,
-        train_loader,
-        val_loader,
-        device,
-        epochs,
-        patience,
-        lr,
-        save_path=output_dir / "multi_layer_perceptron.pth",
-        writer=writer,
+    pos_weight = calculate_pos_weight(y_train, device)
+    history = train(
+        model, train_loader, val_loader, pos_weight, lr, epochs, patience, threshold, device, best_model_path, writer
     )
-    plot_training_curves(history, training_curves_directory)
+    draw_history(history, training_curves_directory)
 
-    probs, preds = evaluate_model(model, X_val, y_val, device, evaluation_metrics_directory, writer)
-
-    print(f"\nExample probability of label 1: {probs[0][0] * 100:.2f}%")
-    print(f"Example predicted label: {preds[0]}")
+    evaluate(
+        load_best_model(best_model_path, X_train, device),
+        val_loader,
+        threshold,
+        device,
+        evaluation_metrics_directory,
+        writer,
+    )
 
     final_train_loss = history["train_loss"][-1]
     final_val_loss = history["val_loss"][-1]
-    final_train_acc = history["train_accuracy"][-1]
-    final_val_acc = history["val_accuracy"][-1]
+    final_train_acc = history["train_acc"][-1]
+    final_train_balanced_acc = history["train_balanced_acc"][-1]
+    final_val_acc = history["val_acc"][-1]
+    final_val_balanced_acc = history["val_balanced_acc"][-1]
 
     writer.add_scalar("Final/train_loss", final_train_loss, 0)
     writer.add_scalar("Final/val_loss", final_val_loss, 0)
     writer.add_scalar("Final/train_accuracy", final_train_acc, 0)
+    writer.add_scalar("Final/train_balanced_accuracy", final_train_balanced_acc, 0)
     writer.add_scalar("Final/val_accuracy", final_val_acc, 0)
+    writer.add_scalar("Final/val_balanced_accuracy", final_val_balanced_acc, 0)
 
     writer.close()
 
@@ -99,21 +104,44 @@ def pipeline_mlp(
     logger.info("To view TensorBoard, run: tensorboard --logdir=" + str(tensorboard_logs_directory))
 
 
-def pipeline_xgboost(dataset_path: Path, output_dir: Path) -> None:
-    dataset_df = read_dataset(dataset_path)
-    features, labels = scale_features(dataset_df, output_dir)
+def hyperparameter_grid_search(
+    dataset_path: Path, runs_dir: Path, param_grid: dict[str, list[int] | list[float]], non_feature_cols: list[str]
+):
+    grid = ParameterGrid(param_grid)
 
-    X_train, X_val, y_train, y_val = train_test_split(
-        features, labels, test_size=0.25, random_state=42, stratify=labels
-    )
+    for params in grid:
+        logger.info(f"Running with params: {params}")
 
-    model, params = train_xgboost(X_train, y_train, X_val, y_val)
-    metrics = evaluate_xgboost(model, X_val, y_val, output_dir)
+        output_dir = runs_dir / get_timestamp()
+        best_model_path = output_dir / "best_model.pth"
+        create_directories([output_dir])
 
-    # model.save_model(str(output_dir / "xgboost_model.json"))
+        pipeline(
+            dataset_path,
+            best_model_path,
+            non_feature_cols,
+            output_dir,
+            params["batch_size"],
+            params["dropout"],
+            params["epochs"],
+            params["patience"],
+            params["lr"],
+            params["test_size"],
+            params["how_many_features"],
+            params["threshold"],
+        )
 
-    with open(output_dir / "params.json", "w") as f:
-        json.dump(params, f, indent=4)
+        with open(output_dir / "config.json", "w") as f:
+            json.dump(params, f, indent=4)
 
-    with open(output_dir / "metrics.json", "w") as f:
-        json.dump(metrics, f, indent=4)
+        logger.info(f"Completed run. Saved results to {output_dir}. Config: {params}")
+
+
+def get_device() -> str:
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    return device
+
+
+def get_timestamp() -> str:
+    ct = datetime.datetime.now()
+    return ct.strftime("%Y-%m-%d_%H-%M-%S")

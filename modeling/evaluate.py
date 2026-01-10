@@ -1,127 +1,122 @@
+import json
 from pathlib import Path
 from typing import Any
 
-import matplotlib.pyplot as plt
-import numpy as np
+import pandas as pd
 import seaborn as sns
-import torch
-import torch.nn as nn
+import matplotlib.pyplot as plt
 from loguru import logger
-from numpy import dtype, ndarray
+import torch
 from sklearn.metrics import (
     accuracy_score,
-    auc,
+    balanced_accuracy_score,
     classification_report,
     confusion_matrix,
-    f1_score,
     precision_score,
     recall_score,
-    roc_curve,
+    f1_score,
 )
+from torch import nn as nn
+from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 
+from modeling.smile_net import SmileNet
 
-def evaluate_model(
+
+def load_best_model(model_path: Path, X_train: pd.DataFrame, device: str) -> nn.Module:
+    logger.info(f"Loading best model from {model_path}")
+
+    model = SmileNet(input_dim=X_train.shape[1]).to(device)
+    model.load_state_dict(torch.load(model_path))
+    model.eval()
+
+    return model
+
+
+def evaluate(
     model: nn.Module,
-    X_val: torch.Tensor,
-    y_val: torch.Tensor,
-    device: torch.device,
+    test_loader: DataLoader[Any],
+    threshold: float,
+    device: str,
     output_dir: Path,
     writer: SummaryWriter | None = None,
-) -> tuple[ndarray, ndarray[tuple[int, ...], dtype[Any]]]:
+) -> dict[str, Any]:
     logger.info("Evaluating model...")
 
-    model.eval()
-    X_val, y_val = X_val.to(device), y_val.to(device)
+    all_logits = []
+    all_labels = []
 
     with torch.no_grad():
-        outputs = model(X_val).cpu()
-        probabilities = torch.sigmoid(outputs).numpy()
-        predictions = (probabilities > 0.5).astype(int)
+        for X_batch, y_batch in test_loader:
+            X_batch = X_batch.to(device)
+            logits = model(X_batch)
 
-    y_true = y_val.cpu().numpy()
+            all_logits.append(logits.cpu())
+            all_labels.append(y_batch)
+
+    all_logits_tensor = torch.cat(all_logits)
+    all_labels_tensor = torch.cat(all_labels)
+
+    probs = torch.sigmoid(all_logits_tensor)
+    preds = (probs > threshold).int()
+
+    accuracy = accuracy_score(all_labels_tensor.numpy(), preds.numpy())
+    balanced_accuracy = balanced_accuracy_score(all_labels_tensor.numpy(), preds.numpy())
+    precision = precision_score(all_labels_tensor.numpy(), preds.numpy())
+    recall = recall_score(all_labels_tensor.numpy(), preds.numpy(), zero_division=0)
+    f1 = f1_score(all_labels_tensor.numpy(), preds.numpy())
+
+    report = classification_report(all_labels_tensor, preds, target_names=["No smile (0)", "Smile (1)"], digits=4)
+    save_classification_report(report, output_dir)
+
+    cm = confusion_matrix(all_labels_tensor, preds)
+    save_confusion_matrix(cm, output_dir)
 
     if writer is not None:
-        cm = confusion_matrix(y_true, predictions)
-        tn, fp, fn, tp = cm.ravel()
-
-        precision = precision_score(y_true, predictions)
-        recall = recall_score(y_true, predictions, zero_division=0)
-        f1 = f1_score(y_true, predictions)
-        accuracy = accuracy_score(y_true, predictions)
-
-        fpr, tpr, _ = roc_curve(y_true, probabilities)
-        roc_auc = auc(fpr, tpr)
-
         writer.add_scalar("Evaluation/precision", precision, 0)
         writer.add_scalar("Evaluation/recall", recall, 0)
         writer.add_scalar("Evaluation/f1", f1, 0)
         writer.add_scalar("Evaluation/accuracy", accuracy, 0)
-        writer.add_scalar("Evaluation/auc", roc_auc, 0)
+
+        tp = cm[1, 1]
+        tn = cm[0, 0]
+        fp = cm[0, 1]
+        fn = cm[1, 0]
 
         writer.add_scalar("Evaluation/true_positives", tp, 0)
         writer.add_scalar("Evaluation/true_negatives", tn, 0)
         writer.add_scalar("Evaluation/false_positives", fp, 0)
         writer.add_scalar("Evaluation/false_negatives", fn, 0)
 
-        writer.add_histogram("Evaluation_prediction_probabilities/prediction_probabilities", probabilities, 0)
-
-    save_classification_report(y_true, predictions, output_dir)
-    save_confusion_matrix(y_true, predictions, output_dir)
-    save_roc_curve_plot(y_true, probabilities, output_dir)
-
     logger.info("Model evaluation complete")
-    return probabilities, predictions
-
-
-def evaluate_xgboost(model, X_val, y_val, output_dir: Path):
-    logger.info("Evaluating XGBoost model...")
-
-    probs = model.predict_proba(X_val)[:, 1]
-    preds = (probs > 0.5).astype(int)
-
-    accuracy = accuracy_score(y_val, preds)
-    precision = precision_score(y_val, preds, zero_division=0)
-    recall = recall_score(y_val, preds, zero_division=0)
-    f1 = f1_score(y_val, preds)
-    fpr, tpr, _ = roc_curve(y_val, probs)
-    roc_auc = auc(fpr, tpr)
-
-    logger.info(f"Accuracy: {accuracy:.4f}")
-    logger.info(f"Precision: {precision:.4f}")
-    logger.info(f"Recall: {recall:.4f}")
-    logger.info(f"F1 Score: {f1:.4f}")
-    logger.info(f"AUC: {roc_auc:.4f}")
-
-    save_classification_report(y_val, preds, output_dir)
-    save_confusion_matrix(y_val, preds, output_dir)
-    save_roc_curve_plot(y_val, probs, output_dir)
 
     return {
         "accuracy": accuracy,
+        "balanced_accuracy": balanced_accuracy,
         "precision": precision,
         "recall": recall,
         "f1": f1,
-        "auc": roc_auc,
     }
 
 
-def save_classification_report(y_true: np.ndarray, predictions: np.ndarray, output_dir: Path) -> None:
-    report = classification_report(y_true, predictions)
+def save_classification_report(report: str | dict, output_dir: Path) -> None:
     print("\n=============== Classification Report ===============")
     print(report)
 
     report_path = output_dir / "classification_report.txt"
 
+    if isinstance(report, dict):
+        report_str = json.dumps(report, indent=2)
+    else:
+        report_str = report
+
     with open(report_path, "w") as f:
-        f.write(report)
+        f.write(report_str)
 
     logger.info(f"Saved classification report to {report_path}")
 
 
-def save_confusion_matrix(y_true: np.ndarray, predictions: np.ndarray, output_dir: Path) -> None:
-    cm = confusion_matrix(y_true, predictions)
-
+def save_confusion_matrix(cm: Any, output_dir: Path) -> None:
     plt.figure(figsize=(6, 5))
     sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
     plt.xlabel("Predicted")
@@ -133,22 +128,3 @@ def save_confusion_matrix(y_true: np.ndarray, predictions: np.ndarray, output_di
     plt.close()
 
     logger.info(f"Saved confusion matrix plot to {cm_path}")
-
-
-def save_roc_curve_plot(y_true: np.ndarray, probabilities: np.ndarray, output_dir: Path) -> None:
-    fpr, tpr, _ = roc_curve(y_true, probabilities)
-    roc_auc = auc(fpr, tpr)
-
-    plt.figure(figsize=(6, 5))
-    plt.plot(fpr, tpr, label=f"AUC = {roc_auc:.3f}")
-    plt.plot([0, 1], [0, 1], linestyle="--")
-    plt.xlabel("False Positive Rate")
-    plt.ylabel("True Positive Rate")
-    plt.title("ROC Curve")
-    plt.legend()
-
-    roc_path = output_dir / "roc_curve.png"
-    plt.savefig(roc_path, dpi=300)
-    plt.close()
-
-    logger.info(f"Saved ROC curve plot to {roc_path}")
