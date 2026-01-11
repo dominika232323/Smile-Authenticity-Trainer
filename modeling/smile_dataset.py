@@ -4,7 +4,7 @@ from torch.utils.data import Dataset
 
 class SmileDataset(Dataset):
     def __init__(self, X, y):
-        self.X = torch.tensor(X, dtype=torch.float32)
+        self.X = torch.tensor(X.values, dtype=torch.float32)
         self.y = torch.tensor(y, dtype=torch.float32)
 
     def __len__(self):

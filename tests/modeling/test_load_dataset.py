@@ -5,7 +5,10 @@ import pandas as pd
 from pathlib import Path
 import tempfile
 import shutil
-from modeling.load_dataset import load_dataset, feature_selection, scale_data, split_data
+
+from torch.utils.data import DataLoader
+
+from modeling.load_dataset import load_dataset, feature_selection, scale_data, split_data, get_dataloaders
 
 
 class TestLoadDataset:
@@ -207,3 +210,62 @@ class TestSplitData:
 
         pd.testing.assert_frame_equal(X_train1, X_train2)
         pd.testing.assert_frame_equal(X_test1, X_test2)
+
+
+class TestGetDataloaders:
+    @pytest.fixture
+    def sample_data(self):
+        X_train = pd.DataFrame(
+            {
+                "f1": np.random.rand(20),
+                "f2": np.random.rand(20),
+            }
+        )
+        y_train = np.random.randint(0, 2, size=20)
+
+        X_val = pd.DataFrame(
+            {
+                "f1": np.random.rand(10),
+                "f2": np.random.rand(10),
+            }
+        )
+        y_val = np.random.randint(0, 2, size=10)
+
+        return X_train, X_val, y_train, y_val
+
+    def test_returns_dataloaders(self, sample_data):
+        X_train, X_val, y_train, y_val = sample_data
+
+        train_loader, val_loader = get_dataloaders(X_train, X_val, y_train, y_val, batch_size=4)
+
+        assert isinstance(train_loader, DataLoader)
+        assert isinstance(val_loader, DataLoader)
+
+    def test_dataset_lengths(self, sample_data):
+        X_train, X_val, y_train, y_val = sample_data
+
+        train_loader, val_loader = get_dataloaders(X_train, X_val, y_train, y_val, batch_size=4)
+
+        assert len(train_loader.dataset) == len(X_train)
+        assert len(val_loader.dataset) == len(X_val)
+
+    def test_batch_size(self, sample_data):
+        X_train, X_val, y_train, y_val = sample_data
+        batch_size = 5
+
+        train_loader, val_loader = get_dataloaders(X_train, X_val, y_train, y_val, batch_size=batch_size)
+
+        train_batch = next(iter(train_loader))
+        val_batch = next(iter(val_loader))
+
+        assert len(train_batch[0]) <= batch_size
+        assert len(val_batch[0]) <= batch_size
+
+    def test_number_of_batches(self, sample_data):
+        X_train, X_val, y_train, y_val = sample_data
+        batch_size = 6
+
+        train_loader, val_loader = get_dataloaders(X_train, X_val, y_train, y_val, batch_size=batch_size)
+
+        assert len(train_loader) == int(np.ceil(len(X_train) / batch_size))
+        assert len(val_loader) == int(np.ceil(len(X_val) / batch_size))
