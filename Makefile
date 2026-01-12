@@ -108,6 +108,12 @@ train_cheeks_features:
 	$(PYTHON_INTERPRETER) -m modeling.cheeks_features
 
 
+## Train model on all features
+.PHONY: train_all_features
+train_all_features:
+	$(PYTHON_INTERPRETER) -m modeling.all_features
+
+
 ## Train lips model on landmarks
 .PHONY: train_lips_landmarks
 train_lips_landmarks:
@@ -166,6 +172,12 @@ tensorboard_eyes_features:
 .PHONY: tensorboard_cheeks_features
 tensorboard_cheeks_features:
 	tensorboard --logdir=runs/cheek_runs/
+
+
+## Run tensorboard for all features runs
+.PHONY: tensorboard_all_features
+tensorboard_all_features:
+	tensorboard --logdir=runs/all_features_runs/
 
 
 ## Run tensorboard for lips landmarks runs
