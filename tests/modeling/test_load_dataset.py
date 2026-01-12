@@ -81,13 +81,15 @@ class TestFeatureSelection:
     def test_feature_selection_success(self, temp_dir, sample_data):
         X, y = sample_data
         how_many_features = 2
+        X_train, X_test, y_train, y_test = split_data(X, y, test_size=0.2)
 
-        X_selected = feature_selection(X, y, how_many_features, temp_dir)
+        X_train_selected, X_test_selected = feature_selection(X_train, y_train, X_test, how_many_features, temp_dir)
 
         # Check return type and shape
-        # Based on sklearn, fit_transform returns a numpy array if input is X
-        assert isinstance(X_selected, np.ndarray)
-        assert X_selected.shape == (100, 2)
+        assert isinstance(X_train_selected, np.ndarray)
+        assert isinstance(X_test_selected, np.ndarray)
+        assert X_train_selected.shape == (80, 2)
+        assert X_test_selected.shape == (20, 2)
 
         # Check if selector was saved
         selector_path = temp_dir / "feature_selector.joblib"
@@ -100,20 +102,24 @@ class TestFeatureSelection:
     def test_feature_selection_all_features(self, temp_dir, sample_data):
         X, y = sample_data
         how_many_features = 4
+        X_train, X_test, y_train, y_test = split_data(X, y, test_size=0.2)
 
-        X_selected = feature_selection(X, y, how_many_features, temp_dir)
+        X_train_selected, X_test_selected = feature_selection(X_train, y_train, X_test, how_many_features, temp_dir)
 
-        assert X_selected.shape == (100, 4)
-        assert (X_selected == X.values).all()
+        assert X_train_selected.shape == (80, 4)
+        assert X_test_selected.shape == (20, 4)
+        assert (X_train_selected == X_train.values).all()
+        assert (X_test_selected == X_test.values).all()
 
     def test_feature_selection_invalid_dir(self, sample_data):
         X, y = sample_data
         how_many_features = 2
+        X_train, X_test, y_train, y_test = split_data(X, y, test_size=0.2)
         invalid_dir = Path("/non_existent_directory_12345")
 
         # Should raise FileNotFoundError when trying to save joblib
         with pytest.raises(FileNotFoundError):
-            feature_selection(X, y, how_many_features, invalid_dir)
+            feature_selection(X_train, y_train, X_test, how_many_features, invalid_dir)
 
 
 class TestScaleData:
@@ -136,15 +142,19 @@ class TestScaleData:
         return X
 
     def test_scale_data_success(self, temp_dir, sample_data):
-        X_scaled = scale_data(sample_data, temp_dir)
+        X = sample_data
+        X_train, X_test = X.iloc[:80], X.iloc[80:]
+        X_train_scaled, X_test_scaled = scale_data(X_train, X_test, temp_dir)
 
         # Check return type and shape
-        assert isinstance(X_scaled, np.ndarray)
-        assert X_scaled.shape == sample_data.shape
+        assert isinstance(X_train_scaled, np.ndarray)
+        assert isinstance(X_test_scaled, np.ndarray)
+        assert X_train_scaled.shape == X_train.shape
+        assert X_test_scaled.shape == X_test.shape
 
         # Check if data is scaled (StandardScaler: mean ~0, std ~1)
-        assert np.allclose(X_scaled.mean(axis=0), 0, atol=1e-7)
-        assert np.allclose(X_scaled.std(axis=0), 1, atol=1e-7)
+        assert np.allclose(X_train_scaled.mean(axis=0), 0, atol=1e-7)
+        assert np.allclose(X_train_scaled.std(axis=0), 1, atol=1e-7)
 
         # Check if scaler was saved
         scaler_path = temp_dir / "scaler.joblib"
@@ -155,16 +165,21 @@ class TestScaleData:
         assert hasattr(scaler, "transform")
 
     def test_scale_data_consistency(self, temp_dir, sample_data):
-        X_scaled_1 = scale_data(sample_data, temp_dir)
-        X_scaled_2 = scale_data(sample_data, temp_dir)
+        X = sample_data
+        X_train, X_test = X.iloc[:80], X.iloc[80:]
+        X_train_scaled_1, X_test_scaled_1 = scale_data(X_train, X_test, temp_dir)
+        X_train_scaled_2, X_test_scaled_2 = scale_data(X_train, X_test, temp_dir)
 
-        assert np.array_equal(X_scaled_1, X_scaled_2)
+        assert np.array_equal(X_train_scaled_1, X_train_scaled_2)
+        assert np.array_equal(X_test_scaled_1, X_test_scaled_2)
 
     def test_scale_data_invalid_dir(self, sample_data):
+        X = sample_data
+        X_train, X_test = X.iloc[:80], X.iloc[80:]
         invalid_dir = Path("/non_existent_directory_98765")
 
         with pytest.raises(FileNotFoundError):
-            scale_data(sample_data, invalid_dir)
+            scale_data(X_train, X_test, invalid_dir)
 
 
 class TestSplitData:
