@@ -5,9 +5,11 @@ matplotlib.use("Agg")  # important for CI / headless environments
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pytest
+import torch
 
-from modeling.train import draw_history
+from modeling.train import calculate_pos_weight, draw_history
 
 
 class TestDrawHistory:
@@ -55,3 +57,31 @@ class TestDrawHistory:
 
         with pytest.raises(KeyError):
             draw_history(history, tmp_path)
+
+
+class TestCalculatePosWeight:
+    def test_calculate_pos_weight_balanced(self):
+        y_train = np.array([0, 0, 1, 1])
+        device = "cpu"
+        pos_weight = calculate_pos_weight(y_train, device)
+
+        assert isinstance(pos_weight, torch.Tensor)
+        assert pos_weight.device.type == "cpu"
+        # num_neg = 2, num_pos = 2 -> pos_weight = 2/2 = 1.0
+        assert torch.allclose(pos_weight, torch.tensor([1.0]))
+
+    def test_calculate_pos_weight_unbalanced(self):
+        y_train = np.array([0, 0, 0, 1])
+        device = "cpu"
+        pos_weight = calculate_pos_weight(y_train, device)
+
+        # num_neg = 3, num_pos = 1 -> pos_weight = 3/1 = 3.0
+        assert torch.allclose(pos_weight, torch.tensor([3.0]))
+
+    def test_calculate_pos_weight_more_pos(self):
+        y_train = np.array([0, 1, 1, 1])
+        device = "cpu"
+        pos_weight = calculate_pos_weight(y_train, device)
+
+        # num_neg = 1, num_pos = 3 -> pos_weight = 1/3 = 0.3333
+        assert torch.allclose(pos_weight, torch.tensor([1 / 3]))
