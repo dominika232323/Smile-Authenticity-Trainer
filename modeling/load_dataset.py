@@ -39,11 +39,13 @@ def load_all_features(lips_dataset_path: Path, eyes_dataset_path: Path, cheeks_d
         df_eyes, on="filename", how="inner", suffixes=("", "_drop")
     )
 
-    label_cols = [col for col in merged_df.columns if col.startswith("label")]
-    merged_df["label"] = merged_df[label_cols[0]]
+    label_cols = [col for col in merged_df.columns if "label" in col]
+    label_df = merged_df[label_cols[0]]
 
     logger.info("Dropping non-feature columns")
-    merged_df = merged_df.drop(columns=["filename"])
+    merged_df = merged_df.drop(columns=["filename"] + label_cols)
+
+    merged_df["label"] = label_df.values.astype(int)
 
     logger.info(f"Dataset shape: {merged_df.shape}")
     return merged_df
@@ -66,8 +68,11 @@ def feature_selection(
     X_test_selected = selector.transform(X_test)
 
     selector_path = selector_output_dir / "feature_selector.joblib"
+    selected_features = X_train.columns[selector.get_support()]
+
     logger.info(f"Saving feature selector to {selector_path}")
     joblib.dump(selector, selector_path)
+    joblib.dump(selected_features.tolist(), selector_output_dir / "selected_features.joblib")
 
     logger.info(f"Selected features shapes: train={X_train_selected.shape}, test={X_test_selected.shape}")
 
