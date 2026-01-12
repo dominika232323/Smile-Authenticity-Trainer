@@ -24,6 +24,36 @@ def load_dataset(path: Path, non_feature_columns: list[str]) -> pd.DataFrame:
     return df
 
 
+def load_all_features(lips_dataset_path: Path, eyes_dataset_path: Path, cheeks_dataset_path: Path) -> pd.DataFrame:
+    logger.info("Loading all features from datasets")
+
+    df_lips = pd.read_csv(lips_dataset_path)
+    df_cheeks = pd.read_csv(cheeks_dataset_path)
+    df_eyes = pd.read_csv(eyes_dataset_path)
+
+    df_lips = add_prefix(df_lips, "lips")
+    df_cheeks = add_prefix(df_cheeks, "cheeks")
+    df_eyes = add_prefix(df_eyes, "eyes")
+
+    merged_df = df_lips.merge(df_cheeks, on="filename", how="inner", suffixes=("", "_drop")).merge(
+        df_eyes, on="filename", how="inner", suffixes=("", "_drop")
+    )
+
+    label_cols = [col for col in merged_df.columns if col.startswith("label")]
+    merged_df["label"] = merged_df[label_cols[0]]
+
+    logger.info("Dropping non-feature columns")
+    merged_df = merged_df.drop(columns=["filename"])
+
+    logger.info(f"Dataset shape: {merged_df.shape}")
+    return merged_df
+
+
+def add_prefix(df: pd.DataFrame, prefix: str) -> pd.DataFrame:
+    rename_dict = {col: f"{prefix}_{col}" for col in df.columns if col not in ["filename", "label"]}
+    return df.rename(columns=rename_dict)
+
+
 def feature_selection(
     X: pd.DataFrame, y: np.ndarray, how_many_features: int, selector_output_dir: Path
 ) -> pd.DataFrame:
