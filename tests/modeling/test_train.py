@@ -1,6 +1,6 @@
 import matplotlib
 
-matplotlib.use("Agg")  # important for CI / headless environments
+matplotlib.use("Agg")
 
 from pathlib import Path
 from typing import Any
@@ -9,7 +9,130 @@ import numpy as np
 import pytest
 import torch
 
-from modeling.train import calculate_pos_weight, draw_history
+from unittest.mock import MagicMock
+
+from modeling.train import calculate_pos_weight, draw_history, train
+
+
+class TestTrain:
+    @pytest.fixture
+    def simple_model(self):
+        return torch.nn.Linear(10, 1)
+
+    @pytest.fixture
+    def dummy_loaders(self):
+        X = torch.randn(10, 10)
+        y = torch.randint(0, 2, (10, 1)).float()
+        dataset = torch.utils.data.TensorDataset(X, y)
+        loader = torch.utils.data.DataLoader(dataset, batch_size=2)
+        return loader, loader
+
+    def test_train_basic(self, tmp_path, simple_model, dummy_loaders):
+        train_loader, val_loader = dummy_loaders
+        model_path = tmp_path / "model.pth"
+        pos_weight = torch.tensor([1.0])
+
+        history = train(
+            model=simple_model,
+            train_loader=train_loader,
+            val_loader=val_loader,
+            pos_weight=pos_weight,
+            learning_rate=0.001,
+            epochs=2,
+            patience=2,
+            threshold=0.5,
+            device="cpu",
+            model_path=model_path,
+        )
+
+        assert "train_loss" in history
+        assert "val_loss" in history
+        assert len(history["train_loss"]) == 2
+        assert model_path.exists()
+
+    def test_train_early_stopping(self, tmp_path, simple_model, dummy_loaders):
+        train_loader, val_loader = dummy_loaders
+        model_path = tmp_path / "model_es.pth"
+        pos_weight = torch.tensor([1.0])
+
+        history = train(
+            model=simple_model,
+            train_loader=train_loader,
+            val_loader=val_loader,
+            pos_weight=pos_weight,
+            learning_rate=0.001,
+            epochs=5,
+            patience=1,
+            threshold=0.5,
+            device="cpu",
+            model_path=model_path,
+        )
+
+        assert len(history["train_loss"]) <= 5
+        assert model_path.exists()
+
+    def test_train_with_writer(self, tmp_path, simple_model, dummy_loaders):
+        train_loader, val_loader = dummy_loaders
+        model_path = tmp_path / "model_writer.pth"
+        pos_weight = torch.tensor([1.0])
+        writer = MagicMock()
+
+        train(
+            model=simple_model,
+            train_loader=train_loader,
+            val_loader=val_loader,
+            pos_weight=pos_weight,
+            learning_rate=0.001,
+            epochs=2,
+            patience=2,
+            threshold=0.5,
+            device="cpu",
+            model_path=model_path,
+            writer=writer,
+        )
+
+        assert writer.add_scalar.called
+
+        scalar_calls = [call.args[0] for call in writer.add_scalar.call_args_list]
+
+        assert "Batch/train_loss" in scalar_calls
+        assert "Epoch/train_loss" in scalar_calls
+        assert "Epoch/val_loss" in scalar_calls
+
+        assert writer.add_histogram.called
+
+        histogram_calls = [call.args[0] for call in writer.add_histogram.call_args_list]
+
+        assert any(c.startswith("Parameters/") for c in histogram_calls)
+        assert any(c.startswith("Gradients/") for c in histogram_calls)
+
+    def test_train_early_stopping_with_writer(self, tmp_path, simple_model, dummy_loaders):
+        train_loader, val_loader = dummy_loaders
+        model_path = tmp_path / "model_es_writer.pth"
+        pos_weight = torch.tensor([1.0])
+        writer = MagicMock()
+
+        def mocked_forward(x):
+            return (simple_model.weight.sum() * 0).reshape(1, 1).expand(x.size(0), 1)
+
+        simple_model.forward = mocked_forward
+
+        train(
+            model=simple_model,
+            train_loader=train_loader,
+            val_loader=val_loader,
+            pos_weight=pos_weight,
+            learning_rate=0.001,
+            epochs=10,
+            patience=1,
+            threshold=0.5,
+            device="cpu",
+            model_path=model_path,
+            writer=writer,
+        )
+
+        scalar_calls = [call.args[0] for call in writer.add_scalar.call_args_list]
+        assert "Training/early_stop_epoch" in scalar_calls
 
 
 class TestDrawHistory:
@@ -48,11 +171,10 @@ class TestDrawHistory:
         except Exception as e:
             pytest.fail(f"draw_history raised an exception: {e}")
 
-    def test_draw_history_missing_key_raises_keyerror(self, tmp_path: Path):
+    def test_draw_history_missing_key_raises_error(self, tmp_path: Path):
         history = {
             "train_loss": [1.0],
             "val_loss": [1.0],
-            # missing accuracy keys
         }
 
         with pytest.raises(KeyError):
@@ -67,7 +189,6 @@ class TestCalculatePosWeight:
 
         assert isinstance(pos_weight, torch.Tensor)
         assert pos_weight.device.type == "cpu"
-        # num_neg = 2, num_pos = 2 -> pos_weight = 2/2 = 1.0
         assert torch.allclose(pos_weight, torch.tensor([1.0]))
 
     def test_calculate_pos_weight_unbalanced(self):
@@ -75,7 +196,6 @@ class TestCalculatePosWeight:
         device = "cpu"
         pos_weight = calculate_pos_weight(y_train, device)
 
-        # num_neg = 3, num_pos = 1 -> pos_weight = 3/1 = 3.0
         assert torch.allclose(pos_weight, torch.tensor([3.0]))
 
     def test_calculate_pos_weight_more_pos(self):
@@ -83,5 +203,4 @@ class TestCalculatePosWeight:
         device = "cpu"
         pos_weight = calculate_pos_weight(y_train, device)
 
-        # num_neg = 1, num_pos = 3 -> pos_weight = 1/3 = 0.3333
         assert torch.allclose(pos_weight, torch.tensor([1 / 3]))
