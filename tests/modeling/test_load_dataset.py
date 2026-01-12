@@ -8,7 +8,38 @@ import shutil
 
 from torch.utils.data import DataLoader
 
-from modeling.load_dataset import load_dataset, feature_selection, scale_data, split_data, get_dataloaders
+from modeling.load_dataset import load_dataset, feature_selection, scale_data, split_data, get_dataloaders, add_prefix
+
+
+class TestAddPrefix:
+    def test_add_prefix_success(self):
+        df = pd.DataFrame({"feat1": [1, 2], "feat2": [3, 4]})
+        prefix = "lips"
+        expected_columns = ["lips_feat1", "lips_feat2"]
+
+        result_df = add_prefix(df, prefix)
+
+        assert list(result_df.columns) == expected_columns
+        assert (result_df.values == df.values).all()
+
+    def test_add_prefix_special_columns(self):
+        df = pd.DataFrame({"filename": ["a.jpg", "b.jpg"], "feat1": [1, 2], "label": [0, 1]})
+        prefix = "eyes"
+        expected_columns = ["filename", "eyes_feat1", "label"]
+
+        result_df = add_prefix(df, prefix)
+
+        assert list(result_df.columns) == expected_columns
+
+    def test_add_prefix_empty_df(self):
+        df = pd.DataFrame(columns=["feat1", "feat2"])
+        prefix = "cheeks"
+        expected_columns = ["cheeks_feat1", "cheeks_feat2"]
+
+        result_df = add_prefix(df, prefix)
+
+        assert list(result_df.columns) == expected_columns
+        assert len(result_df) == 0
 
 
 class TestLoadDataset:
