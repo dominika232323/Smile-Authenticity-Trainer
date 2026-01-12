@@ -8,7 +8,80 @@ import shutil
 
 from torch.utils.data import DataLoader
 
-from modeling.load_dataset import load_dataset, feature_selection, scale_data, split_data, get_dataloaders, add_prefix
+from modeling.load_dataset import (
+    load_dataset,
+    feature_selection,
+    scale_data,
+    split_data,
+    get_dataloaders,
+    add_prefix,
+    load_all_features,
+)
+
+
+class TestLoadAllFeatures:
+    @pytest.fixture
+    def temp_dir(self):
+        temp_dir_path = tempfile.mkdtemp()
+        yield Path(temp_dir_path)
+        shutil.rmtree(temp_dir_path)
+
+    @pytest.fixture
+    def datasets(self, temp_dir):
+        df_lips = pd.DataFrame({"filename": ["1.jpg", "2.jpg"], "feat1": [0.1, 0.2], "label": [0, 1]})
+        df_cheeks = pd.DataFrame({"filename": ["1.jpg", "2.jpg"], "feat2": [0.3, 0.4], "label": [0, 1]})
+        df_eyes = pd.DataFrame({"filename": ["1.jpg", "2.jpg"], "feat3": [0.5, 0.6], "label": [0, 1]})
+
+        lips_path = temp_dir / "lips.csv"
+        cheeks_path = temp_dir / "cheeks.csv"
+        eyes_path = temp_dir / "eyes.csv"
+
+        df_lips.to_csv(lips_path, index=False)
+        df_cheeks.to_csv(cheeks_path, index=False)
+        df_eyes.to_csv(eyes_path, index=False)
+
+        return lips_path, eyes_path, cheeks_path
+
+    def test_load_all_features_success(self, datasets):
+        lips_path, eyes_path, cheeks_path = datasets
+        result_df = load_all_features(lips_path, eyes_path, cheeks_path)
+
+        assert isinstance(result_df, pd.DataFrame)
+        # Expected columns: lips_feat1, cheeks_feat2, eyes_feat3, label
+        # filename and original labels should be dropped
+        expected_columns = ["lips_feat1", "cheeks_feat2", "eyes_feat3", "label"]
+        assert list(result_df.columns) == expected_columns
+        assert len(result_df) == 2
+        assert result_df["label"].tolist() == [0, 1]
+
+    def test_load_all_features_mismatched_filenames(self, temp_dir):
+        df_lips = pd.DataFrame({"filename": ["1.jpg", "2.jpg"], "feat1": [0.1, 0.2], "label": [0, 1]})
+        df_cheeks = pd.DataFrame({"filename": ["1.jpg", "3.jpg"], "feat2": [0.3, 0.4], "label": [0, 1]})
+        df_eyes = pd.DataFrame({"filename": ["1.jpg", "2.jpg"], "feat3": [0.5, 0.6], "label": [0, 1]})
+
+        lips_path = temp_dir / "lips.csv"
+        cheeks_path = temp_dir / "cheeks.csv"
+        eyes_path = temp_dir / "eyes.csv"
+
+        df_lips.to_csv(lips_path, index=False)
+        df_cheeks.to_csv(cheeks_path, index=False)
+        df_eyes.to_csv(eyes_path, index=False)
+
+        # Inner merge should only keep "1.jpg"
+        result_df = load_all_features(lips_path, eyes_path, cheeks_path)
+        assert len(result_df) == 1
+        assert "label" in result_df.columns
+
+    def test_load_all_features_missing_file(self, temp_dir):
+        lips_path = temp_dir / "lips.csv"
+        eyes_path = temp_dir / "eyes.csv"
+        cheeks_path = temp_dir / "cheeks.csv"
+
+        pd.DataFrame({"filename": ["1.jpg"], "f": [1], "label": [0]}).to_csv(lips_path, index=False)
+        # eyes_path is missing
+
+        with pytest.raises(FileNotFoundError):
+            load_all_features(lips_path, eyes_path, cheeks_path)
 
 
 class TestAddPrefix:
