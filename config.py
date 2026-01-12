@@ -41,6 +41,7 @@ EYES_RUNS_DIR = RUNS_DIR / "eyes_runs"
 EYES_LANDMARKS_RUNS_DIR = RUNS_DIR / "eyes_landmarks_runs"
 CHEEKS_RUNS_DIR = RUNS_DIR / "cheek_runs"
 CHEEKS_LANDMARKS_RUNS_DIR = RUNS_DIR / "cheek_landmarks_runs"
+ALL_FEATURES_RUNS_DIR = RUNS_DIR / "all_features_runs"
 
 EYE_RELATIVE_LEFT = 0.35
 EYE_RELATIVE_TOP = 0.35
