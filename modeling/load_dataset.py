@@ -51,35 +51,46 @@ def load_all_features(lips_dataset_path: Path, eyes_dataset_path: Path, cheeks_d
 
 def add_prefix(df: pd.DataFrame, prefix: str) -> pd.DataFrame:
     rename_dict = {col: f"{prefix}_{col}" for col in df.columns if col not in ["filename", "label"]}
+
     return df.rename(columns=rename_dict)
 
 
 def feature_selection(
-    X: pd.DataFrame, y: np.ndarray, how_many_features: int, selector_output_dir: Path
-) -> pd.DataFrame:
+    X_train: pd.DataFrame, y_train: np.ndarray, X_test: pd.DataFrame, how_many_features: int, selector_output_dir: Path
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     logger.info(f"Selecting {how_many_features} best features")
+
     selector = SelectKBest(score_func=f_classif, k=how_many_features)
-    X_selected = selector.fit_transform(X, y)
+
+    X_train_selected = selector.fit_transform(X_train, y_train)
+    X_test_selected = selector.transform(X_test)
 
     selector_path = selector_output_dir / "feature_selector.joblib"
     logger.info(f"Saving feature selector to {selector_path}")
     joblib.dump(selector, selector_path)
 
-    logger.info(f"Selected features shape: {X_selected.shape}")
-    return X_selected
+    logger.info(f"Selected features shapes: train={X_train_selected.shape}, test={X_test_selected.shape}")
+
+    return X_train_selected, X_test_selected
 
 
-def scale_data(X: pd.DataFrame, scaler_output_dir: Path) -> pd.DataFrame:
+def scale_data(
+    X_train: pd.DataFrame, X_test: pd.DataFrame, scaler_output_dir: Path
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     logger.info("Scaling data")
+
     scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X)
+
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
 
     scaler_path = scaler_output_dir / "scaler.joblib"
     logger.info(f"Saving scaler to {scaler_path}")
     joblib.dump(scaler, scaler_path)
 
-    logger.info(f"Scaled data shape: {X_scaled.shape}")
-    return X_scaled
+    logger.info(f"Scaled data shapes: train={X_train_scaled.shape}, test={X_test_scaled.shape}")
+
+    return X_train_scaled, X_test_scaled
 
 
 def split_data(

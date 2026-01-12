@@ -11,13 +11,20 @@ from tqdm import tqdm
 
 from data_preprocessing.file_utils import create_directories
 from modeling.evaluate import evaluate, load_best_model
-from modeling.load_dataset import feature_selection, get_dataloaders, load_dataset, scale_data, split_data
+from modeling.load_dataset import (
+    feature_selection,
+    get_dataloaders,
+    load_all_features,
+    load_dataset,
+    scale_data,
+    split_data,
+)
 from modeling.smile_net import SmileNet
 from modeling.train import calculate_pos_weight, draw_history, train
 
 
 def pipeline(
-    dataset_path: Path,
+    dataset_path: Path | list[Path],
     best_model_path: Path,
     non_feature_cols: list[str],
     output_dir: Path,
@@ -42,14 +49,19 @@ def pipeline(
     device = get_device()
     logger.info(f"Using device: {device}")
 
-    dataset = load_dataset(dataset_path, non_feature_cols)
+    if isinstance(dataset_path, list):
+        dataset = load_all_features(dataset_path[0], dataset_path[1], dataset_path[2])
+    elif isinstance(dataset_path, Path):
+        dataset = load_dataset(dataset_path, non_feature_cols)
+    else:
+        raise ValueError(f"Invalid dataset path: {dataset_path}")
+
     X = dataset.drop("label", axis=1)
     y = dataset["label"].values.astype(np.float32)
 
-    X_selected = feature_selection(X, y, how_many_features, output_dir)
-    X_scaled = scale_data(X_selected, output_dir)
-
-    X_train, X_test, y_train, y_test = split_data(X_scaled, y, test_size)
+    X_train, X_test, y_train, y_test = split_data(X, y, test_size)
+    X_train, X_test = feature_selection(X_train, y_train, X_test, how_many_features, output_dir)
+    X_train, X_test = scale_data(X_train, X_test, output_dir)
 
     train_loader, val_loader = get_dataloaders(X_train, X_test, y_train, y_test, batch_size)
 
@@ -108,7 +120,10 @@ def pipeline(
 
 
 def hyperparameter_grid_search(
-    dataset_path: Path, runs_dir: Path, param_grid: dict[str, list[int] | list[float]], non_feature_cols: list[str]
+    dataset_path: Path | list[Path],
+    runs_dir: Path,
+    param_grid: dict[str, list[int] | list[float]],
+    non_feature_cols: list[str],
 ):
     grid = ParameterGrid(param_grid)
 
