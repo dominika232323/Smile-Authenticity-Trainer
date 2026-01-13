@@ -4,6 +4,7 @@ import pandas as pd
 import torch
 
 from modeling.evaluate import (
+    evaluate,
     load_best_model,
     save_classification_report,
     save_confusion_matrix,
@@ -132,3 +133,49 @@ class TestSaveMetrics:
             content = json.load(f)
 
         assert content == metrics
+
+
+class TestEvaluate:
+    @patch("modeling.evaluate.save_classification_report")
+    @patch("modeling.evaluate.save_confusion_matrix")
+    @patch("modeling.evaluate.save_metrics")
+    def test_evaluate(self, mock_save_metrics, mock_save_cm, mock_save_report, tmp_path):
+        device = "cpu"
+        threshold = 0.5
+        output_dir = tmp_path
+
+        # Mock model
+        mock_model = MagicMock()
+        # Mock logits for 2 samples: one above threshold, one below
+        # Logits are passed through sigmoid, so > 0 will be > 0.5
+        mock_model.return_value = torch.tensor([1.0, -1.0])
+
+        # Mock DataLoader
+        X_batch = torch.randn(2, 5)
+        y_batch = torch.tensor([1, 0])
+        mock_loader = [(X_batch, y_batch)]
+
+        # Mock SummaryWriter
+        mock_writer = MagicMock()
+
+        metrics = evaluate(
+            model=mock_model,
+            test_loader=mock_loader,
+            threshold=threshold,
+            device=device,
+            output_dir=output_dir,
+            writer=mock_writer,
+        )
+
+        # Assertions
+        assert "accuracy" in metrics
+        assert "f1" in metrics
+        assert metrics["accuracy"] == 1.0  # Since preds [1, 0] match labels [1, 0]
+
+        mock_model.assert_called_once()
+        mock_save_report.assert_called_once()
+        mock_save_cm.assert_called_once()
+        mock_save_metrics.assert_called_once_with(metrics, output_dir)
+
+        # Check writer calls
+        assert mock_writer.add_scalar.call_count > 0
