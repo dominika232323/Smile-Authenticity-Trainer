@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import torch
 
-from modeling.evaluate import load_best_model, save_classification_report
+from modeling.evaluate import load_best_model, save_classification_report, save_confusion_matrix
 
 
 class TestLoadBestModel:
@@ -81,3 +81,31 @@ class TestSaveClassificationReport:
         import json
 
         assert json.loads(content) == report
+
+
+class TestSaveConfusionMatrix:
+    @patch("modeling.evaluate.plt")
+    @patch("modeling.evaluate.sns")
+    def test_save_confusion_matrix(self, mock_sns, mock_plt, tmp_path):
+        import numpy as np
+
+        cm = np.array([[10, 2], [3, 15]])
+        output_dir = tmp_path
+        cm_path = output_dir / "confusion_matrix.png"
+
+        save_confusion_matrix(cm, output_dir)
+
+        mock_plt.figure.assert_called_once_with(figsize=(6, 5))
+        mock_sns.heatmap.assert_called_once()
+        args, kwargs = mock_sns.heatmap.call_args
+
+        assert (args[0] == cm).all()
+        assert kwargs["annot"] is True
+        assert kwargs["fmt"] == "d"
+        assert kwargs["cmap"] == "Blues"
+
+        mock_plt.xlabel.assert_called_once_with("Predicted")
+        mock_plt.ylabel.assert_called_once_with("True")
+        mock_plt.title.assert_called_once_with("Confusion Matrix")
+        mock_plt.savefig.assert_called_once_with(cm_path, dpi=300)
+        mock_plt.close.assert_called_once()
