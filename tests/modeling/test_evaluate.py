@@ -3,7 +3,7 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import torch
 
-from modeling.evaluate import load_best_model
+from modeling.evaluate import load_best_model, save_classification_report
 
 
 class TestLoadBestModel:
@@ -53,3 +53,31 @@ class TestLoadBestModel:
         mock_smilenet.assert_called_once_with(input_dim=8, dropout_p=dropout, hidden_dims=[32, 16])
         mock_model.load_state_dict.assert_called_once_with({"key": "value"})
         mock_model.eval.assert_called_once()
+
+
+class TestSaveClassificationReport:
+    def test_save_classification_report_str(self, tmp_path):
+        report = "precision recall f1-score\n0.8 0.7 0.75"
+        output_dir = tmp_path
+        report_path = output_dir / "classification_report.txt"
+
+        save_classification_report(report, output_dir)
+
+        assert report_path.exists()
+        with open(report_path, "r") as f:
+            content = f.read()
+        assert content == report
+
+    def test_save_classification_report_dict(self, tmp_path):
+        report = {"precision": 0.8, "recall": 0.7, "f1-score": 0.75}
+        output_dir = tmp_path
+        report_path = output_dir / "classification_report.txt"
+
+        save_classification_report(report, output_dir)
+
+        assert report_path.exists()
+        with open(report_path, "r") as f:
+            content = f.read()
+        import json
+
+        assert json.loads(content) == report
