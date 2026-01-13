@@ -3,7 +3,12 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import torch
 
-from modeling.evaluate import load_best_model, save_classification_report, save_confusion_matrix
+from modeling.evaluate import (
+    load_best_model,
+    save_classification_report,
+    save_confusion_matrix,
+    save_metrics,
+)
 
 
 class TestLoadBestModel:
@@ -109,3 +114,21 @@ class TestSaveConfusionMatrix:
         mock_plt.title.assert_called_once_with("Confusion Matrix")
         mock_plt.savefig.assert_called_once_with(cm_path, dpi=300)
         mock_plt.close.assert_called_once()
+
+
+class TestSaveMetrics:
+    def test_save_metrics(self, tmp_path):
+        import json
+
+        metrics = {"accuracy": 0.95, "f1": 0.94}
+        output_dir = tmp_path
+        metrics_path = output_dir / "metrics.json"
+
+        save_metrics(metrics, output_dir)
+
+        assert metrics_path.exists()
+
+        with open(metrics_path, "r") as f:
+            content = json.load(f)
+
+        assert content == metrics
