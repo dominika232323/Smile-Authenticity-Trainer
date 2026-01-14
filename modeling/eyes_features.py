@@ -11,26 +11,32 @@ def main():
     logger.info("Starting training on eyes features pipeline")
 
     dataset_path = ALL_EYES_FEATURES_CSV
+    runs_dir = EYES_RUNS_DIR / "hidden_dims_experiment"
     non_feature_cols = ["filename"]
 
     param_grid = {
-        "batch_size": [32, 64],
-        "dropout": [0.1, 0.3, 0.5],
-        "epochs": [50],
+        "batch_size": [32],
+        "dropout": [0.3],
+        "epochs": [70],
         "patience": [7],
-        "lr": [3e-4, 1e-3],
+        "lr": [1e-3],
         "test_size": [0.2],
-        "how_many_features": [30, 50, 75],
-        "threshold": [0.4, 0.5, 0.6],
+        "how_many_features": [70],
+        "threshold": [0.5],
         "hidden_dims": [
-            [],
-            [64],
-            [128],
+            [64, 32],
             [128, 64],
             [256, 128],
+            [128, 64, 32],
+            [256, 128, 64],
+            [512, 256, 128],
+            [256, 128, 64, 32],
+            [512, 256, 128, 64],
         ],
     }
-    hyperparameter_grid_search(dataset_path, EYES_RUNS_DIR, param_grid, non_feature_cols)
+
+    for i in range(10):
+        hyperparameter_grid_search(dataset_path, runs_dir, param_grid, non_feature_cols)
 
 
 if __name__ == "__main__":
