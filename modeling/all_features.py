@@ -15,27 +15,20 @@ def main():
     cheeks_dataset_path = ALL_CHEEKS_FEATURES_CSV
     dataset_path = [lips_dataset_path, eyes_dataset_path, cheeks_dataset_path]
 
-    runs_dir = ALL_FEATURES_RUNS_DIR / "hidden_dims_experiment"
+    runs_dir = ALL_FEATURES_RUNS_DIR / "how_many_features_experiment"
     non_feature_cols = ["filename"]
 
     param_grid = {
         "batch_size": [32],
         "dropout": [0.3],
-        "epochs": [150],
+        "epochs": [70],
         "patience": [7],
         "lr": [1e-3],
         "test_size": [0.2],
-        "how_many_features": [70],
+        "how_many_features": [20, 50, 70, 100, 200],
         "threshold": [0.5],
         "hidden_dims": [
-            [64, 32],
             [128, 64],
-            [256, 128],
-            [128, 64, 32],
-            [256, 128, 64],
-            [512, 256, 128],
-            [256, 128, 64, 32],
-            [512, 256, 128, 64],
         ],
     }
 
