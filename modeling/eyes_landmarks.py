@@ -11,27 +11,20 @@ def main():
     logger.info("Starting training on eyes landmarks pipeline")
 
     dataset_path = EYES_LANDMARKS_IN_APEX_CSV
-    runs_dir = EYES_LANDMARKS_RUNS_DIR / "hidden_dims_experiment"
+    runs_dir = EYES_LANDMARKS_RUNS_DIR / "how_many_features_experiment"
     non_feature_cols = ["filename", "smile_phase", "frame_number"]
 
     param_grid = {
         "batch_size": [32],
         "dropout": [0.3],
-        "epochs": [150],
+        "epochs": [70],
         "patience": [7],
         "lr": [1e-3],
         "test_size": [0.2],
-        "how_many_features": [70],
+        "how_many_features": [20, 50, 70, 100, 200],
         "threshold": [0.5],
         "hidden_dims": [
-            [64, 32],
             [128, 64],
-            [256, 128],
-            [128, 64, 32],
-            [256, 128, 64],
-            [512, 256, 128],
-            [256, 128, 64, 32],
-            [512, 256, 128, 64],
         ],
     }
 
