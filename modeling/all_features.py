@@ -15,18 +15,18 @@ def main():
     cheeks_dataset_path = ALL_CHEEKS_FEATURES_CSV
     dataset_path = [lips_dataset_path, eyes_dataset_path, cheeks_dataset_path]
 
-    runs_dir = ALL_FEATURES_RUNS_DIR / "dropout_experiment"
+    runs_dir = ALL_FEATURES_RUNS_DIR / "threshold_experiment"
     non_feature_cols = ["filename"]
 
     param_grid = {
         "batch_size": [32],
-        "dropout": [0.0, 0.2, 0.3, 0.4, 0.5],
+        "dropout": [0.3],
         "epochs": [70],
         "patience": [7],
         "lr": [1e-3],
         "test_size": [0.2],
         "how_many_features": [70],
-        "threshold": [0.5],
+        "threshold": [0.2, 0.35, 0.5, 0.6, 0.7],
         "hidden_dims": [
             [128, 64],
         ],
