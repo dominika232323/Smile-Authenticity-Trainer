@@ -1,7 +1,8 @@
 import re
 import datetime
 from unittest.mock import patch
-from modeling.pipeline import get_timestamp
+from modeling.pipeline import get_timestamp, get_device
+
 
 class TestGetTimestamp:
     def test_get_timestamp_format(self):
@@ -17,3 +18,19 @@ class TestGetTimestamp:
         timestamp = get_timestamp()
 
         assert timestamp == "2023-10-27_12-30-45"
+
+
+class TestGetDevice:
+    @patch("modeling.pipeline.torch.cuda.is_available")
+    def test_get_device_cuda(self, mock_cuda_available):
+        mock_cuda_available.return_value = True
+        device = get_device()
+
+        assert device == "cuda"
+
+    @patch("modeling.pipeline.torch.cuda.is_available")
+    def test_get_device_cpu(self, mock_cuda_available):
+        mock_cuda_available.return_value = False
+        device = get_device()
+
+        assert device == "cpu"
