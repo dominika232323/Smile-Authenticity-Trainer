@@ -1,14 +1,12 @@
 from unittest.mock import patch, ANY
-from modeling.all_features import main
+from modeling.cheeks_features import main
 
 
-class TestAllFeaturesMain:
-    @patch("modeling.all_features.setup_logging")
-    @patch("modeling.all_features.hyperparameter_grid_search")
-    @patch("modeling.all_features.ALL_CHEEKS_FEATURES_CSV", "cheeks.csv")
-    @patch("modeling.all_features.ALL_EYES_FEATURES_CSV", "eyes.csv")
-    @patch("modeling.all_features.ALL_LIP_FEATURES_CSV", "lips.csv")
-    @patch("modeling.all_features.ALL_FEATURES_RUNS_DIR")
+class TestCheeksFeaturesMain:
+    @patch("modeling.cheeks_features.setup_logging")
+    @patch("modeling.cheeks_features.hyperparameter_grid_search")
+    @patch("modeling.cheeks_features.ALL_CHEEKS_FEATURES_CSV", "cheeks.csv")
+    @patch("modeling.cheeks_features.CHEEKS_RUNS_DIR")
     def test_main_execution(self, mock_runs_dir, mock_grid_search, mock_setup_logging):
         from pathlib import Path
 
@@ -18,7 +16,7 @@ class TestAllFeaturesMain:
 
         assert mock_grid_search.called
 
-        expected_dataset_path = ["lips.csv", "eyes.csv", "cheeks.csv"]
+        expected_dataset_path = "cheeks.csv"
         expected_runs_dir = Path("dummy_runs/threshold_experiment")
         expected_non_feature_cols = ["filename"]
 
