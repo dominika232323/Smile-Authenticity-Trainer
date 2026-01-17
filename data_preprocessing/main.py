@@ -13,13 +13,10 @@ from config import (
     ALL_LIP_FEATURES_CSV,
     CHECKPOINT_FILE_PATH,
     CHEEKS_FEATURES_DIR,
-    CHEEKS_LANDMARKS_IN_APEX_CSV,
     DESIRED_FRAME_SIZE,
     EYE_RELATIVE_SIZE,
     EYES_FEATURES_DIR,
-    EYES_LANDMARKS_IN_APEX_CSV,
     LIP_FEATURES_DIR,
-    LIPS_LANDMARKS_IN_APEX_CSV,
     ORIGINAL_FACELANDMARKS_DIR,
     ORIGINAL_FRAMES_DIR,
     PREPROCESSED_DATA_DIR,
@@ -33,7 +30,6 @@ from data_preprocessing.assign_labels import assign_labels
 from data_preprocessing.extract_cheek_features import extract_cheek_features
 from data_preprocessing.extract_eye_features import extract_eye_features
 from data_preprocessing.extract_lip_features import extract_lip_features
-from data_preprocessing.face_landmarks import FaceLandmarks
 from data_preprocessing.file_utils import (
     append_row_to_csv,
     concat_csvs,
@@ -47,6 +43,7 @@ from data_preprocessing.get_details import get_details
 from data_preprocessing.get_face_landmarks import create_facelandmarks_header, get_face_landmarks
 from data_preprocessing.label_smile_phases import label_smile_phases
 from data_preprocessing.normalize_face import normalize_face
+from data_preprocessing.save_landmarks_in_apex import save_landmarks_in_apex
 from logging_config import setup_logging
 
 
@@ -137,100 +134,6 @@ def get_videos_to_process() -> list[Path]:
         videos_to_process = all_videos
 
     return videos_to_process
-
-
-def save_landmarks_in_apex() -> None:
-    details_df = pd.read_csv(PREPROCESSED_DATA_DIR / "details.csv")
-
-    lips_landmarks_df = pd.DataFrame()
-    eyes_landmarks_df = pd.DataFrame()
-    cheeks_landmarks_df = pd.DataFrame()
-
-    for filename, label in zip(details_df["filename"], details_df["label"]):
-        filename = Path(filename).stem
-        label = 0 if label == "deliberate" else 1
-
-        smile_phases = pd.read_csv(PREPROCESSED_SMILE_PHASES_DIR / f"{filename}.csv")
-        landmarks = pd.read_csv(PREPROCESSED_FACELANDMARKS_DIR / f"{filename}.csv")
-
-        merged = smile_phases.merge(landmarks, on="frame_number", how="inner")
-        merged["filename"] = filename
-
-        lips_indexes = list(
-            set(
-                FaceLandmarks.lips_upper_outer()
-                + FaceLandmarks.lips_lower_outer()
-                + FaceLandmarks.lips_upper_inner()
-                + FaceLandmarks.lips_lower_inner()
-            )
-        )
-        eyes_indexes = list(
-            set(
-                FaceLandmarks.right_eye_upper_0()
-                + FaceLandmarks.right_eye_lower_0()
-                + FaceLandmarks.right_eye_upper_1()
-                + FaceLandmarks.right_eye_lower_1()
-                + FaceLandmarks.right_eye_upper_2()
-                + FaceLandmarks.right_eye_lower_2()
-                + FaceLandmarks.right_eye_lower_3()
-                + FaceLandmarks.left_eye_upper_0()
-                + FaceLandmarks.left_eye_lower_0()
-                + FaceLandmarks.left_eye_upper_1()
-                + FaceLandmarks.left_eye_lower_1()
-                + FaceLandmarks.left_eye_upper_2()
-                + FaceLandmarks.left_eye_lower_2()
-                + FaceLandmarks.left_eye_lower_3()
-            )
-        )
-        cheeks_indexes = list(
-            set(
-                FaceLandmarks.left_cheek()
-                + FaceLandmarks.right_cheek()
-                + FaceLandmarks.left_cheek_center()
-                + FaceLandmarks.right_cheek_center()
-            )
-        )
-
-        lips_landmarks = []
-        eyes_landmarks = []
-        cheeks_landmarks = []
-
-        for i in lips_indexes:
-            lips_landmarks.append(f"{i}_x")
-            lips_landmarks.append(f"{i}_y")
-
-        for i in eyes_indexes:
-            eyes_landmarks.append(f"{i}_x")
-            eyes_landmarks.append(f"{i}_y")
-
-        for i in cheeks_indexes:
-            cheeks_landmarks.append(f"{i}_x")
-            cheeks_landmarks.append(f"{i}_y")
-
-        columns_to_keep_lips = ["filename", "frame_number", "smile_phase"] + lips_landmarks
-        columns_to_keep_eyes = ["filename", "frame_number", "smile_phase"] + eyes_landmarks
-        columns_to_keep_cheeks = ["filename", "frame_number", "smile_phase"] + cheeks_landmarks
-
-        filtered_lips = merged[columns_to_keep_lips]
-        filtered_eyes = merged[columns_to_keep_eyes]
-        filtered_cheeks = merged[columns_to_keep_cheeks]
-
-        result_lips = filtered_lips[filtered_lips["smile_phase"] == "apex"].copy()
-        result_lips["label"] = label
-
-        result_eyes = filtered_eyes[filtered_eyes["smile_phase"] == "apex"].copy()
-        result_eyes["label"] = label
-
-        result_cheeks = filtered_cheeks[filtered_cheeks["smile_phase"] == "apex"].copy()
-        result_cheeks["label"] = label
-
-        lips_landmarks_df = pd.concat([lips_landmarks_df, result_lips], ignore_index=True)
-        eyes_landmarks_df = pd.concat([eyes_landmarks_df, result_eyes], ignore_index=True)
-        cheeks_landmarks_df = pd.concat([cheeks_landmarks_df, result_cheeks], ignore_index=True)
-
-    lips_landmarks_df.to_csv(LIPS_LANDMARKS_IN_APEX_CSV, index=False)
-    eyes_landmarks_df.to_csv(EYES_LANDMARKS_IN_APEX_CSV, index=False)
-    cheeks_landmarks_df.to_csv(CHEEKS_LANDMARKS_IN_APEX_CSV, index=False)
 
 
 @logger.catch
