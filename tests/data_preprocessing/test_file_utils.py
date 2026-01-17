@@ -16,7 +16,48 @@ from data_preprocessing.file_utils import (
     save_dataframe_to_csv,
     concat_csvs,
     ensure_checkpoint_file_exists,
+    load_json,
 )
+
+
+class TestLoadJson:
+    def test_load_json_success(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            json_file = Path(temp_dir) / "test.json"
+            data = {"key": "value", "number": 123, "list": [1, 2, 3]}
+            with open(json_file, "w") as f:
+                import json
+
+                json.dump(data, f)
+
+            result = load_json(json_file)
+            assert result == data
+
+    def test_load_json_file_not_found(self):
+        non_existent_file = Path("/nonexistent/path/to/file.json")
+        with pytest.raises(FileNotFoundError):
+            load_json(non_existent_file)
+
+    def test_load_json_invalid_format(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            json_file = Path(temp_dir) / "invalid.json"
+            with open(json_file, "w") as f:
+                f.write("{ invalid json }")
+
+            import json
+
+            with pytest.raises(json.JSONDecodeError):
+                load_json(json_file)
+
+    def test_load_json_empty_file(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            json_file = Path(temp_dir) / "empty.json"
+            json_file.touch()
+
+            import json
+
+            with pytest.raises(json.JSONDecodeError):
+                load_json(json_file)
 
 
 class TestAppendRowToCsv:

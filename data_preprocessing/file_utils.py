@@ -1,4 +1,5 @@
 import csv
+import json
 from pathlib import Path
 from typing import Any
 
@@ -106,3 +107,8 @@ def ensure_checkpoint_file_exists() -> bool:
         return False
 
     return True
+
+
+def load_json(file_path: Path) -> dict[str, Any]:
+    with open(file_path, "r") as f:
+        return json.load(f)
