@@ -1,4 +1,5 @@
 import pandas as pd
+from pathlib import Path
 
 from data_preprocessing import save_landmarks_in_apex
 
@@ -198,3 +199,64 @@ class TestGetListOfCoords:
         from data_preprocessing.save_landmarks_in_apex import get_list_of_coords
 
         assert get_list_of_coords([]) == []
+
+
+class TestGetLipsEyesCheeksLandmarksForFile:
+    def test_returns_correct_dataframes(self, monkeypatch):
+        import config
+        from data_preprocessing.save_landmarks_in_apex import get_lips_eyes_cheeks_landmarks_for_file
+        import data_preprocessing.save_landmarks_in_apex as save_mod
+
+        # Mock directories
+        monkeypatch.setattr(config, "PREPROCESSED_SMILE_PHASES_DIR", Path("/fake/phases"))
+        monkeypatch.setattr(config, "PREPROCESSED_FACELANDMARKS_DIR", Path("/fake/landmarks"))
+        # Also patch in the module where they are imported
+        monkeypatch.setattr(save_mod, "PREPROCESSED_SMILE_PHASES_DIR", Path("/fake/phases"))
+        monkeypatch.setattr(save_mod, "PREPROCESSED_FACELANDMARKS_DIR", Path("/fake/landmarks"))
+
+        # Mock index-gathering functions
+        monkeypatch.setattr(save_mod, "get_lips_indexes", lambda: [1])
+        monkeypatch.setattr(save_mod, "get_eyes_indexes", lambda: [2])
+        monkeypatch.setattr(save_mod, "get_cheeks_indexes", lambda: [3])
+
+        # Sample data
+        filename = "test_vid.mp4"
+        label_str = "spontaneous"  # Should map to 1
+
+        def mock_read_csv(path):
+            if "phases" in str(path):
+                return pd.DataFrame({"frame_number": [10, 11, 12], "smile_phase": ["onset", "apex", "offset"]})
+            elif "landmarks" in str(path):
+                return pd.DataFrame(
+                    {
+                        "frame_number": [10, 11, 12],
+                        "1_x": [100, 110, 120],
+                        "1_y": [101, 111, 121],
+                        "2_x": [200, 210, 220],
+                        "2_y": [201, 211, 221],
+                        "3_x": [300, 310, 320],
+                        "3_y": [301, 311, 321],
+                    }
+                )
+            return pd.DataFrame()
+
+        monkeypatch.setattr(pd, "read_csv", mock_read_csv)
+
+        cheeks_df, eyes_df, lips_df = get_lips_eyes_cheeks_landmarks_for_file(filename, label_str)
+
+        # Common checks
+        for df in [cheeks_df, eyes_df, lips_df]:
+            assert len(df) == 1
+            assert df.iloc[0]["smile_phase"] == "apex"
+            assert df.iloc[0]["frame_number"] == 11
+            assert df.iloc[0]["filename"] == "test_vid"
+            assert df.iloc[0]["label"] == 1
+
+        # Specific columns check
+        assert list(lips_df.columns) == ["filename", "frame_number", "smile_phase", "1_x", "1_y", "label"]
+        assert list(eyes_df.columns) == ["filename", "frame_number", "smile_phase", "2_x", "2_y", "label"]
+        assert list(cheeks_df.columns) == ["filename", "frame_number", "smile_phase", "3_x", "3_y", "label"]
+
+        # Values check for lips
+        assert lips_df.iloc[0]["1_x"] == 110
+        assert lips_df.iloc[0]["1_y"] == 111
