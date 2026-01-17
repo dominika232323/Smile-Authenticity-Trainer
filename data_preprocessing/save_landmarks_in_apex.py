@@ -2,7 +2,6 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
-from pandas import DataFrame
 
 from config import (
     PREPROCESSED_DATA_DIR,
@@ -23,8 +22,14 @@ def save_landmarks_in_apex() -> None:
     final_cheeks_landmarks_df = pd.DataFrame()
 
     for filename, label in zip(details_df["filename"], details_df["label"]):
+        filename = Path(filename).stem
+        label = 0 if label == "deliberate" else 1
+
+        smile_phases = pd.read_csv(PREPROCESSED_SMILE_PHASES_DIR / f"{filename}.csv")
+        landmarks = pd.read_csv(PREPROCESSED_FACELANDMARKS_DIR / f"{filename}.csv")
+
         cheeks_landmarks_df, eyes_landmarks_df, lips_landmarks_df = get_lips_eyes_cheeks_landmarks_for_file(
-            filename, label
+            smile_phases, landmarks, filename, label
         )
 
         final_lips_landmarks_df = pd.concat([final_lips_landmarks_df, lips_landmarks_df], ignore_index=True)
@@ -36,13 +41,9 @@ def save_landmarks_in_apex() -> None:
     final_cheeks_landmarks_df.to_csv(CHEEKS_LANDMARKS_IN_APEX_CSV, index=False)
 
 
-def get_lips_eyes_cheeks_landmarks_for_file(filename: str, label: int) -> tuple[DataFrame, DataFrame, DataFrame]:
-    filename = Path(filename).stem
-    label = 0 if label == "deliberate" else 1
-
-    smile_phases = pd.read_csv(PREPROCESSED_SMILE_PHASES_DIR / f"{filename}.csv")
-    landmarks = pd.read_csv(PREPROCESSED_FACELANDMARKS_DIR / f"{filename}.csv")
-
+def get_lips_eyes_cheeks_landmarks_for_file(
+    smile_phases: pd.DataFrame, landmarks: pd.DataFrame, filename: str, label: int
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     merged = smile_phases.merge(landmarks, on="frame_number", how="inner")
     merged["filename"] = filename
 

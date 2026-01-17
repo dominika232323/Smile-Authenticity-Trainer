@@ -242,7 +242,15 @@ class TestGetLipsEyesCheeksLandmarksForFile:
 
         monkeypatch.setattr(pd, "read_csv", mock_read_csv)
 
-        cheeks_df, eyes_df, lips_df = get_lips_eyes_cheeks_landmarks_for_file(filename, label_str)
+        # Call function with required arguments
+        smile_phases = mock_read_csv(Path("/fake/phases/test_vid.csv"))
+        landmarks = mock_read_csv(Path("/fake/landmarks/test_vid.csv"))
+        label_int = 1 if label_str == "spontaneous" else 0
+        filename_stem = Path(filename).stem
+
+        cheeks_df, eyes_df, lips_df = get_lips_eyes_cheeks_landmarks_for_file(
+            smile_phases, landmarks, filename_stem, label_int
+        )
 
         # Common checks
         for df in [cheeks_df, eyes_df, lips_df]:
