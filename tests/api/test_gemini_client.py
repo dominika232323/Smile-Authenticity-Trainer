@@ -61,3 +61,20 @@ class TestCleanGeminiResponse:
         expected = "Tip: Try to smile more! happy"
 
         assert clean_gemini_response(text) == expected
+
+    def test_clean_gemini_response_quotes(self):
+        text = '“Smart” quotes and "normal" quotes'
+        expected = "'Smart' quotes and 'normal' quotes"
+
+        assert clean_gemini_response(text) == expected
+
+    def test_clean_gemini_response_escaped_unicode(self):
+        text = "Escaped \\u201csmart\\u201d quotes"
+        expected = "Escaped 'smart' quotes"
+        assert clean_gemini_response(text) == expected
+
+    def test_clean_gemini_response_backslashes(self):
+        text = 'Backslash \\ and escaped quote \\"'
+        expected = "Backslash and escaped quote '"
+
+        assert clean_gemini_response(text) == expected

@@ -20,11 +20,38 @@ def get_tip_from_gemini(lips_score: float, eye_score: float, cheeks_score: float
     return clean_gemini_response(response.text)
 
 
-def clean_gemini_response(text: str) -> str:
+def clean_gemini_response(text: str | None) -> str:
     if not text:
         return ""
+
+    if "\\" in text:
+        try:
+            text = re.sub(r"\\u([0-9a-fA-F]{4})", lambda m: chr(int(m.group(1), 16)), text)
+        except Exception:
+            pass
+
+    text = normalize_punctuation(text)
 
     text = re.sub(r"[*_`#>-]", "", text)
     text = re.sub(r"\s+", " ", text)
 
     return text.strip()
+
+
+def normalize_punctuation(text: str) -> str:
+    replacements = {
+        "—": "-",
+        "–": "-",
+        "“": "'",
+        "”": "'",
+        '"': "'",
+        "’": "'",
+        "‘": "'",
+    }
+
+    for k, v in replacements.items():
+        text = text.replace(k, v)
+
+    text = text.replace("\\", "")
+
+    return text
