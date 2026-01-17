@@ -16,6 +16,8 @@ from modeling.load_dataset import (
     get_dataloaders,
     add_prefix,
     load_all_features,
+    load_and_apply_feature_selector,
+    load_and_apply_scaler,
 )
 
 
@@ -398,3 +400,105 @@ class TestGetDataloaders:
         assert isinstance(train_loader, DataLoader)
         assert val_loader is None
         assert len(train_loader.dataset) == len(X_train)
+
+
+class TestLoadAndApplyFeatureSelector:
+    @pytest.fixture
+    def temp_dir(self):
+        temp_dir_path = tempfile.mkdtemp()
+        yield Path(temp_dir_path)
+        shutil.rmtree(temp_dir_path)
+
+    @pytest.fixture
+    def sample_data(self):
+        X = pd.DataFrame(
+            {
+                "feat1": [1, 2, 3],
+                "feat2": [4, 5, 6],
+                "feat3": [7, 8, 9],
+            }
+        )
+        return X
+
+    def test_load_and_apply_feature_selector_success(self, temp_dir, sample_data):
+        from sklearn.feature_selection import SelectKBest, f_classif
+
+        X = sample_data
+        y = np.array([0, 1, 0])
+
+        # Create and fit a selector
+        selector = SelectKBest(score_func=f_classif, k=2)
+        selector.fit(X, y)
+
+        selector_path = temp_dir / "selector.joblib"
+        joblib.dump(selector, selector_path)
+
+        # Apply the function
+        X_selected = load_and_apply_feature_selector(X, selector_path)
+
+        # Verify
+        assert isinstance(X_selected, pd.DataFrame)
+        assert X_selected.shape == (3, 2)
+        assert list(X_selected.index) == list(X.index)
+
+        expected_features = X.columns[selector.get_support()]
+        assert list(X_selected.columns) == list(expected_features)
+
+        # Verify data consistency
+        np.testing.assert_array_equal(X_selected.values, selector.transform(X))
+
+    def test_load_and_apply_feature_selector_file_not_found(self):
+        X = pd.DataFrame({"a": [1]})
+        invalid_path = Path("/non_existent_path/selector.joblib")
+
+        with pytest.raises(FileNotFoundError):
+            load_and_apply_feature_selector(X, invalid_path)
+
+
+class TestLoadAndApplyScaler:
+    @pytest.fixture
+    def temp_dir(self):
+        temp_dir_path = tempfile.mkdtemp()
+        yield Path(temp_dir_path)
+        shutil.rmtree(temp_dir_path)
+
+    @pytest.fixture
+    def sample_data(self):
+        X = pd.DataFrame(
+            {
+                "feat1": [1.0, 2.0, 3.0],
+                "feat2": [4.0, 5.0, 6.0],
+            }
+        )
+        return X
+
+    def test_load_and_apply_scaler_success(self, temp_dir, sample_data):
+        from sklearn.preprocessing import StandardScaler
+
+        X = sample_data
+
+        # Create and fit a scaler
+        scaler = StandardScaler()
+        scaler.fit(X)
+
+        scaler_path = temp_dir / "scaler.joblib"
+        joblib.dump(scaler, scaler_path)
+
+        # Apply the function
+        X_scaled = load_and_apply_scaler(X, scaler_path)
+
+        # Verify
+        assert isinstance(X_scaled, pd.DataFrame)
+        assert X_scaled.shape == X.shape
+        assert list(X_scaled.index) == list(X.index)
+        assert list(X_scaled.columns) == list(X.columns)
+
+        # Verify data consistency
+        np.testing.assert_array_almost_equal(X_scaled.values, scaler.transform(X))
+
+    def test_load_and_apply_scaler_file_not_found(self):
+        X = pd.DataFrame({"a": [1.0]})
+        invalid_path = Path("/non_existent_path/scaler.joblib")
+
+        with pytest.raises(FileNotFoundError):
+            load_and_apply_scaler(X, invalid_path)

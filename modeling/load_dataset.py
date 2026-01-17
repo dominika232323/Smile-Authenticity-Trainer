@@ -79,6 +79,24 @@ def feature_selection(
     return X_train_selected, X_test_selected
 
 
+def load_and_apply_feature_selector(X: pd.DataFrame, selector_path: Path) -> pd.DataFrame:
+    logger.info(f"Loading feature selector from {selector_path}")
+    selector: SelectKBest = joblib.load(selector_path)
+
+    X_selected_array = selector.transform(X)
+    selected_feature_names = X.columns[selector.get_support()]
+
+    X_selected = pd.DataFrame(
+        X_selected_array,
+        columns=selected_feature_names,
+        index=X.index,
+    )
+
+    logger.info(f"Selected features shape: {X_selected.shape}")
+
+    return X_selected
+
+
 def scale_data(
     X_train: pd.DataFrame, X_test: pd.DataFrame, scaler_output_dir: Path
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -96,6 +114,23 @@ def scale_data(
     logger.info(f"Scaled data shapes: train={X_train_scaled.shape}, test={X_test_scaled.shape}")
 
     return X_train_scaled, X_test_scaled
+
+
+def load_and_apply_scaler(X: pd.DataFrame, scaler_path: Path) -> pd.DataFrame:
+    logger.info(f"Loading scaler from {scaler_path}")
+    scaler: StandardScaler = joblib.load(scaler_path)
+
+    X_scaled_array = scaler.transform(X)
+
+    X_scaled = pd.DataFrame(
+        X_scaled_array,
+        columns=X.columns,
+        index=X.index,
+    )
+
+    logger.info(f"Scaled data shape: {X_scaled.shape}")
+
+    return X_scaled
 
 
 def split_data(
