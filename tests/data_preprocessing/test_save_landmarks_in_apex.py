@@ -183,3 +183,18 @@ class TestGetCheeksIndexes:
 
         result = get_cheeks_indexes()
         assert sorted(result) == [100, 101, 102, 103, 104, 105]
+
+
+class TestGetListOfCoords:
+    def test_get_list_of_coords_returns_correct_strings(self):
+        from data_preprocessing.save_landmarks_in_apex import get_list_of_coords
+
+        indexes = [1, 5, 10]
+        expected = ["1_x", "1_y", "5_x", "5_y", "10_x", "10_y"]
+        result = get_list_of_coords(indexes)
+        assert result == expected
+
+    def test_get_list_of_coords_with_empty_list(self):
+        from data_preprocessing.save_landmarks_in_apex import get_list_of_coords
+
+        assert get_list_of_coords([]) == []
