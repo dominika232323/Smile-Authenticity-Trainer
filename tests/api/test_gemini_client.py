@@ -1,5 +1,5 @@
 from unittest.mock import MagicMock, patch
-from api.gemini_client import get_tip_from_gemini
+from api.gemini_client import get_tip_from_gemini, clean_gemini_response
 
 
 class TestGetTipFromGemini:
@@ -36,4 +36,28 @@ class TestGetTipFromGemini:
 
         result = get_tip_from_gemini(80.0, 80.0, 80.0)
 
-        assert result is None
+        assert result == ""
+
+
+class TestCleanGeminiResponse:
+    def test_clean_gemini_response_empty(self):
+        assert clean_gemini_response("") == ""
+        assert clean_gemini_response(None) == ""
+
+    def test_clean_gemini_response_special_chars(self):
+        text = "*Special* _chars_ `code` #hashtag >quote -dash"
+        expected = "Special chars code hashtag quote dash"
+
+        assert clean_gemini_response(text) == expected
+
+    def test_clean_gemini_response_whitespace(self):
+        text = "  Too    many    spaces  "
+        expected = "Too many spaces"
+
+        assert clean_gemini_response(text) == expected
+
+    def test_clean_gemini_response_combined(self):
+        text = "\n  *Tip*: Try   to _smile_ more!  #happy \n"
+        expected = "Tip: Try to smile more! happy"
+
+        assert clean_gemini_response(text) == expected
