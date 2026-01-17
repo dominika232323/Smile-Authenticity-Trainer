@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 from flask import Flask, request, jsonify
 
+from api.gemini_client import get_tip_from_gemini
 from data_preprocessing.label_smile_phases import label_smile_phases
 from data_preprocessing.main import preprocess_video
 from data_preprocessing.get_face_landmarks import create_facelandmarks_header
@@ -137,6 +138,7 @@ def process_video():
         cheeks_score = float(np.mean(cheeks_probs))
 
         score = (lips_score + eyes_score + cheeks_score) / 3
+        tip = get_tip_from_gemini(lips_score, eyes_score, cheeks_score)
 
         return jsonify(
             {
@@ -144,7 +146,7 @@ def process_video():
                 "score_lips": lips_score,
                 "score_eyes": eyes_score,
                 "score_cheeks": cheeks_score,
-                "tip": "Smileeee :)",
+                "tip": tip,
             }
         )
 
