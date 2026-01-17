@@ -178,7 +178,7 @@ class HiveController {
     }
 
     for (final item in items) {
-      final created = item['created_at'] ?? item['createdAt'];
+      final created = item['createdAt'];
       final score = item['score'];
 
       if (created == null || score == null) continue;

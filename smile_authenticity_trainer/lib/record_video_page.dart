@@ -174,77 +174,64 @@ class _RecordingBody extends State<RecordingBody> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Center(child: Text('Smile authenticity score: $value%')),
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 23),
-          child: RoundedProgressBar(
-            value: value,
-            color: Theme.of(context).colorScheme.tertiary,
-          ),
-        ),
-        Expanded(
-          child: ClipRect(
-            child: FittedBox(
-              fit: BoxFit.cover,
-              child: SizedBox(
-                width: widget.controller.value.previewSize!.height,
-                height: widget.controller.value.previewSize!.width,
-                child: Stack(
-                  children: [
-                    CameraPreview(widget.controller),
-                    Align(
-                      alignment: Alignment.topLeft,
-                      child: Container(
-                        margin: const EdgeInsets.all(12),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.red.withAlpha(250),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          'Recording: ${seconds}s',
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
+    return Expanded(
+      child: ClipRect(
+        child: FittedBox(
+          fit: BoxFit.cover,
+          child: SizedBox(
+            width: widget.controller.value.previewSize!.height,
+            height: widget.controller.value.previewSize!.width,
+            child: Stack(
+              children: [
+                CameraPreview(widget.controller),
+                Align(
+                  alignment: Alignment.topLeft,
+                  child: Container(
+                    margin: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.red.withAlpha(250),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      'Recording: ${seconds}s',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
                     ),
-
-                    Align(
-                      alignment: Alignment.bottomCenter,
-                      child: IconButton(
-                        onPressed: () {
-                          context.read<RecordVideoCubit>().stopRecording();
-                        },
-                        icon: Container(
-                          padding: EdgeInsets.all(17),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.white, width: 7),
-                          ),
-                          child: Icon(
-                            Icons.rectangle,
-                            size: 80,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: IconButton(
+                    onPressed: () {
+                      context.read<RecordVideoCubit>().stopRecording();
+                    },
+                    icon: Container(
+                      padding: EdgeInsets.all(17),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 7),
+                      ),
+                      child: Icon(
+                        Icons.rectangle,
+                        size: 80,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),
-        Center(child: Text('Your tips')),
-      ],
+      ),
     );
   }
 }
