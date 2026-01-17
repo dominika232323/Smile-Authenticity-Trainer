@@ -1,11 +1,13 @@
 from unittest.mock import MagicMock, patch
 
+import numpy as np
 import pandas as pd
 import torch
 
 from modeling.evaluate import (
     evaluate,
     load_best_model,
+    predict,
     save_classification_report,
     save_confusion_matrix,
     save_metrics,
@@ -193,3 +195,64 @@ class TestEvaluate:
         expected_metrics = {"accuracy": 0.0, "balanced_accuracy": 0.0, "precision": 0.0, "recall": 0.0, "f1": 0.0}
         assert metrics == expected_metrics
         mock_model.assert_not_called()
+
+
+class TestPredict:
+    def test_predict_binary(self):
+        # Mock model
+        mock_model = MagicMock()
+        # 3 samples: 0.1, 0.6, 0.9. With threshold 0.5 -> [0, 1, 1]
+        # We need to return logits that after sigmoid give these probs
+        # sigmoid(x) = p  => x = log(p / (1-p))
+        # log(0.1/0.9) = -2.197
+        # log(0.6/0.4) = 0.405
+        # log(0.9/0.1) = 2.197
+        logits = torch.tensor([[-2.197], [0.405], [2.197]])
+        mock_model.return_value = logits
+
+        # Mock DataLoader
+        X_batch = torch.randn(3, 5)
+        # Loader returning batch as a tuple (X, y)
+        mock_loader = [(X_batch, torch.tensor([0, 1, 1]))]
+
+        preds = predict(mock_model, mock_loader, device="cpu", threshold=0.5, return_proba=False)
+
+        assert isinstance(preds, np.ndarray)
+        assert preds.shape == (3,)
+        np.testing.assert_array_equal(preds, [0, 1, 1])
+        mock_model.eval.assert_called_once()
+
+    def test_predict_proba(self):
+        mock_model = MagicMock()
+        # 2 samples
+        logits = torch.tensor([[0.0], [2.197]])  # sigmoid(0)=0.5, sigmoid(2.197)=0.9
+        mock_model.return_value = logits
+
+        # Mock DataLoader returning just X (not a tuple)
+        X_batch = torch.randn(2, 5)
+        mock_loader = [X_batch]
+
+        probs = predict(mock_model, mock_loader, device="cpu", return_proba=True)
+
+        assert isinstance(probs, np.ndarray)
+        assert probs.shape == (2,)
+        np.testing.assert_allclose(probs, [0.5, 0.9], atol=1e-3)
+
+    def test_predict_custom_threshold(self):
+        mock_model = MagicMock()
+        # Probabilities [0.4, 0.6]
+        # log(0.4/0.6) = -0.405
+        # log(0.6/0.4) = 0.405
+        logits = torch.tensor([[-0.405], [0.405]])
+        mock_model.return_value = logits
+
+        X_batch = torch.randn(2, 5)
+        mock_loader = [X_batch]
+
+        # Threshold 0.7 -> both should be 0
+        preds_high = predict(mock_model, mock_loader, device="cpu", threshold=0.7)
+        np.testing.assert_array_equal(preds_high, [0, 0])
+
+        # Threshold 0.3 -> both should be 1
+        preds_low = predict(mock_model, mock_loader, device="cpu", threshold=0.3)
+        np.testing.assert_array_equal(preds_low, [1, 1])

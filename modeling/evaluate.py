@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Any
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import seaborn as sns
 import torch
@@ -109,6 +110,39 @@ def evaluate(
     save_metrics(metrics, output_dir)
 
     return metrics
+
+
+def predict(
+    model: torch.nn.Module,
+    data_loader: DataLoader,
+    device: str,
+    threshold: float = 0.5,
+    return_proba: bool = False,
+) -> np.ndarray:
+    model.eval()
+
+    all_probs = []
+
+    with torch.no_grad():
+        for batch in data_loader:
+            if isinstance(batch, (list, tuple)):
+                X = batch[0]
+            else:
+                X = batch
+
+            X = X.to(device)
+
+            logits = model(X)
+            probs = torch.sigmoid(logits)
+
+            all_probs.append(probs.cpu())
+
+    probs = torch.cat(all_probs).numpy().squeeze()
+
+    if return_proba:
+        return probs
+
+    return (probs >= threshold).astype(np.int32)
 
 
 def save_classification_report(report: str | dict, output_dir: Path) -> None:
