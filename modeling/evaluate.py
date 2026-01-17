@@ -40,13 +40,17 @@ def load_best_model(
 
 def evaluate(
     model: nn.Module,
-    test_loader: DataLoader[Any],
+    test_loader: DataLoader[Any] | None,
     threshold: float,
     device: str,
     output_dir: Path,
     writer: SummaryWriter | None = None,
 ) -> dict[str, Any]:
     logger.info("Evaluating model...")
+
+    if test_loader is None:
+        logger.warning("No test data loader provided, skipping evaluation")
+        return {"accuracy": 0.0, "balanced_accuracy": 0.0, "precision": 0.0, "recall": 0.0, "f1": 0.0}
 
     all_logits = []
     all_labels = []

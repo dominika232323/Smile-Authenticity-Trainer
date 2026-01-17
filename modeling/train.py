@@ -16,7 +16,7 @@ from torch.utils.tensorboard import SummaryWriter
 def train(
     model: nn.Module,
     train_loader: DataLoader[Any],
-    val_loader: DataLoader[Any],
+    val_loader: DataLoader[Any] | None,
     pos_weight: Tensor,
     learning_rate: float,
     epochs: int,
@@ -27,6 +27,11 @@ def train(
     writer: SummaryWriter | None = None,
 ) -> dict[str, list[Any]]:
     logger.info("Training model...")
+
+    if val_loader is None:
+        logger.error("No validation data loader provided, aborting training")
+        return {}
+
     criterion = nn.BCEWithLogitsLoss(pos_weight=pos_weight)
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 

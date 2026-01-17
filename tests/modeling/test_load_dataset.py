@@ -388,3 +388,13 @@ class TestGetDataloaders:
 
         assert len(train_loader) == int(np.ceil(len(X_train) / batch_size))
         assert len(val_loader) == int(np.ceil(len(X_val) / batch_size))
+
+    def test_get_dataloaders_no_val_data(self, sample_data):
+        X_train, _, y_train, _ = sample_data
+        batch_size = 4
+
+        train_loader, val_loader = get_dataloaders(X_train, None, y_train, None, batch_size=batch_size)
+
+        assert isinstance(train_loader, DataLoader)
+        assert val_loader is None
+        assert len(train_loader.dataset) == len(X_train)

@@ -179,3 +179,17 @@ class TestEvaluate:
 
         # Check writer calls
         assert mock_writer.add_scalar.call_count > 0
+
+    def test_evaluate_no_test_loader(self, tmp_path):
+        mock_model = MagicMock()
+        metrics = evaluate(
+            model=mock_model,
+            test_loader=None,
+            threshold=0.5,
+            device="cpu",
+            output_dir=tmp_path,
+        )
+
+        expected_metrics = {"accuracy": 0.0, "balanced_accuracy": 0.0, "precision": 0.0, "recall": 0.0, "f1": 0.0}
+        assert metrics == expected_metrics
+        mock_model.assert_not_called()

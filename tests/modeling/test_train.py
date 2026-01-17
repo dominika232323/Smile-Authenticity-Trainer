@@ -134,6 +134,27 @@ class TestTrain:
         scalar_calls = [call.args[0] for call in writer.add_scalar.call_args_list]
         assert "Training/early_stop_epoch" in scalar_calls
 
+    def test_train_no_val_loader(self, tmp_path, simple_model, dummy_loaders):
+        train_loader, _ = dummy_loaders
+        model_path = tmp_path / "model_no_val.pth"
+        pos_weight = torch.tensor([1.0])
+
+        history = train(
+            model=simple_model,
+            train_loader=train_loader,
+            val_loader=None,
+            pos_weight=pos_weight,
+            learning_rate=0.001,
+            epochs=2,
+            patience=2,
+            threshold=0.5,
+            device="cpu",
+            model_path=model_path,
+        )
+
+        assert history == {}
+        assert not model_path.exists()
+
 
 class TestDrawHistory:
     @pytest.fixture

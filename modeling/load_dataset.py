@@ -111,16 +111,19 @@ def split_data(
 
 
 def get_dataloaders(
-    X_train: pd.DataFrame, X_val: pd.DataFrame, y_train: np.ndarray, y_val: np.ndarray, batch_size: int
-) -> tuple[DataLoader[Any], DataLoader[Any]]:
+    X_train: pd.DataFrame, X_val: pd.DataFrame | None, y_train: np.ndarray, y_val: np.ndarray | None, batch_size: int
+) -> tuple[DataLoader[Any], DataLoader[Any] | None]:
     logger.info(f"Creating dataloaders with batch size: {batch_size}")
+
     train_ds = SmileDataset(X_train, y_train)
-    val_ds = SmileDataset(X_val, y_val)
-
     train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False)
-
     logger.info(f"Number of training batches: {len(train_loader)}")
-    logger.info(f"Number of validation batches: {len(val_loader)}")
+
+    if X_val is not None and y_val is not None:
+        val_ds = SmileDataset(X_val, y_val)
+        val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False)
+        logger.info(f"Number of validation batches: {len(val_loader)}")
+    else:
+        val_loader = None
 
     return train_loader, val_loader
