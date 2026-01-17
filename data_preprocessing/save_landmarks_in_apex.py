@@ -4,7 +4,14 @@ from typing import Any
 import pandas as pd
 from pandas import DataFrame
 
-from config import PREPROCESSED_DATA_DIR, PREPROCESSED_SMILE_PHASES_DIR, PREPROCESSED_FACELANDMARKS_DIR, LIPS_LANDMARKS_IN_APEX_CSV, EYES_LANDMARKS_IN_APEX_CSV, CHEEKS_LANDMARKS_IN_APEX_CSV
+from config import (
+    PREPROCESSED_DATA_DIR,
+    PREPROCESSED_SMILE_PHASES_DIR,
+    PREPROCESSED_FACELANDMARKS_DIR,
+    LIPS_LANDMARKS_IN_APEX_CSV,
+    EYES_LANDMARKS_IN_APEX_CSV,
+    CHEEKS_LANDMARKS_IN_APEX_CSV,
+)
 from data_preprocessing.face_landmarks import FaceLandmarks
 
 
@@ -16,7 +23,9 @@ def save_landmarks_in_apex() -> None:
     final_cheeks_landmarks_df = pd.DataFrame()
 
     for filename, label in zip(details_df["filename"], details_df["label"]):
-        cheeks_landmarks_df, eyes_landmarks_df, lips_landmarks_df = get_lips_eyes_cheeks_landmarks_for_file(filename, label)
+        cheeks_landmarks_df, eyes_landmarks_df, lips_landmarks_df = get_lips_eyes_cheeks_landmarks_for_file(
+            filename, label
+        )
 
         final_lips_landmarks_df = pd.concat([final_lips_landmarks_df, lips_landmarks_df], ignore_index=True)
         final_eyes_landmarks_df = pd.concat([final_eyes_landmarks_df, eyes_landmarks_df], ignore_index=True)

@@ -512,5 +512,3 @@ class TestMain:
         main_mod.main()
 
         assert len(label_smile_called) == 0
-
-

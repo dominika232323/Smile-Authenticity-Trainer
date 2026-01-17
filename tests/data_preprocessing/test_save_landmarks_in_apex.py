@@ -131,3 +131,55 @@ class TestSaveLandmarksInApex:
         assert len(cheeks_res) == 3
         assert "20_y" in cheeks_res.columns
         assert list(cheeks_res["20_y"]) == [2010, 5200, 6200]
+
+
+class TestGetLipsIndexes:
+    def test_get_lips_indexes_returns_correct_set(self, monkeypatch):
+        from data_preprocessing.face_landmarks import FaceLandmarks
+        from data_preprocessing.save_landmarks_in_apex import get_lips_indexes
+
+        monkeypatch.setattr(FaceLandmarks, "lips_upper_outer", lambda: [1, 2, 3])
+        monkeypatch.setattr(FaceLandmarks, "lips_lower_outer", lambda: [3, 4, 5])
+        monkeypatch.setattr(FaceLandmarks, "lips_upper_inner", lambda: [5, 6, 7])
+        monkeypatch.setattr(FaceLandmarks, "lips_lower_inner", lambda: [7, 8, 1])
+
+        result = get_lips_indexes()
+        assert sorted(result) == [1, 2, 3, 4, 5, 6, 7, 8]
+
+
+class TestGetEyesIndexes:
+    def test_get_eyes_indexes_returns_correct_set(self, monkeypatch):
+        from data_preprocessing.face_landmarks import FaceLandmarks
+        from data_preprocessing.save_landmarks_in_apex import get_eyes_indexes
+
+        monkeypatch.setattr(FaceLandmarks, "right_eye_upper_0", lambda: [1])
+        monkeypatch.setattr(FaceLandmarks, "right_eye_lower_0", lambda: [2])
+        monkeypatch.setattr(FaceLandmarks, "right_eye_upper_1", lambda: [3])
+        monkeypatch.setattr(FaceLandmarks, "right_eye_lower_1", lambda: [4])
+        monkeypatch.setattr(FaceLandmarks, "right_eye_upper_2", lambda: [5])
+        monkeypatch.setattr(FaceLandmarks, "right_eye_lower_2", lambda: [6])
+        monkeypatch.setattr(FaceLandmarks, "right_eye_lower_3", lambda: [7])
+        monkeypatch.setattr(FaceLandmarks, "left_eye_upper_0", lambda: [8])
+        monkeypatch.setattr(FaceLandmarks, "left_eye_lower_0", lambda: [9])
+        monkeypatch.setattr(FaceLandmarks, "left_eye_upper_1", lambda: [10])
+        monkeypatch.setattr(FaceLandmarks, "left_eye_lower_1", lambda: [11])
+        monkeypatch.setattr(FaceLandmarks, "left_eye_upper_2", lambda: [12])
+        monkeypatch.setattr(FaceLandmarks, "left_eye_lower_2", lambda: [13])
+        monkeypatch.setattr(FaceLandmarks, "left_eye_lower_3", lambda: [1])  # Duplicate
+
+        result = get_eyes_indexes()
+        assert sorted(result) == list(range(1, 14))
+
+
+class TestGetCheeksIndexes:
+    def test_get_cheeks_indexes_returns_correct_set(self, monkeypatch):
+        from data_preprocessing.face_landmarks import FaceLandmarks
+        from data_preprocessing.save_landmarks_in_apex import get_cheeks_indexes
+
+        monkeypatch.setattr(FaceLandmarks, "left_cheek", lambda: [100, 101])
+        monkeypatch.setattr(FaceLandmarks, "right_cheek", lambda: [102, 103])
+        monkeypatch.setattr(FaceLandmarks, "left_cheek_center", lambda: [101, 104])
+        monkeypatch.setattr(FaceLandmarks, "right_cheek_center", lambda: [103, 105])
+
+        result = get_cheeks_indexes()
+        assert sorted(result) == [100, 101, 102, 103, 104, 105]
