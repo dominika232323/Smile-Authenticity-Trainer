@@ -137,12 +137,12 @@ def predict(
 
             all_probs.append(probs.cpu())
 
-    probs = torch.cat(all_probs).numpy().squeeze()
+    probs_array = torch.cat(all_probs).numpy().squeeze()
 
     if return_proba:
-        return probs
+        return probs_array
 
-    return (probs >= threshold).astype(np.int32)
+    return (probs_array >= threshold).astype(np.int32)
 
 
 def save_classification_report(report: str | dict, output_dir: Path) -> None:
