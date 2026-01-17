@@ -133,9 +133,9 @@ def process_video():
         eyes_probs = predict(eyes_model, eyes_loader, device, eyes_config.get("threshold", 0.5), True)
         cheeks_probs = predict(cheeks_model, cheeks_loader, device, cheeks_config.get("threshold", 0.5), True)
 
-        lips_score = float(np.mean(lips_probs))
-        eyes_score = float(np.mean(eyes_probs))
-        cheeks_score = float(np.mean(cheeks_probs))
+        lips_score = float(np.mean(lips_probs)) * 100
+        eyes_score = float(np.mean(eyes_probs)) * 100
+        cheeks_score = float(np.mean(cheeks_probs)) * 100
 
         score = (lips_score + eyes_score + cheeks_score) / 3
         tip = get_tip_from_gemini(lips_score, eyes_score, cheeks_score)
