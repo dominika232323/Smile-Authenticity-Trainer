@@ -44,6 +44,13 @@ CHEEKS_LANDMARKS_RUNS_DIR = RUNS_DIR / "cheek_landmarks_runs"
 ALL_FEATURES_RUNS_DIR = RUNS_DIR / "all_features_runs"
 
 MODELS_DIR = PROJ_ROOT / "models"
+LIPS_FEATURES_MODEL = MODELS_DIR / "lips_features"
+LIPS_LANDMARKS_MODEL = MODELS_DIR / "lips_landmarks"
+EYES_FEATURES_MODEL = MODELS_DIR / "eyes_features"
+EYES_LANDMARKS_MODEL = MODELS_DIR / "eyes_landmarks"
+CHEEKS_FEATURES_MODEL = MODELS_DIR / "cheeks_features"
+CHEEKS_LANDMARKS_MODEL = MODELS_DIR / "cheeks_landmarks"
+ALL_FEATURES_MODEL = MODELS_DIR / "all_features"
 
 EYE_RELATIVE_LEFT = 0.35
 EYE_RELATIVE_TOP = 0.35
