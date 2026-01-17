@@ -222,3 +222,6 @@ logs/
 
 # Runs
 runs/
+
+# Models
+models/
