@@ -70,7 +70,7 @@ class UploadVideoBody extends StatelessWidget {
             },
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.tertiary,
-              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+              foregroundColor: Theme.of(context).colorScheme.onTertiary,
               padding: const EdgeInsets.symmetric(
                 horizontal: 100,
                 vertical: 20,
@@ -123,7 +123,10 @@ class UploadVideoBody extends StatelessWidget {
                 child: Text(
                   error,
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16, color: Colors.black54),
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Theme.of(context).colorScheme.onPrimary,
+                  ),
                 ),
               ),
 
