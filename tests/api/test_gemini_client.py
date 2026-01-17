@@ -81,23 +81,15 @@ class TestCleanGeminiResponse:
 
     @patch("api.gemini_client.re.sub")
     def test_clean_gemini_response_exception_handling(self, mock_sub):
-        # Force re.sub to raise an exception ONLY on the first call to cover lines 30-31
-        # The subsequent calls for stripping special characters and whitespace should succeed
         mock_sub.side_effect = [Exception("Test exception"), "Cleaned text", "Final text"]
         text = "Some text with \\ a backslash"
 
-        # Should not raise exception because of try-except block on lines 28-31
         result = clean_gemini_response(text)
 
-        # The first call failed, and was caught.
-        # Then normalize_punctuation(text) was called.
-        # "Some text with \ a backslash" -> "Some text with  a backslash"
-        # Then re.sub(r"[*_`#>-]", "", text) -> "Cleaned text" (our mock)
-        # Then re.sub(r"\s+", " ", text) -> "Final text" (our mock)
         assert result == "Final text"
 
     def test_clean_gemini_response_unicode_conversion(self):
-        # Test the actual conversion logic in line 29
         text = "Smile \\u263A!"
         expected = "Smile ☺!"
+
         assert clean_gemini_response(text) == expected
