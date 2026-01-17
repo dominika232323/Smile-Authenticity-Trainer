@@ -76,7 +76,7 @@ format:
 ## Check type hints with mypy
 .PHONY: mypy
 mypy:
-	mypy data_preprocessing modeling
+	mypy data_preprocessing modeling api
 
 
 #################################################################################
@@ -153,7 +153,7 @@ test:
 ## Run tests with coverage
 .PHONY: coverage
 coverage:
-	$(PYTHON_INTERPRETER) -m pytest --cov=data_preprocessing --cov=modeling --cov-report=term-missing tests
+	$(PYTHON_INTERPRETER) -m pytest --cov=data_preprocessing --cov=modeling --cov=api --cov-report=term-missing tests
 
 
 ## Run tensorboard for lips features runs
