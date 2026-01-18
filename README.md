@@ -34,7 +34,8 @@ The goal of this project is to design an intelligent system that supports users 
 ├── pyproject.toml               # Project and tool configuration
 ├── requirements.txt             # Python dependencies
 ├── README.md                    # Project documentation
-└── .gitignore                   # Git ignore rules
+├── .gitignore                   # Git ignore rules
+└── .env                         # Environment variables
 ```
 
 ## Dataset
@@ -111,7 +112,7 @@ Run unit and integration tests:
 make test
 ```
 
-Run tests with coverage report:
+Run tests with a coverage report:
 
 ```bash
 make coverage
@@ -123,6 +124,12 @@ To start the backend API for the mobile application:
 
 ```bash
 make run_api
+```
+
+To run API `.env` file is required. It should contain:
+
+```
+GEMINI_API_KEY=YOUR_KEY
 ```
 
 ## Development tools
