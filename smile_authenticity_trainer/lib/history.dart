@@ -335,14 +335,17 @@ Widget myFramedStreakText(BuildContext context, String text, int streak) {
 }
 
 Widget myFramedBox(BuildContext context, Widget child) {
-  return Container(
-    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-    decoration: BoxDecoration(
-      color: Theme.of(context).colorScheme.surface,
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(color: Theme.of(context).colorScheme.tertiary),
+  return ClipRRect(
+    borderRadius: BorderRadius.circular(16),
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Theme.of(context).colorScheme.tertiary),
+      ),
+      child: child,
     ),
-    child: child,
   );
 }
 
@@ -374,12 +377,9 @@ Widget myLineChart(
           height: 300,
           child: LineChart(
             LineChartData(
+              clipData: const FlClipData.all(),
               minY: 0,
-              maxY:
-                  (values.isNotEmpty
-                      ? values.reduce((a, b) => a > b ? a : b)
-                      : 10) +
-                  5,
+              maxY: 100,
               lineBarsData: [
                 LineChartBarData(
                   spots: spots,
