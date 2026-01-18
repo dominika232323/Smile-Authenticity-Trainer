@@ -114,24 +114,27 @@ class TestSaveLandmarksInApex:
         cheeks_res = pd.read_csv(preproc_dir / "cheeks_landmarks.csv")
 
         # Verify lips
-        # vid1 apex is frame 1. vid2 apex are frames 5, 6.
-        # labels: vid1 (deliberate) -> 0, vid2 (spontaneous) -> 1
-        assert len(lips_res) == 3
-        assert list(lips_res["filename"]) == ["vid1", "vid2", "vid2"]
-        assert list(lips_res["frame_number"]) == [1, 5, 6]
-        assert list(lips_res["label"]) == [0, 1, 1]
-        assert list(lips_res["1_x"]) == [11, 51, 61]
-        assert list(lips_res["2_y"]) == [210, 520, 620]
+        # vid1 has 3 frames, none are 'apex' in mock? No, wait.
+        # vid1_phases = pd.DataFrame({"frame_number": [0, 1, 2], "smile_phase": ["onset", "apex", "offset"]})
+        # vid1 has 1 apex frame. vid2 has 2 apex frames. Total 3 apex frames.
+        # Since 3 < 5, it should return all frames from both videos.
+        # vid1 has 3 frames, vid2 has 2 frames. Total 5 frames.
+        assert len(lips_res) == 5
+        assert list(lips_res["filename"]) == ["vid1", "vid1", "vid1", "vid2", "vid2"]
+        assert list(lips_res["frame_number"]) == [0, 1, 2, 5, 6]
+        assert list(lips_res["label"]) == [0, 0, 0, 1, 1]
+        assert list(lips_res["1_x"]) == [10, 11, 12, 51, 61]
+        assert list(lips_res["2_y"]) == [200, 210, 220, 520, 620]
 
         # Verify eyes
-        assert len(eyes_res) == 3
+        assert len(eyes_res) == 5
         assert "10_x" in eyes_res.columns
-        assert list(eyes_res["10_x"]) == [101, 510, 610]
+        assert list(eyes_res["10_x"]) == [100, 101, 102, 510, 610]
 
         # Verify cheeks
-        assert len(cheeks_res) == 3
+        assert len(cheeks_res) == 5
         assert "20_y" in cheeks_res.columns
-        assert list(cheeks_res["20_y"]) == [2010, 5200, 6200]
+        assert list(cheeks_res["20_y"]) == [2000, 2010, 2020, 5200, 6200]
 
 
 class TestGetLipsIndexes:
@@ -252,13 +255,14 @@ class TestGetLipsEyesCheeksLandmarksForFile:
             smile_phases, landmarks, filename_stem, label_int
         )
 
-        # Common checks
+        # In mock data, there are 3 frames total, only 1 is apex.
+        # Since 1 < 5, it should return all 3 frames.
         for df in [cheeks_df, eyes_df, lips_df]:
-            assert len(df) == 1
-            assert df.iloc[0]["smile_phase"] == "apex"
-            assert df.iloc[0]["frame_number"] == 11
-            assert df.iloc[0]["filename"] == "test_vid"
-            assert df.iloc[0]["label"] == 1
+            assert len(df) == 3
+            assert list(df["smile_phase"]) == ["onset", "apex", "offset"]
+            assert list(df["frame_number"]) == [10, 11, 12]
+            assert list(df["filename"]) == ["test_vid", "test_vid", "test_vid"]
+            assert list(df["label"]) == [1, 1, 1]
 
         # Specific columns check
         assert list(lips_df.columns) == ["filename", "frame_number", "smile_phase", "1_x", "1_y", "label"]
@@ -266,5 +270,5 @@ class TestGetLipsEyesCheeksLandmarksForFile:
         assert list(cheeks_df.columns) == ["filename", "frame_number", "smile_phase", "3_x", "3_y", "label"]
 
         # Values check for lips
-        assert lips_df.iloc[0]["1_x"] == 110
-        assert lips_df.iloc[0]["1_y"] == 111
+        assert list(lips_df["1_x"]) == [100, 110, 120]
+        assert list(lips_df["1_y"]) == [101, 111, 121]

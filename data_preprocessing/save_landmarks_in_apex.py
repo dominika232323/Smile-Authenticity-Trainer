@@ -64,12 +64,20 @@ def get_lips_eyes_cheeks_landmarks_for_file(
     filtered_cheeks = merged[columns_to_keep_cheeks]
 
     result_lips = filtered_lips[filtered_lips["smile_phase"] == "apex"].copy()
-    result_lips["label"] = label
-
     result_eyes = filtered_eyes[filtered_eyes["smile_phase"] == "apex"].copy()
-    result_eyes["label"] = label
-
     result_cheeks = filtered_cheeks[filtered_cheeks["smile_phase"] == "apex"].copy()
+
+    if len(result_lips) < 5:
+        result_lips = filtered_lips.copy()
+
+    if len(result_eyes) < 5:
+        result_eyes = filtered_eyes.copy()
+
+    if len(result_cheeks) < 5:
+        result_cheeks = filtered_cheeks.copy()
+
+    result_lips["label"] = label
+    result_eyes["label"] = label
     result_cheeks["label"] = label
 
     return result_cheeks, result_eyes, result_lips
