@@ -166,72 +166,59 @@ class RecordingBody extends StatefulWidget {
 }
 
 class _RecordingBody extends State<RecordingBody> {
-  double value = 40;
-
   int get seconds => context.watch<RecordVideoCubit>().state is Recording
       ? (context.watch<RecordVideoCubit>().state as Recording).seconds
       : 0;
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: ClipRect(
-        child: FittedBox(
-          fit: BoxFit.cover,
-          child: SizedBox(
-            width: widget.controller.value.previewSize!.height,
-            height: widget.controller.value.previewSize!.width,
-            child: Stack(
-              children: [
-                CameraPreview(widget.controller),
-                Align(
-                  alignment: Alignment.topLeft,
-                  child: Container(
-                    margin: const EdgeInsets.all(12),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.red.withAlpha(250),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      'Recording: ${seconds}s',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
+    final controller = widget.controller;
 
-                Align(
-                  alignment: Alignment.bottomCenter,
-                  child: IconButton(
-                    onPressed: () {
-                      context.read<RecordVideoCubit>().stopRecording();
-                    },
-                    icon: Container(
-                      padding: EdgeInsets.all(17),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 7),
-                      ),
-                      child: Icon(
-                        Icons.rectangle,
-                        size: 80,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+    if (!controller.value.isInitialized) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return Stack(
+      children: [
+        CameraPreview(controller),
+
+        Positioned(
+          top: 12,
+          left: 12,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.red,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              'Recording: ${seconds}s',
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
           ),
         ),
-      ),
+
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: IconButton(
+            onPressed: () {
+              context.read<RecordVideoCubit>().stopRecording();
+            },
+            icon: Container(
+              padding: const EdgeInsets.all(17),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 7),
+              ),
+              child: const Icon(Icons.rectangle, size: 80, color: Colors.white),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -318,7 +305,13 @@ class _VideoFinishedBody extends State<VideoFinishedBody> {
             ? const CircularProgressIndicator()
             : Column(
                 children: [
-                  Text(displayedTip, style: const TextStyle(fontSize: 16)),
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                      displayedTip,
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ),
                   Text(
                     'Lips score: ${displayedScoreLips.toStringAsFixed(0)}%',
                     style: const TextStyle(fontSize: 16),
