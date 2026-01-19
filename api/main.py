@@ -139,6 +139,7 @@ def process_video():
 
         score = (lips_score + eyes_score + cheeks_score) / 3
         tip = get_tip_from_gemini(lips_score, eyes_score, cheeks_score)
+        # tip = "Keep smiling!"
 
         return jsonify(
             {

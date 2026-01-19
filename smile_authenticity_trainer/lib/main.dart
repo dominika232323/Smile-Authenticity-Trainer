@@ -2,6 +2,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:smile_authenticity_trainer/demo_items.dart';
 import 'package:smile_authenticity_trainer/history.dart';
 import 'package:smile_authenticity_trainer/hive_controller.dart';
 import 'package:smile_authenticity_trainer/record_video_page.dart';
@@ -16,7 +17,15 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Hive.initFlutter();
-  await Hive.openBox(StringConstants.hiveBox);
+  final box = await Hive.openBox(StringConstants.hiveBox);
+
+  if (box.isEmpty) {
+    final items = demoItems();
+
+    for (final item in items) {
+      await box.add(item.toMap());
+    }
+  }
 
   _cameras = await availableCameras();
 
