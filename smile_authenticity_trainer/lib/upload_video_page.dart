@@ -228,7 +228,13 @@ class _PickingVideoBodyState extends State<PickingVideoBody> {
             ? const CircularProgressIndicator()
             : Column(
                 children: [
-                  Text(displayedTip, style: const TextStyle(fontSize: 16)),
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Text(
+                      displayedTip,
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ),
                   Text(
                     'Lips score: ${displayedScoreLips.toStringAsFixed(0)}%',
                     style: const TextStyle(fontSize: 16),
