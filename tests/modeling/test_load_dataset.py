@@ -700,15 +700,13 @@ class TestLoadAndSplitAllFeatures:
         assert isinstance(train_df, pd.DataFrame)
         assert isinstance(val_df, pd.DataFrame)
 
-        # 20 rows total, 20% test_size -> 4 rows in val, 16 in train
         assert len(train_df) + len(val_df) == 20
         assert len(val_df) == 4
         assert len(train_df) == 16
 
-        # Check columns: lips_feat1, cheeks_feat2, eyes_feat3, label
-        expected_columns = ["lips_feat1", "cheeks_feat2", "eyes_feat3", "label"]
+        expected_columns = ["filename", "lips_feat1", "cheeks_feat2", "eyes_feat3", "label"]
+
         assert all(col in train_df.columns for col in expected_columns)
-        assert "filename" not in train_df.columns
         assert "subject_code" not in train_df.columns
 
     def test_load_and_split_all_features_file_not_found(self, temp_dir):

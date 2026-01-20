@@ -104,8 +104,8 @@ def split_dataframe(df: pd.DataFrame, test_size: float, random_state: int = 42) 
     train_df = df[df["subject_code"].isin(train_subjects)].reset_index(drop=True)
     val_df = df[df["subject_code"].isin(val_subjects)].reset_index(drop=True)
 
-    train_df = train_df.drop(columns=["subject_code", "filename"], axis=1)
-    val_df = val_df.drop(columns=["subject_code", "filename"], axis=1)
+    train_df = train_df.drop(columns=["subject_code"], axis=1)
+    val_df = val_df.drop(columns=["subject_code"], axis=1)
 
     logger.info(f"Train set shape: {train_df.shape}, {train_df['label'].value_counts()}")
     logger.info(f"Validation set shape: {val_df.shape}, {val_df['label'].value_counts()}")
