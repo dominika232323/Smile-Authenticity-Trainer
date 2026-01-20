@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from loguru import logger
 
 from config import ALL_CHEEKS_FEATURES_CSV, ALL_EYES_FEATURES_CSV, ALL_FEATURES_RUNS_DIR, ALL_LIP_FEATURES_CSV
@@ -15,13 +17,103 @@ def main():
     cheeks_dataset_path = ALL_CHEEKS_FEATURES_CSV
     dataset_path = [lips_dataset_path, eyes_dataset_path, cheeks_dataset_path]
 
-    runs_dir = ALL_FEATURES_RUNS_DIR / "threshold_experiment"
     non_feature_cols = ["filename"]
+
+    runs_dir, param_grid = hidden_dims_experiment()
+
+    for i in range(10):
+        hyperparameter_grid_search(dataset_path, runs_dir, param_grid, non_feature_cols)
+
+    runs_dir, param_grid = how_many_features_experiment()
+
+    for i in range(10):
+        hyperparameter_grid_search(dataset_path, runs_dir, param_grid, non_feature_cols)
+
+    runs_dir, param_grid = dropout_experiment()
+
+    for i in range(10):
+        hyperparameter_grid_search(dataset_path, runs_dir, param_grid, non_feature_cols)
+
+    runs_dir, param_grid = threshold_experiment()
+
+    for i in range(10):
+        hyperparameter_grid_search(dataset_path, runs_dir, param_grid, non_feature_cols)
+
+
+def hidden_dims_experiment() -> tuple[Path, dict[str, object]]:
+    runs_dir = ALL_FEATURES_RUNS_DIR / "hidden_dims_experiment"
 
     param_grid = {
         "batch_size": [32],
         "dropout": [0.3],
-        "epochs": [70],
+        "epochs": [150],
+        "patience": [7],
+        "lr": [1e-3],
+        "test_size": [0.2],
+        "how_many_features": [70],
+        "threshold": [0.5],
+        "hidden_dims": [
+            [64, 32],
+            [128, 64],
+            [256, 128],
+            [128, 64, 32],
+            [256, 128, 64],
+            [512, 256, 128],
+            [256, 128, 64, 32],
+            [512, 256, 128, 64],
+        ],
+    }
+
+    return runs_dir, param_grid
+
+
+def how_many_features_experiment() -> tuple[Path, dict[str, object]]:
+    runs_dir = ALL_FEATURES_RUNS_DIR / "how_many_features_experiment"
+
+    param_grid = {
+        "batch_size": [32],
+        "dropout": [0.3],
+        "epochs": [150],
+        "patience": [7],
+        "lr": [1e-3],
+        "test_size": [0.2],
+        "how_many_features": [20, 50, 70, 100, 200],
+        "threshold": [0.5],
+        "hidden_dims": [
+            [128, 64],
+        ],
+    }
+
+    return runs_dir, param_grid
+
+
+def dropout_experiment() -> tuple[Path, dict[str, object]]:
+    runs_dir = ALL_FEATURES_RUNS_DIR / "dropout_experiment"
+
+    param_grid = {
+        "batch_size": [32],
+        "dropout": [0.0, 0.2, 0.3, 0.4, 0.5],
+        "epochs": [150],
+        "patience": [7],
+        "lr": [1e-3],
+        "test_size": [0.2],
+        "how_many_features": [70],
+        "threshold": [0.5],
+        "hidden_dims": [
+            [128, 64],
+        ],
+    }
+
+    return runs_dir, param_grid
+
+
+def threshold_experiment() -> tuple[Path, dict[str, object]]:
+    runs_dir = ALL_FEATURES_RUNS_DIR / "threshold_experiment"
+
+    param_grid = {
+        "batch_size": [32],
+        "dropout": [0.3],
+        "epochs": [150],
         "patience": [7],
         "lr": [1e-3],
         "test_size": [0.2],
@@ -32,8 +124,7 @@ def main():
         ],
     }
 
-    for i in range(10):
-        hyperparameter_grid_search(dataset_path, runs_dir, param_grid, non_feature_cols)
+    return runs_dir, param_grid
 
 
 if __name__ == "__main__":
