@@ -51,6 +51,68 @@ def load_all_features(lips_dataset_path: Path, eyes_dataset_path: Path, cheeks_d
     return merged_df
 
 
+def load_and_split(dataset_path: Path, test_size: float, random_state: int = 42) -> tuple[pd.DataFrame, pd.DataFrame]:
+    logger.info(f"Reading dataset from file: {dataset_path}")
+    df = pd.read_csv(dataset_path)
+
+    return split_dataframe(df, test_size, random_state)
+
+
+def load_and_split_all_features(
+    lips_dataset_path: Path,
+    eyes_dataset_path: Path,
+    cheeks_dataset_path: Path,
+    test_size: float,
+    random_state: int = 42,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    logger.info("Loading all features from datasets")
+
+    df_lips = pd.read_csv(lips_dataset_path)
+    df_cheeks = pd.read_csv(cheeks_dataset_path)
+    df_eyes = pd.read_csv(eyes_dataset_path)
+
+    df_lips = add_prefix(df_lips, "lips")
+    df_cheeks = add_prefix(df_cheeks, "cheeks")
+    df_eyes = add_prefix(df_eyes, "eyes")
+
+    merged_df = df_lips.merge(df_cheeks, on="filename", how="inner", suffixes=("", "_drop")).merge(
+        df_eyes, on="filename", how="inner", suffixes=("", "_drop")
+    )
+
+    label_cols = [col for col in merged_df.columns if "label" in col]
+    label_df = merged_df[label_cols[0]]
+
+    merged_df = merged_df.drop(columns=label_cols)
+    merged_df["label"] = label_df.values.astype(int)
+
+    return split_dataframe(merged_df, test_size, random_state)
+
+
+def split_dataframe(df: pd.DataFrame, test_size: float, random_state: int = 42) -> tuple[pd.DataFrame, pd.DataFrame]:
+    df["subject_code"] = df["filename"].str[:3]
+
+    subject_labels = df.groupby("subject_code")["label"].agg(lambda x: x.mode()[0]).reset_index()
+
+    train_subjects, val_subjects = train_test_split(
+        subject_labels["subject_code"],
+        test_size=test_size,
+        random_state=random_state,
+        shuffle=True,
+        stratify=subject_labels["label"],
+    )
+
+    train_df = df[df["subject_code"].isin(train_subjects)].reset_index(drop=True)
+    val_df = df[df["subject_code"].isin(val_subjects)].reset_index(drop=True)
+
+    train_df = train_df.drop(columns=["subject_code", "filename"], axis=1)
+    val_df = val_df.drop(columns=["subject_code", "filename"], axis=1)
+
+    logger.info(f"Train set shape: {train_df.shape}, {train_df['label'].value_counts()}")
+    logger.info(f"Validation set shape: {val_df.shape}, {val_df['label'].value_counts()}")
+
+    return train_df, val_df
+
+
 def add_prefix(df: pd.DataFrame, prefix: str) -> pd.DataFrame:
     rename_dict = {col: f"{prefix}_{col}" for col in df.columns if col not in ["filename", "label"]}
 

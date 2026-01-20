@@ -14,10 +14,9 @@ from modeling.evaluate import evaluate, load_best_model
 from modeling.load_dataset import (
     feature_selection,
     get_dataloaders,
-    load_all_features,
-    load_dataset,
+    load_and_split,
+    load_and_split_all_features,
     scale_data,
-    split_data,
 )
 from modeling.smile_net import SmileNet
 from modeling.train import calculate_pos_weight, draw_history, train
@@ -50,16 +49,18 @@ def pipeline(
     logger.info(f"Using device: {device}")
 
     if isinstance(dataset_path, list):
-        dataset = load_all_features(dataset_path[0], dataset_path[1], dataset_path[2])
+        train_df, val_df = load_and_split_all_features(dataset_path[0], dataset_path[1], dataset_path[2], test_size)
     elif isinstance(dataset_path, Path):
-        dataset = load_dataset(dataset_path, non_feature_cols)
+        train_df, val_df = load_and_split(dataset_path, test_size)
     else:
         raise ValueError(f"Invalid dataset path: {dataset_path}")
 
-    X = dataset.drop("label", axis=1)
-    y = dataset["label"].values.astype(np.float32)
+    X_train = train_df.drop(columns=non_feature_cols + ["label"], axis=1)
+    y_train = train_df["label"].values.astype(np.float32)
 
-    X_train, X_test, y_train, y_test = split_data(X, y, test_size)
+    X_test = val_df.drop(columns=non_feature_cols + ["label"], axis=1)
+    y_test = val_df["label"].values.astype(np.float32)
+
     X_train, X_test = feature_selection(X_train, y_train, X_test, how_many_features, output_dir)
     X_train, X_test = scale_data(X_train, X_test, output_dir)
 
@@ -80,7 +81,7 @@ def pipeline(
         "how_many_features": how_many_features,
         "threshold": threshold,
         "hidden_dims": torch.tensor(hidden_dims if hidden_dims else [128, 64]),
-        "input_dim": X.shape[1],
+        "input_dim": X_train.shape[1],
     }
     writer.add_hparams(hparams, {})
 

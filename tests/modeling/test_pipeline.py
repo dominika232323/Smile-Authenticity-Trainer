@@ -97,12 +97,11 @@ class TestPipeline:
         with pytest.raises(ValueError, match="Invalid dataset path"):
             pipeline("not_a_path_or_list", Path("best.pth"), [], Path("out"))
 
-    @patch("modeling.pipeline.load_all_features")
+    @patch("modeling.pipeline.load_and_split_all_features")
     @patch("modeling.pipeline.create_directories")
     @patch("modeling.pipeline.SummaryWriter")
     @patch("modeling.pipeline.get_device")
-    @patch("modeling.pipeline.load_dataset")
-    @patch("modeling.pipeline.split_data")
+    @patch("modeling.pipeline.load_and_split")
     @patch("modeling.pipeline.feature_selection")
     @patch("modeling.pipeline.scale_data")
     @patch("modeling.pipeline.get_dataloaders")
@@ -127,16 +126,14 @@ class TestPipeline:
         mock_get_dataloaders,
         mock_scale_data,
         mock_feature_selection,
-        mock_split_data,
-        mock_load_dataset,
+        mock_load_and_split,
         mock_get_device,
         mock_summary_writer,
         mock_create_directories,
-        mock_load_all_features,
+        mock_load_and_split_all_features,
     ):
         from pathlib import Path
         import pandas as pd
-        import numpy as np
 
         # Setup
         dataset_paths = [Path("d1"), Path("d2"), Path("d3")]
@@ -147,15 +144,9 @@ class TestPipeline:
         # Mocking return values
         mock_get_device.return_value = "cpu"
 
-        mock_dataset = pd.DataFrame({"feature1": [1, 2], "label": [0, 1]})
-        mock_load_all_features.return_value = mock_dataset
-
-        mock_split_data.return_value = (
-            pd.DataFrame({"feature1": [1]}),
-            pd.DataFrame({"feature1": [2]}),
-            np.array([0]),
-            np.array([1]),
-        )
+        mock_train_df = pd.DataFrame({"feature1": [1], "label": [0], "id": ["a"]})
+        mock_val_df = pd.DataFrame({"feature1": [2], "label": [1], "id": ["b"]})
+        mock_load_and_split_all_features.return_value = (mock_train_df, mock_val_df)
 
         mock_feature_selection.return_value = (pd.DataFrame({"feature1": [1]}), pd.DataFrame({"feature1": [2]}))
         mock_scale_data.return_value = (pd.DataFrame({"feature1": [1]}), pd.DataFrame({"feature1": [2]}))
@@ -177,14 +168,13 @@ class TestPipeline:
         pipeline(dataset_paths, best_model_path, non_feature_cols, output_dir)
 
         # Assertions
-        mock_load_all_features.assert_called_with(dataset_paths[0], dataset_paths[1], dataset_paths[2])
-        mock_load_dataset.assert_not_called()
+        mock_load_and_split_all_features.assert_called_with(dataset_paths[0], dataset_paths[1], dataset_paths[2], 0.2)
+        mock_load_and_split.assert_not_called()
 
     @patch("modeling.pipeline.create_directories")
     @patch("modeling.pipeline.SummaryWriter")
     @patch("modeling.pipeline.get_device")
-    @patch("modeling.pipeline.load_dataset")
-    @patch("modeling.pipeline.split_data")
+    @patch("modeling.pipeline.load_and_split")
     @patch("modeling.pipeline.feature_selection")
     @patch("modeling.pipeline.scale_data")
     @patch("modeling.pipeline.get_dataloaders")
@@ -209,15 +199,13 @@ class TestPipeline:
         mock_get_dataloaders,
         mock_scale_data,
         mock_feature_selection,
-        mock_split_data,
-        mock_load_dataset,
+        mock_load_and_split,
         mock_get_device,
         mock_summary_writer,
         mock_create_directories,
     ):
         from pathlib import Path
         import pandas as pd
-        import numpy as np
 
         # Setup
         dataset_path = Path("dummy_dataset.csv")
@@ -228,15 +216,9 @@ class TestPipeline:
         # Mocking return values
         mock_get_device.return_value = "cpu"
 
-        mock_dataset = pd.DataFrame({"feature1": [1, 2], "label": [0, 1]})
-        mock_load_dataset.return_value = mock_dataset
-
-        mock_split_data.return_value = (
-            pd.DataFrame({"feature1": [1]}),
-            pd.DataFrame({"feature1": [2]}),
-            np.array([0]),
-            np.array([1]),
-        )
+        mock_train_df = pd.DataFrame({"feature1": [1], "label": [0], "id": ["a"]})
+        mock_val_df = pd.DataFrame({"feature1": [2], "label": [1], "id": ["b"]})
+        mock_load_and_split.return_value = (mock_train_df, mock_val_df)
 
         mock_feature_selection.return_value = (pd.DataFrame({"feature1": [1]}), pd.DataFrame({"feature1": [2]}))
         mock_scale_data.return_value = (pd.DataFrame({"feature1": [1]}), pd.DataFrame({"feature1": [2]}))
@@ -260,8 +242,7 @@ class TestPipeline:
         # Assertions
         mock_create_directories.assert_called()
         mock_summary_writer.assert_called_with(log_dir=output_dir / "tensorboard_logs")
-        mock_load_dataset.assert_called_with(dataset_path, non_feature_cols)
-        mock_split_data.assert_called()
+        mock_load_and_split.assert_called_with(dataset_path, 0.2)
         mock_feature_selection.assert_called()
         mock_scale_data.assert_called()
         mock_get_dataloaders.assert_called()
