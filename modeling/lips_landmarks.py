@@ -20,6 +20,11 @@ def main():
     for i in range(3):
         hyperparameter_grid_search(dataset_path, runs_dir, param_grid, non_feature_cols)
 
+    runs_dir, param_grid = how_many_features_experiment()
+
+    for i in range(5):
+        hyperparameter_grid_search(dataset_path, runs_dir, param_grid, non_feature_cols)
+
     runs_dir, param_grid = dropout_experiment()
 
     for i in range(5):
